@@ -30,6 +30,7 @@ from .models import (
     BranchList,
     BulkCancelHoldsResult,
     BulkPlaceHoldResult,
+    BulkRenewLoansResult,
     CancelHoldResult,
     DigitalFormat,
     Hold,
@@ -40,7 +41,6 @@ from .models import (
     Loan,
     LoanList,
     PlaceHoldResult,
-    BulkRenewLoansResult,
     RenewLoanResult,
     SearchResult,
 )
@@ -679,9 +679,7 @@ def renew_loan(checkout_id: str, dry_run: bool = False) -> RenewLoanResult:
 
 @mcp.tool(title="Renew multiple checkouts in one call", annotations=MUTATION)
 @_safe
-def renew_loans(
-    checkout_ids: list[str], dry_run: bool = False
-) -> BulkRenewLoansResult:
+def renew_loans(checkout_ids: list[str], dry_run: bool = False) -> BulkRenewLoansResult:
     """Renew one or more checkouts in a single gateway call.
 
     Prefer this over multiple `renew_loan` calls when the user has a
@@ -760,7 +758,9 @@ def _renewal_failures(data: dict) -> dict[str, str]:
         if not isinstance(item, dict):
             continue
         cid = item.get("checkoutId") or item.get("id") or item.get("itemId") or ""
-        msg = item.get("message") or item.get("error") or item.get("reason") or str(item)
+        msg = (
+            item.get("message") or item.get("error") or item.get("reason") or str(item)
+        )
         if cid:
             out[str(cid)] = str(msg)
     return out

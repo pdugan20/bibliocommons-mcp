@@ -287,8 +287,7 @@ class BulkRenewLoansResult(BaseModel):
     renewed: dict[str, str] = Field(
         default_factory=dict,
         description=(
-            "Map of checkout_id → new ISO due date for items that renewed "
-            "successfully."
+            "Map of checkout_id → new ISO due date for items that renewed successfully."
         ),
     )
     failures: dict[str, str] = Field(

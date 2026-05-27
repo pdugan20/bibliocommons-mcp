@@ -461,9 +461,7 @@ def test_renew_loan_dry_run_pre_checks_actions(mock_client):
 def test_renew_loans_bulk_partial_failure(mock_client):
     """Bulk renewal where the gateway accepts one and rejects the other."""
     mock_client.renew_checkouts.return_value = {
-        "failures": [
-            {"checkoutId": "B2", "message": "Item has holds; cannot renew"}
-        ],
+        "failures": [{"checkoutId": "B2", "message": "Item has holds; cannot renew"}],
         "entities": {
             "checkouts": {
                 "A1": {"dueDate": "2026-06-30", "timesRenewed": 2},
