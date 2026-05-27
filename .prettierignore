@@ -1,0 +1,6 @@
+CHANGELOG.md
+tests/cassettes/
+dist/
+build/
+.venv/
+spike/

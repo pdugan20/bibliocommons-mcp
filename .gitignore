@@ -1,0 +1,19 @@
+.venv/
+spike/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.env
+*.cookies
+*.session
+.DS_Store
+
+# tooling caches
+.coverage
+.coverage.*
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+coverage.xml

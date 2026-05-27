@@ -1,0 +1,49 @@
+name: Version Guard
+
+# Catches manual __version__ / manifest bumps that slip past human review.
+# release-please's own release commit is allowed.
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Reject manual version bumps
+        run: |
+          set -euo pipefail
+
+          msg=$(git log -1 --pretty=%s)
+
+          # release-please's own release commit is allowed.
+          if [[ "$msg" =~ ^chore\(main\):\ release\  ]]; then
+            echo "::notice::Allowed: release-please release commit ('$msg')"
+            exit 0
+          fi
+
+          changed=0
+          if git diff HEAD~1 HEAD -- src/bibliocommons_mcp/__init__.py 2>/dev/null |
+            grep -qE '^\+__version__[[:space:]]*='; then
+            echo "::error::__version__ was bumped by '$msg'."
+            echo "::error::Only release-please ('chore(main): release X.Y.Z') may bump __version__."
+            changed=1
+          fi
+
+          if git diff HEAD~1 HEAD -- .release-please-manifest.json 2>/dev/null |
+            grep -qE '^[+-]'; then
+            echo "::error::.release-please-manifest.json was edited by '$msg'."
+            echo "::error::Only release-please-action may modify the manifest."
+            changed=1
+          fi
+
+          exit $changed

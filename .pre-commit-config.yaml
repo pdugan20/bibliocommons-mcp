@@ -1,0 +1,47 @@
+---
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.6
+    hooks:
+      - id: ruff
+        args: ['--fix']
+      - id: ruff-format
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: []
+
+  - repo: local
+    hooks:
+      - id: block-credentials
+        name: Block credential leaks
+        language: pygrep
+        # Catch obvious credential leaks. Tests/cassettes are sanitized,
+        # but a typo could land a card number or PIN. Match common SPL
+        # 13/14-digit barcodes + a 4-digit PIN literal.
+        entry: '(?i)(card|pin|barcode|password|bc_access_token|x-access-token|session_id)\s*[:=]\s*["''][0-9a-f]{4,}["'']'
+        exclude: |
+          (?x)^(
+            tests/cassettes/.*\.yaml |
+            \.pre-commit-config\.yaml |
+            tests/conftest\.py |
+            docs/.* |
+            CLAUDE\.md |
+            README\.md |
+            CONTRIBUTING\.md
+          )$

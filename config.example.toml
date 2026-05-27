@@ -1,0 +1,9 @@
+# Copy to ~/.config/bibliocommons-mcp/config.toml and `chmod 600`.
+
+library = "seattle"                    # your bibliocommons subdomain (sfpl, vpl, bpl, etc.)
+default_pickup_branch = "Lake City"    # branch name or 3-letter code (LCY)
+default_format = "MUSIC_CD"            # optional default for search; omit for any format
+
+[credentials]
+card = "REPLACE_WITH_LIBRARY_CARD_NUMBER"
+pin  = "REPLACE_WITH_PIN"
