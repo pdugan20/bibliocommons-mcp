@@ -101,5 +101,5 @@ def test_annotations_advertise_safety_correctly():
     for name in ("place_hold", "borrow_digital"):
         ann = by_name[name].annotations
         assert ann is not None, f"{name} missing annotations"
-        assert ann.readOnlyHint is not True, f"{name} should NOT be readOnlyHint=True"
-        assert ann.destructiveHint is not True, f"{name} should NOT be destructiveHint=True"
+        assert ann.readOnlyHint is not True, f"{name} must not be read-only"
+        assert ann.destructiveHint is not True, f"{name} must not be destructive"
