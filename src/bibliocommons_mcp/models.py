@@ -239,3 +239,22 @@ class BulkCancelHoldsResult(BaseModel):
             "be cancelled (title + queue position). Empty when dry_run=False."
         ),
     )
+
+
+class BulkPlaceHoldResult(BaseModel):
+    """Result of `place_holds(...)`. Per-bib success/failure breakdown.
+
+    The gateway has no batch endpoint for placement, so this is N
+    sequential POSTs with a small delay between each. Some may succeed
+    while others fail (e.g. duplicate hold, item not holdable); the
+    response is keyed by `bib_id` so the caller can act on each.
+    """
+
+    placed: dict[str, PlaceHoldResult] = Field(
+        default_factory=dict,
+        description="Successful placements, keyed by `bib_id`.",
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Failed placements, keyed by `bib_id` → reason.",
+    )

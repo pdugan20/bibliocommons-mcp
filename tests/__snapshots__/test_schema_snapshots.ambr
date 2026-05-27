@@ -1132,6 +1132,9 @@
       'description': '''
         Place a physical hold on a bib (CD, book, DVD, etc.).
         
+        For multiple bibs, prefer `place_holds` — it batches with a built-in
+        inter-call delay to avoid gateway rate-limiting.
+        
         Args:
             bib_id: The bib id (e.g. `S30C3857930`).
             pickup_branch: Branch name or 3-letter code (e.g. `Lake City`
@@ -1263,6 +1266,201 @@
         'type': 'object',
       }),
       'title': 'Place a physical hold',
+    }),
+    'place_holds': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'description': '''
+        Place physical holds on several bibs at the same pickup branch.
+        
+        The gateway has no batch endpoint for placement, so this is N
+        sequential POSTs. A short delay between each (default 1s) keeps
+        the BC gateway from rate-limiting after several rapid requests.
+        
+        Per-bib failures don't stop the run — placement continues and the
+        result splits successes (`placed`) and failures (`failures`) so the
+        agent can report partial completion. Common failure causes: the
+        user already has the item on hold (409), the item isn't holdable
+        (reference-only), or a transient gateway 5xx.
+        
+        Args:
+            bib_ids: List of bib IDs. Order is preserved during placement
+                (first attempted first).
+            pickup_branch: Branch name or 3-letter code applied to every
+                hold. Defaults to `default_pickup_branch` from config.
+            delay_seconds: Pause between each gateway call. The default of
+                1s is conservative; lower for small batches if you're
+                willing to risk a transient 429.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+          'bib_ids': dict({
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Bib Ids',
+            'type': 'array',
+          }),
+          'delay_seconds': dict({
+            'default': 1.0,
+            'title': 'Delay Seconds',
+            'type': 'number',
+          }),
+          'pickup_branch': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Pickup Branch',
+          }),
+        }),
+        'required': list([
+          'bib_ids',
+        ]),
+        'title': 'place_holdsArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'PlaceHoldResult': dict({
+            'properties': dict({
+              'expiry': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Expiry',
+              }),
+              'hold_id': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Hold Id',
+              }),
+              'material_type': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Material Type',
+              }),
+              'pickup_branch': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Pickup Branch',
+              }),
+              'position': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Position',
+              }),
+              'status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Status',
+              }),
+              'success': dict({
+                'title': 'Success',
+                'type': 'boolean',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+            }),
+            'required': list([
+              'success',
+            ]),
+            'title': 'PlaceHoldResult',
+            'type': 'object',
+          }),
+        }),
+        'description': '''
+          Result of `place_holds(...)`. Per-bib success/failure breakdown.
+          
+          The gateway has no batch endpoint for placement, so this is N
+          sequential POSTs with a small delay between each. Some may succeed
+          while others fail (e.g. duplicate hold, item not holdable); the
+          response is keyed by `bib_id` so the caller can act on each.
+        ''',
+        'properties': dict({
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Failed placements, keyed by `bib_id` → reason.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'placed': dict({
+            'additionalProperties': dict({
+              '$ref': '#/$defs/PlaceHoldResult',
+            }),
+            'description': 'Successful placements, keyed by `bib_id`.',
+            'title': 'Placed',
+            'type': 'object',
+          }),
+        }),
+        'title': 'BulkPlaceHoldResult',
+        'type': 'object',
+      }),
+      'title': 'Place holds on multiple bibs',
     }),
     'ready_for_pickup': dict({
       'annotations': dict({

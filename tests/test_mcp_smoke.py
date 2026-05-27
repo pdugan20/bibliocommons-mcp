@@ -26,6 +26,7 @@ EXPECTED_TOOLS = {
     "search",
     "availability",
     "place_hold",
+    "place_holds",
     "borrow_digital",
     "list_holds",
     "ready_for_pickup",
@@ -108,7 +109,7 @@ def test_annotations_advertise_safety_correctly():
         assert ann.destructiveHint is True, f"{name} must be destructiveHint=True"
 
     # Mutations are neither read-only nor destructive
-    for name in ("place_hold", "borrow_digital"):
+    for name in ("place_hold", "place_holds", "borrow_digital"):
         ann = by_name[name].annotations
         assert ann is not None, f"{name} missing annotations"
         assert ann.readOnlyHint is not True, f"{name} must not be read-only"

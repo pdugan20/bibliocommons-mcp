@@ -159,6 +159,100 @@ def test_place_hold_explicit_branch(mock_client):
     mock_client.branches.resolve.assert_called_once_with("Central")
 
 
+def test_place_holds_bulk_success(mock_client):
+    """Bulk placement should call place_physical_hold once per bib and
+    return a per-bib map of PlaceHoldResults."""
+    mock_client.branches.resolve.return_value = Branch(code="LCY", name="Lake City")
+
+    def fake_place(bib_id, branch_code):
+        return {
+            "entities": {
+                "holds": {
+                    f"H_{bib_id}": {
+                        "bibTitle": f"Title for {bib_id}",
+                        "materialType": "PHYSICAL",
+                        "pickupLocation": {"code": branch_code},
+                        "holdsPosition": 1,
+                        "status": "NOT_YET_AVAILABLE",
+                    }
+                }
+            }
+        }
+
+    mock_client.place_physical_hold.side_effect = fake_place
+
+    out = srv.place_holds(bib_ids=["S30C1", "S30C2", "S30C3"], delay_seconds=0.0)
+    assert out.failures == {}
+    assert set(out.placed.keys()) == {"S30C1", "S30C2", "S30C3"}
+    assert all(r.success for r in out.placed.values())
+    assert mock_client.place_physical_hold.call_count == 3
+
+
+def test_place_holds_bulk_partial_failure(mock_client):
+    """When one bib 409s, the others should still complete and the
+    failure should land in `failures`."""
+    from bibliocommons_mcp.client import BCError
+
+    mock_client.branches.resolve.return_value = Branch(code="LCY", name="Lake City")
+
+    def fake_place(bib_id, branch_code):
+        if bib_id == "S30C_DUP":
+            raise BCError(409, "This item is already on your holds list.")
+        return {
+            "entities": {
+                "holds": {
+                    "H1": {
+                        "bibTitle": "ok",
+                        "materialType": "PHYSICAL",
+                        "pickupLocation": {"code": branch_code},
+                        "holdsPosition": 1,
+                        "status": "NOT_YET_AVAILABLE",
+                    }
+                }
+            }
+        }
+
+    mock_client.place_physical_hold.side_effect = fake_place
+
+    out = srv.place_holds(
+        bib_ids=["S30C_OK", "S30C_DUP", "S30C_ALSO_OK"], delay_seconds=0.0
+    )
+    assert set(out.placed.keys()) == {"S30C_OK", "S30C_ALSO_OK"}
+    assert "S30C_DUP" in out.failures
+    assert "already on your holds list" in out.failures["S30C_DUP"]
+
+
+def test_place_holds_applies_delay_between_calls(mock_client, monkeypatch):
+    """The tool should call time.sleep(delay_seconds) between bibs, but
+    not before the first one or after the last."""
+    sleeps: list[float] = []
+    monkeypatch.setattr(srv.time, "sleep", lambda s: sleeps.append(s))
+
+    mock_client.branches.resolve.return_value = Branch(code="LCY", name="Lake City")
+    mock_client.place_physical_hold.return_value = {
+        "entities": {
+            "holds": {
+                "H": {
+                    "bibTitle": "x",
+                    "materialType": "PHYSICAL",
+                    "pickupLocation": {"code": "LCY"},
+                    "holdsPosition": 1,
+                    "status": "NOT_YET_AVAILABLE",
+                }
+            }
+        }
+    }
+
+    srv.place_holds(bib_ids=["A", "B", "C"], delay_seconds=0.5)
+    # 3 bibs → 2 sleeps (between, not before/after)
+    assert sleeps == [0.5, 0.5]
+
+
+def test_place_holds_empty_raises(mock_client):
+    with pytest.raises(ToolError, match="empty"):
+        srv.place_holds(bib_ids=[])
+
+
 def test_place_hold_with_no_branch_or_default_raises(mock_client, monkeypatch):
     cfg = MagicMock()
     cfg.default_pickup_branch = None

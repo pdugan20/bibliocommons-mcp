@@ -12,6 +12,7 @@ import functools
 import logging
 import os
 import sys
+import time
 from typing import TYPE_CHECKING
 
 from mcp.server.fastmcp import FastMCP
@@ -28,6 +29,7 @@ from .models import (
     BorrowDigitalResult,
     BranchList,
     BulkCancelHoldsResult,
+    BulkPlaceHoldResult,
     CancelHoldResult,
     DigitalFormat,
     Hold,
@@ -283,20 +285,8 @@ def availability(bib_id: str) -> Availability:
     )
 
 
-@mcp.tool(title="Place a physical hold", annotations=MUTATION)
-@_safe
-def place_hold(bib_id: str, pickup_branch: str | None = None) -> PlaceHoldResult:
-    """Place a physical hold on a bib (CD, book, DVD, etc.).
-
-    Args:
-        bib_id: The bib id (e.g. `S30C3857930`).
-        pickup_branch: Branch name or 3-letter code (e.g. `Lake City`
-            or `LCY`). Defaults to `default_pickup_branch` from config.
-            Names are matched case-insensitively; locker variants are
-            de-prioritized when the query is ambiguous.
-    """
-    client = _ensure_client()
-    branch_code = _resolve_branch(pickup_branch)
+def _place_hold_one(client: Client, bib_id: str, branch_code: str) -> PlaceHoldResult:
+    """Place a single physical hold; shared by `place_hold` and `place_holds`."""
     data = client.place_physical_hold(bib_id, branch_code)
     holds = data.get("entities", {}).get("holds", {})
     if not holds:
@@ -313,6 +303,74 @@ def place_hold(bib_id: str, pickup_branch: str | None = None) -> PlaceHoldResult
         status=hold.get("status"),
         expiry=hold.get("expiryDate"),
     )
+
+
+@mcp.tool(title="Place a physical hold", annotations=MUTATION)
+@_safe
+def place_hold(bib_id: str, pickup_branch: str | None = None) -> PlaceHoldResult:
+    """Place a physical hold on a bib (CD, book, DVD, etc.).
+
+    For multiple bibs, prefer `place_holds` — it batches with a built-in
+    inter-call delay to avoid gateway rate-limiting.
+
+    Args:
+        bib_id: The bib id (e.g. `S30C3857930`).
+        pickup_branch: Branch name or 3-letter code (e.g. `Lake City`
+            or `LCY`). Defaults to `default_pickup_branch` from config.
+            Names are matched case-insensitively; locker variants are
+            de-prioritized when the query is ambiguous.
+    """
+    client = _ensure_client()
+    branch_code = _resolve_branch(pickup_branch)
+    return _place_hold_one(client, bib_id, branch_code)
+
+
+@mcp.tool(title="Place holds on multiple bibs", annotations=MUTATION)
+@_safe
+def place_holds(
+    bib_ids: list[str],
+    pickup_branch: str | None = None,
+    delay_seconds: float = 1.0,
+) -> BulkPlaceHoldResult:
+    """Place physical holds on several bibs at the same pickup branch.
+
+    The gateway has no batch endpoint for placement, so this is N
+    sequential POSTs. A short delay between each (default 1s) keeps
+    the BC gateway from rate-limiting after several rapid requests.
+
+    Per-bib failures don't stop the run — placement continues and the
+    result splits successes (`placed`) and failures (`failures`) so the
+    agent can report partial completion. Common failure causes: the
+    user already has the item on hold (409), the item isn't holdable
+    (reference-only), or a transient gateway 5xx.
+
+    Args:
+        bib_ids: List of bib IDs. Order is preserved during placement
+            (first attempted first).
+        pickup_branch: Branch name or 3-letter code applied to every
+            hold. Defaults to `default_pickup_branch` from config.
+        delay_seconds: Pause between each gateway call. The default of
+            1s is conservative; lower for small batches if you're
+            willing to risk a transient 429.
+    """
+    if not bib_ids:
+        raise ToolError("bib_ids list is empty — nothing to place")
+
+    client = _ensure_client()
+    branch_code = _resolve_branch(pickup_branch)
+
+    placed: dict[str, PlaceHoldResult] = {}
+    failures: dict[str, str] = {}
+
+    for i, bib_id in enumerate(bib_ids):
+        if i > 0 and delay_seconds > 0:
+            time.sleep(delay_seconds)
+        try:
+            placed[bib_id] = _place_hold_one(client, bib_id, branch_code)
+        except BCError as e:
+            failures[bib_id] = e.message
+
+    return BulkPlaceHoldResult(placed=placed, failures=failures)
 
 
 @mcp.tool(title="Borrow an available digital item", annotations=MUTATION)
