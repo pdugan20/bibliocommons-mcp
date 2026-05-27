@@ -86,8 +86,14 @@ def test_annotations_advertise_safety_correctly():
     _, tools = asyncio.run(_handshake_and_list())
     by_name = {t.name: t for t in tools.tools}
 
-    read_only = {"search", "availability", "list_holds", "list_loans",
-                 "list_branches", "library_health"}
+    read_only = {
+        "search",
+        "availability",
+        "list_holds",
+        "list_loans",
+        "list_branches",
+        "library_health",
+    }
     for name in read_only:
         ann = by_name[name].annotations
         assert ann is not None, f"{name} missing annotations"
