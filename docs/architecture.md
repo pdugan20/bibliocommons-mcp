@@ -2,7 +2,7 @@
 
 ## Overview
 
-bibliocommons-mcp is a thin Python MCP server that authenticates against a BiblioCommons library and forwards a curated set of operations — search, hold, cancel, list, etc. — to the public-facing gateway at `gateway.bibliocommons.com`. The same endpoints work across all ~190 BiblioCommons libraries; the library subdomain is per-instance config.
+bibliocommons-mcp is a thin Python MCP server that authenticates against a BiblioCommons library and forwards a curated set of operations — search, hold, cancel, list, etc. — to the public-facing gateway at `gateway.bibliocommons.com`. The same endpoints work for every BiblioCommons-powered library; the library subdomain is per-instance config.
 
 ## Data flow
 
@@ -87,4 +87,4 @@ You need a working `~/.config/bibliocommons-mcp/config.toml` (or env vars). Diff
 
 - [`python-bibliocommons`](https://github.com/williamjacksn/python-bibliocommons) by William Jackson — handles the modern login flow we build on.
 - [`SFPL` by kaijchang](https://github.com/kaijchang/SFPL) — first community sighting of the BiblioCommons place-hold endpoint pattern, even if the body shape has since evolved.
-- [`bibliophile-backend` by DavidCain](https://github.com/DavidCain/bibliophile-backend) — proof that this approach generalizes across ~190 libraries.
+- [`bibliophile-backend` by DavidCain](https://github.com/DavidCain/bibliophile-backend) — proof that this approach generalizes across the BiblioCommons platform.

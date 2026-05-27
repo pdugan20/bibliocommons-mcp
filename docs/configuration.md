@@ -62,9 +62,7 @@ If your library uses BiblioCommons, the catalog lives at `{your-library}.biblioc
 | Ottawa Public Library         | `ottawa`  |
 | Burnaby Public Library        | `burnaby` |
 
-The full list is around ~190 systems. If you visit `{name}.bibliocommons.com` and see the catalog interface, you've got the right subdomain.
-
-If your library isn't on BiblioCommons (e.g. NYPL moved off in 2025), this tool can't help. See [`known-libraries.md`](known-libraries.md) for the compatibility status of libraries people have tried.
+If you visit `{name}.bibliocommons.com` and see the catalog interface, you've got the right subdomain. If your library isn't on BiblioCommons, this tool can't help. See [`known-libraries.md`](known-libraries.md) for the compatibility status of libraries people have tried.
 
 ## Branches
 

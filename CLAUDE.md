@@ -92,10 +92,9 @@ place holds, manage checkouts via an MCP client.
 
 ## Generality
 
-The same endpoints work for any BiblioCommons library (SFPL, BPL, VPL,
-~190 others). Library is configured per-server-instance via the `library`
-key (subdomain) in config. Tested against `seattle` and `sfpl`. NYPL
-returns 410 SiteDisabledError (moved off BiblioCommons).
+The same endpoints work for any BiblioCommons-powered library. Library is
+configured per-server-instance via the `library` key (subdomain) in config.
+Tested against `seattle` and `sfpl`.
 
 ## Development
 

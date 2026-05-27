@@ -13,63 +13,44 @@ MCP server for placing holds, searching, and managing your account at [BiblioCom
 pipx install bibliocommons-mcp
 ```
 
-Or with `pip`:
-
-```bash
-pip install bibliocommons-mcp
-```
+Requires Python 3.11+.
 
 ## Quick Start
 
 ```bash
-pipx install bibliocommons-mcp
-bibliocommons-mcp init                                    # interactive setup
+bibliocommons-mcp init
 claude mcp add bibliocommons bibliocommons-mcp --scope user
 ```
 
-`init` walks you through the four prompts it needs (library subdomain, card, PIN, default pickup branch), validates each step against the live gateway, and writes `~/.config/bibliocommons-mcp/config.toml` with mode 0600. If you'd rather skip the wizard and hand-write the file (or use env vars), see [`docs/configuration.md`](docs/configuration.md).
+`init` walks the prompts, validates live against the gateway, and writes the config file for you. Manual setup: [`docs/configuration.md`](docs/configuration.md). For Claude Desktop, Cursor, or other MCP clients: [`docs/mcp-clients.md`](docs/mcp-clients.md).
 
-After `claude mcp add`, restart your client. That's it.
+## Try asking
 
-## What this feels like
-
-> Any Mark Lanegan available at Lake City this week?
+> Place a hold on something at my branch.
 >
-> Find me a Sub Pop CD from the last five years I haven't held yet — closest branch to Lake City wins.
+> Show my current holds with queue positions.
 >
-> What's on hold for me and how far up the queue am I?
+> What's due back this week?
 >
-> Cancel the hold on the Cobain biography — I bought it.
-
-Each prompt becomes a chain of MCP tool calls — typically `search` → `availability` → `place_hold`, or `list_holds` → `cancel_hold` for cleanup.
+> Cancel a hold.
 
 ## Tools
 
-| Tool             | Description                                                        |
-| ---------------- | ------------------------------------------------------------------ |
-| `search`         | Catalog search with format facet (`MUSIC_CD`, `BK`, `EBOOK`, etc.) |
-| `availability`   | Per-branch availability + status for a bib                         |
-| `place_hold`     | Physical hold with pickup branch (defaults to your config)         |
-| `borrow_digital` | Check out an immediately-available ebook / e-audiobook             |
-| `list_holds`     | Your current holds (physical + digital)                            |
-| `cancel_hold`    | Cancel a hold by ID                                                |
-| `list_loans`     | Current checkouts with due dates                                   |
-| `list_branches`  | All branches at your configured library                            |
-| `library_health` | Login probe + hold counts/quotas                                   |
-
-Placing a hold on an _unavailable_ digital item (joining a Libby waitlist) isn't supported in v1 — use the Libby app for that. `borrow_digital` covers available digital items.
-
-## Configuration
-
-The example above is enough for most users. The full schema, environment-variable overrides, and tips for finding your library's subdomain are in [`docs/configuration.md`](docs/configuration.md).
-
-## MCP clients
-
-The Quick Start uses Claude Code. For Claude Desktop, Cursor, Continue, Cline, Zed, and other MCP clients, see [`docs/mcp-clients.md`](docs/mcp-clients.md).
+| Tool             | Description                                       |
+| ---------------- | ------------------------------------------------- |
+| `search`         | Search the catalog, optionally filtered by format |
+| `availability`   | Show per-branch status for a bib                  |
+| `place_hold`     | Place a physical hold at your pickup branch       |
+| `borrow_digital` | Borrow an available digital item                  |
+| `list_holds`     | Show current holds and queue positions            |
+| `cancel_hold`    | Cancel a hold by ID                               |
+| `list_loans`     | Show checkouts with due dates                     |
+| `list_branches`  | List all branches at your library                 |
+| `library_health` | Check login and report hold quotas                |
 
 ## Library compatibility
 
-Tested against `seattle` and `sfpl`. NYPL is no longer on BiblioCommons (`410 SiteDisabledError`). If you try it against your library, [open a compatibility report](https://github.com/pdugan20/bibliocommons-mcp/issues/new?template=library_compatibility.yml) — the running list lives in [`docs/known-libraries.md`](docs/known-libraries.md).
+The same gateway serves every BiblioCommons-powered library — see [`docs/known-libraries.md`](docs/known-libraries.md) for what's been verified. If yours isn't listed, [file a compatibility report](https://github.com/pdugan20/bibliocommons-mcp/issues/new?template=library_compatibility.yml) once you try it.
 
 ## Requirements
 
@@ -79,14 +60,8 @@ Tested against `seattle` and `sfpl`. NYPL is no longer on BiblioCommons (`410 Si
 
 ## Further reading
 
-- [`docs/architecture.md`](docs/architecture.md) — how the gateway client works and what we had to discover to make holds POST cleanly
-- [`docs/format-codes.md`](docs/format-codes.md) — known format facet codes
+- [`docs/architecture.md`](docs/architecture.md) — gateway client design and API quirks
+- [`docs/format-codes.md`](docs/format-codes.md) — format facet codes
 - [`docs/troubleshooting.md`](docs/troubleshooting.md) — common errors and fixes
-- [`docs/roadmap.md`](docs/roadmap.md) — what's planned for v1.1+
+- [`docs/roadmap.md`](docs/roadmap.md) — what's planned next
 - [`docs/releasing.md`](docs/releasing.md) — automated release flow
-
-## Contributing / Security / License
-
-- Setup, tests, commit conventions: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Vulnerability disclosure: [SECURITY.md](SECURITY.md)
-- MIT
