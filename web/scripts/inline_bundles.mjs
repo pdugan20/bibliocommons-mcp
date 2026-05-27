@@ -40,12 +40,7 @@ import { fileURLToPath } from "node:url";
 const webDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(webDir, "..");
 const distDir = join(webDir, "dist");
-const outFile = join(
-  repoRoot,
-  "src",
-  "bibliocommons_mcp",
-  "_ui_bundles.py",
-);
+const outFile = join(repoRoot, "src", "bibliocommons_mcp", "_ui_bundles.py");
 
 const entries = readdirSync(webDir).filter((name) => {
   if (!name.endsWith(".html")) return false;
@@ -81,8 +76,7 @@ if (existsSync(distDir)) {
 const injectLoadingBg = {
   name: "inject-loading-bg",
   transformIndexHtml(html) {
-    const css =
-      "html, body { background: light-dark(#fcfcfa, #272726); }";
+    const css = "html, body { background: light-dark(#fcfcfa, #272726); }";
     return html
       .replace(
         "<html",
