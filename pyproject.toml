@@ -23,7 +23,9 @@ dependencies = [
     "bibliocommons>=2025.3",
     "httpx>=0.28",
     "lxml>=5",
-    "mcp>=1.2",
+    # mcp>=1.27 = MCP spec 2025-11-25 (tool annotations, structured output,
+    # elicitation, ToolError). Anything older lacks features we depend on.
+    "mcp>=1.27",
 ]
 
 [project.scripts]

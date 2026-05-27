@@ -1,7 +1,8 @@
 """Tests for the MCP tool wrappers in server.py.
 
 These mock the Client to isolate the response-shaping logic in each
-tool. Network is never touched.
+tool. Network is never touched. Tools now return Pydantic models —
+assertions use attribute access.
 """
 
 from __future__ import annotations
@@ -9,9 +10,10 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
+from mcp.server.fastmcp.exceptions import ToolError
 
 import bibliocommons_mcp.server as srv
-from bibliocommons_mcp.branches import Branch, BranchNotFound
+from bibliocommons_mcp.branches import Branch
 
 
 @pytest.fixture
@@ -50,10 +52,10 @@ def test_search_compresses_response(mock_client):
         "catalogSearch": {"pagination": {"page": 1, "pages": 1, "count": 1}},
     }
     out = srv.search("mudhoney", format="MUSIC_CD")
-    assert out["page"] == 1
-    assert out["total"] == 1
-    assert out["results"][0]["title"] == "Plastic Eternity"
-    assert out["results"][0]["format"] == "MUSIC_CD"
+    assert out.page == 1
+    assert out.total == 1
+    assert out.results[0].title == "Plastic Eternity"
+    assert out.results[0].format == "MUSIC_CD"
     mock_client.search.assert_called_once_with(
         "mudhoney", format="MUSIC_CD", page=1, sort_by=None
     )
@@ -68,7 +70,6 @@ def test_search_uses_default_format(mock_client, monkeypatch):
         "catalogSearch": {"pagination": {}},
     }
     srv.search("anything")
-    # format wasn't passed; defaults from config should be used
     assert mock_client.search.call_args.kwargs["format"] == "BK"
 
 
@@ -104,10 +105,10 @@ def test_availability_flattens_per_copy(mock_client):
         },
     }
     out = srv.availability("S30C9")
-    assert out["total_copies"] == 3
-    assert out["available_copies"] == 2
-    assert len(out["copies"]) == 2
-    assert out["copies"][0]["branch_code"] in {"LCY", "CEN"}
+    assert out.total_copies == 3
+    assert out.available_copies == 2
+    assert len(out.copies) == 2
+    assert out.copies[0].branch_code in {"LCY", "CEN"}
 
 
 def test_place_hold_default_branch(mock_client):
@@ -130,10 +131,9 @@ def test_place_hold_default_branch(mock_client):
         },
     }
     out = srv.place_hold("S30C1")
-    assert out["success"] is True
-    assert out["hold_id"] == "H1"
-    assert out["pickup_branch"] == "LCY"
-    # default branch from config was resolved
+    assert out.success is True
+    assert out.hold_id == "H1"
+    assert out.pickup_branch == "LCY"
     mock_client.branches.resolve.assert_called_once_with("Lake City")
     mock_client.place_physical_hold.assert_called_once_with("S30C1", "LCY")
 
@@ -163,13 +163,17 @@ def test_place_hold_with_no_branch_or_default_raises(mock_client, monkeypatch):
     cfg = MagicMock()
     cfg.default_pickup_branch = None
     monkeypatch.setattr(srv, "_cfg", cfg)
-    with pytest.raises(ValueError, match="pickup_branch"):
+    # _resolve_branch now raises ToolError directly (was ValueError before).
+    with pytest.raises(ToolError, match="pickup_branch"):
         srv.place_hold("S30C1")
 
 
-def test_place_hold_unknown_branch_propagates(mock_client):
+def test_place_hold_unknown_branch_surfaces_as_tool_error(mock_client):
+    """BranchNotFound from the resolver gets wrapped in ToolError by _safe."""
+    from bibliocommons_mcp.branches import BranchNotFound
+
     mock_client.branches.resolve.side_effect = BranchNotFound("no match")
-    with pytest.raises(BranchNotFound):
+    with pytest.raises(ToolError, match="no match"):
         srv.place_hold("S30C1", pickup_branch="Hogwarts")
 
 
@@ -189,9 +193,9 @@ def test_borrow_digital_shape(mock_client):
         },
     }
     out = srv.borrow_digital("S30C5")
-    assert out["success"] is True
-    assert out["title"] == "Come as You Are"
-    assert out["due"] == "2026-06-17"
+    assert out.success is True
+    assert out.title == "Come as You Are"
+    assert out.due == "2026-06-17"
 
 
 def test_list_holds_shape(mock_client):
@@ -212,22 +216,22 @@ def test_list_holds_shape(mock_client):
         }
     }
     out = srv.list_holds()
-    assert out["count"] == 1
-    assert out["holds"][0]["pickup_branch"] == "LCY"
+    assert out.count == 1
+    assert out.holds[0].pickup_branch == "LCY"
 
 
 def test_cancel_hold_returns_success_when_no_failures(mock_client):
     mock_client.cancel_holds.return_value = {"failures": {}}
     out = srv.cancel_hold("H1", "S30C1")
-    assert out["success"] is True
+    assert out.success is True
     mock_client.cancel_holds.assert_called_once_with([("H1", "S30C1")])
 
 
 def test_cancel_hold_surfaces_failures(mock_client):
     mock_client.cancel_holds.return_value = {"failures": {"H1": "already canceled"}}
     out = srv.cancel_hold("H1", "S30C1")
-    assert out["success"] is False
-    assert "H1" in out["failures"]
+    assert out.success is False
+    assert "H1" in out.failures
 
 
 def test_list_loans_shape(mock_client):
@@ -246,8 +250,8 @@ def test_list_loans_shape(mock_client):
         }
     }
     out = srv.list_loans()
-    assert out["count"] == 1
-    assert out["loans"][0]["due"] == "2026-06-11"
+    assert out.count == 1
+    assert out.loans[0].due == "2026-06-11"
 
 
 def test_list_branches(mock_client):
@@ -256,9 +260,10 @@ def test_list_branches(mock_client):
         Branch("CEN", "Central Library"),
     ]
     out = srv.list_branches()
-    assert out["library"] == "seattle"
-    assert len(out["branches"]) == 2
-    assert out["branches"][0] == {"code": "LCY", "name": "Lake City Branch"}
+    assert out.library == "seattle"
+    assert len(out.branches) == 2
+    assert out.branches[0].code == "LCY"
+    assert out.branches[0].name == "Lake City Branch"
 
 
 def test_library_health_unlimited_ils(mock_client):
@@ -278,7 +283,16 @@ def test_library_health_unlimited_ils(mock_client):
         }
     }
     out = srv.library_health()
-    assert out["physical_holds"] == "2/unlimited"
-    assert out["digital_holds"] == "3/10"
-    assert out["logged_in"] is True
-    assert out["library"] == "seattle"
+    assert out.physical_holds == "2/unlimited"
+    assert out.digital_holds == "3/10"
+    assert out.logged_in is True
+    assert out.library == "seattle"
+
+
+def test_bcerror_from_gateway_surfaces_as_tool_error(mock_client):
+    """Gateway errors should turn into ToolError, not propagate raw BCError."""
+    from bibliocommons_mcp.client import BCError
+
+    mock_client.list_holds.side_effect = BCError(500, "Internal Server Error")
+    with pytest.raises(ToolError, match="Internal Server Error"):
+        srv.list_holds()
