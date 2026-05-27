@@ -27,10 +27,13 @@ from .models import (
     BibSummary,
     BorrowDigitalResult,
     BranchList,
+    BulkCancelHoldsResult,
     CancelHoldResult,
     DigitalFormat,
     Hold,
     HoldList,
+    HoldRef,
+    Jacket,
     LibraryHealth,
     Loan,
     LoanList,
@@ -160,6 +163,23 @@ def _safe(fn: Callable) -> Callable:
     return wrapper
 
 
+def _extract_jacket(brief_info: dict) -> Jacket | None:
+    """Pull jacket cover-art URLs from a briefInfo dict.
+
+    `briefInfo.jacket` is structured with `small`/`medium`/`large`/`local_url`
+    keys plus a `type` field we ignore. Returns None if no jacket data.
+    """
+    raw = brief_info.get("jacket") if isinstance(brief_info, dict) else None
+    if not raw or not isinstance(raw, dict):
+        return None
+    return Jacket(
+        small=raw.get("small"),
+        medium=raw.get("medium"),
+        large=raw.get("large"),
+        local_url=raw.get("local_url"),
+    )
+
+
 def _bib_summary(bib: dict) -> BibSummary:
     bi = bib.get("briefInfo", {})
     return BibSummary(
@@ -170,7 +190,18 @@ def _bib_summary(bib: dict) -> BibSummary:
         format=bi.get("format"),
         year=bi.get("publicationDate"),
         call_number=bi.get("callNumber"),
+        jacket=_extract_jacket(bi),
     )
+
+
+def _jacket_for(data: dict, metadata_id: str | None) -> Jacket | None:
+    """Look up jacket via `entities.bibs[metadata_id].briefInfo.jacket`."""
+    if not metadata_id:
+        return None
+    bib = data.get("entities", {}).get("bibs", {}).get(metadata_id)
+    if not bib:
+        return None
+    return _extract_jacket(bib.get("briefInfo", {}))
 
 
 # ─────────────────────────────── tools ───────────────────────────────
@@ -315,14 +346,14 @@ def borrow_digital(bib_id: str) -> BorrowDigitalResult:
     )
 
 
-@mcp.tool(title="List your holds", annotations=READ_ONLY)
-@_safe
-def list_holds() -> HoldList:
-    """Show current holds (physical + digital) with queue positions."""
-    client = _ensure_client()
-    data = client.list_holds()
+def _holds_from_response(data: dict) -> list[Hold]:
+    """Build a list of Hold models from a raw gateway holds response.
+
+    Joins `entities.holds` with `entities.bibs[metadataId]` to populate
+    jacket cover-art alongside each hold.
+    """
     holds_ents = data.get("entities", {}).get("holds", {})
-    out = [
+    return [
         Hold(
             hold_id=hid,
             metadata_id=h.get("metadataId"),
@@ -333,10 +364,37 @@ def list_holds() -> HoldList:
             pickup_branch=(h.get("pickupLocation") or {}).get("code"),
             placed=h.get("holdPlacedDate"),
             expiry=h.get("expiryDate"),
+            jacket=_jacket_for(data, h.get("metadataId")),
         )
         for hid, h in holds_ents.items()
     ]
+
+
+@mcp.tool(title="List your holds", annotations=READ_ONLY)
+@_safe
+def list_holds() -> HoldList:
+    """Show current holds (physical + digital) with queue positions."""
+    client = _ensure_client()
+    data = client.list_holds()
+    out = _holds_from_response(data)
     return HoldList(count=len(out), holds=out)
+
+
+@mcp.tool(title="Show holds ready for pickup", annotations=READ_ONLY)
+@_safe
+def ready_for_pickup() -> HoldList:
+    """Show only the holds that have arrived at the user's pickup branch.
+
+    Filters `list_holds` to `status == "READY_FOR_PICKUP"`. The same
+    fields as `list_holds`; use this when the user asks "what's waiting
+    for me at the library" so the model doesn't have to filter
+    client-side.
+    """
+    client = _ensure_client()
+    data = client.list_holds()
+    all_holds = _holds_from_response(data)
+    ready = [h for h in all_holds if h.status == "READY_FOR_PICKUP"]
+    return HoldList(count=len(ready), holds=ready)
 
 
 @mcp.tool(title="Cancel a hold", annotations=DESTRUCTIVE)
@@ -346,6 +404,9 @@ def cancel_hold(hold_id: str, bib_id: str, dry_run: bool = False) -> CancelHoldR
 
     **Irreversible** — cancelling loses your queue position. Confirm
     with the user first.
+
+    For multiple holds, prefer `cancel_holds` — it's one round-trip
+    instead of N.
 
     Args:
         hold_id: From `list_holds().holds[i].hold_id`.
@@ -378,6 +439,58 @@ def cancel_hold(hold_id: str, bib_id: str, dry_run: bool = False) -> CancelHoldR
     return CancelHoldResult(success=not failures, failures=failures)
 
 
+@mcp.tool(title="Cancel multiple holds in one call", annotations=DESTRUCTIVE)
+@_safe
+def cancel_holds(holds: list[HoldRef], dry_run: bool = False) -> BulkCancelHoldsResult:
+    """Cancel one or more holds in a single gateway call.
+
+    **Irreversible** for each cancelled hold (lost queue position).
+    Confirm with the user before calling with `dry_run=False`.
+
+    Prefer this over multiple `cancel_hold` calls when the user has a
+    list — it's one HTTP round-trip and one server-side transaction.
+
+    Args:
+        holds: List of `{hold_id, bib_id}` pairs. Construct each entry
+            from a row in `list_holds().holds` — `hold_id` and
+            `metadata_id` map directly.
+        dry_run: If true, look up each hold and report what would be
+            cancelled without doing it. Use as a self-check before
+            committing.
+    """
+    if not holds:
+        raise ToolError("holds list is empty — nothing to cancel")
+
+    client = _ensure_client()
+
+    if dry_run:
+        existing = client.list_holds().get("entities", {}).get("holds", {})
+        would: list[str] = []
+        failures: dict[str, str] = {}
+        for ref in holds:
+            hold = existing.get(ref.hold_id)
+            if not hold:
+                failures[ref.hold_id] = "hold not found on this account"
+                continue
+            title = hold.get("bibTitle") or "(unknown title)"
+            position = hold.get("holdsPosition")
+            pos_str = f" at queue position {position}" if position else ""
+            would.append(f"{title!r}{pos_str}")
+        return BulkCancelHoldsResult(
+            cancelled=[],
+            failures=failures,
+            dry_run=True,
+            would_cancel=would,
+        )
+
+    pairs = [(ref.hold_id, ref.bib_id) for ref in holds]
+    data = client.cancel_holds(pairs)
+    failures = data.get("failures") or {}
+    requested = [ref.hold_id for ref in holds]
+    cancelled = [hid for hid in requested if hid not in failures]
+    return BulkCancelHoldsResult(cancelled=cancelled, failures=failures)
+
+
 @mcp.tool(title="List checkouts with due dates", annotations=READ_ONLY)
 @_safe
 def list_loans() -> LoanList:
@@ -394,6 +507,7 @@ def list_loans() -> LoanList:
             due=c.get("dueDate"),
             call_number=c.get("callNumber"),
             branch=(c.get("branch") or {}).get("code") if c.get("branch") else None,
+            jacket=_jacket_for(data, c.get("metadataId")),
         )
         for cid, c in checkouts.items()
     ]

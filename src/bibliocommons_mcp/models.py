@@ -24,6 +24,23 @@ class Branch(BaseModel):
     name: str = Field(description="Display name, e.g. 'Lake City Branch'.")
 
 
+class Jacket(BaseModel):
+    """Cover-art URLs from BiblioCommons (typically Syndetics-hosted).
+
+    Three sizes plus an optional library-uploaded override. Clients that
+    support image rendering can use any of these — small for list views,
+    medium for cards, large for detail pages.
+    """
+
+    small: str | None = Field(default=None)
+    medium: str | None = Field(default=None)
+    large: str | None = Field(default=None)
+    local_url: str | None = Field(
+        default=None,
+        description="Library-uploaded override, when present. Prefer over Syndetics.",
+    )
+
+
 class BibSummary(BaseModel):
     """Compact view of a catalog bib (book, CD, etc.)."""
 
@@ -36,6 +53,14 @@ class BibSummary(BaseModel):
     )
     year: str | None = Field(default=None, description="Publication date as printed.")
     call_number: str | None = Field(default=None)
+    jacket: Jacket | None = Field(default=None)
+
+
+class HoldRef(BaseModel):
+    """Reference to a hold + its bib. Both are required to cancel."""
+
+    hold_id: str = Field(description="From `Hold.hold_id`.")
+    bib_id: str = Field(description="From `Hold.metadata_id`.")
 
 
 # ─────────────────────────────── tool results ───────────────────────────────
@@ -108,6 +133,7 @@ class Hold(BaseModel):
         default=None, description="ISO date the hold was placed."
     )
     expiry: str | None = Field(default=None)
+    jacket: Jacket | None = Field(default=None)
 
 
 class HoldList(BaseModel):
@@ -125,6 +151,7 @@ class Loan(BaseModel):
     due: str | None = Field(default=None, description="ISO date due back.")
     call_number: str | None = Field(default=None)
     branch: str | None = Field(default=None)
+    jacket: Jacket | None = Field(default=None)
 
 
 class LoanList(BaseModel):
@@ -191,4 +218,24 @@ class CancelHoldResult(BaseModel):
     failures: dict[str, str] = Field(
         default_factory=dict,
         description="Hold-id-keyed map of failure reasons. Empty on full success.",
+    )
+
+
+class BulkCancelHoldsResult(BaseModel):
+    """Result of `cancel_holds(...)`. Per-hold success/failure breakdown."""
+
+    cancelled: list[str] = Field(
+        default_factory=list, description="Hold IDs successfully cancelled."
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Hold-id-keyed map of failure reasons.",
+    )
+    dry_run: bool = Field(default=False)
+    would_cancel: list[str] = Field(
+        default_factory=list,
+        description=(
+            "On a dry run, one human-readable summary per hold that would "
+            "be cancelled (title + queue position). Empty when dry_run=False."
+        ),
     )

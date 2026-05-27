@@ -329,3 +329,188 @@ def test_bcerror_from_gateway_surfaces_as_tool_error(mock_client):
     mock_client.list_holds.side_effect = BCError(500, "Internal Server Error")
     with pytest.raises(ToolError, match="Internal Server Error"):
         srv.list_holds()
+
+
+# ─────────────────────────────── jacket extraction ───────────────────────────────
+
+
+_SAMPLE_JACKET = {
+    "type": "SYNDETICS",
+    "small": "https://example.com/SC.GIF",
+    "medium": "https://example.com/MC.GIF",
+    "large": "https://example.com/LC.JPG",
+    "local_url": None,
+}
+
+
+def test_search_extracts_jacket(mock_client):
+    mock_client.search.return_value = {
+        "entities": {
+            "bibs": {
+                "S30C1": {
+                    "id": "S30C1",
+                    "briefInfo": {
+                        "title": "Plastic Eternity",
+                        "format": "MUSIC_CD",
+                        "jacket": _SAMPLE_JACKET,
+                    },
+                }
+            }
+        },
+        "catalogSearch": {"pagination": {}},
+    }
+    out = srv.search("mudhoney")
+    j = out.results[0].jacket
+    assert j is not None
+    assert j.small == "https://example.com/SC.GIF"
+    assert j.medium == "https://example.com/MC.GIF"
+    assert j.large == "https://example.com/LC.JPG"
+
+
+def test_list_holds_joins_jacket_from_entities_bibs(mock_client):
+    """list_holds should pull jacket from entities.bibs[metadataId]."""
+    mock_client.list_holds.return_value = {
+        "entities": {
+            "holds": {
+                "H1": {
+                    "metadataId": "S30C1",
+                    "bibTitle": "Plastic Eternity",
+                    "materialType": "PHYSICAL",
+                    "status": "NOT_YET_AVAILABLE",
+                }
+            },
+            "bibs": {
+                "S30C1": {"briefInfo": {"jacket": _SAMPLE_JACKET}},
+            },
+        }
+    }
+    out = srv.list_holds()
+    assert out.holds[0].jacket is not None
+    assert out.holds[0].jacket.medium == "https://example.com/MC.GIF"
+
+
+def test_list_holds_handles_missing_bibs_entity(mock_client):
+    """If entities.bibs isn't present (older response shape), jacket=None."""
+    mock_client.list_holds.return_value = {
+        "entities": {
+            "holds": {
+                "H1": {
+                    "metadataId": "S30C1",
+                    "bibTitle": "x",
+                    "materialType": "PHYSICAL",
+                }
+            }
+        }
+    }
+    out = srv.list_holds()
+    assert out.holds[0].jacket is None
+
+
+# ─────────────────────────────── ready_for_pickup ───────────────────────────────
+
+
+def test_ready_for_pickup_filters_by_status(mock_client):
+    mock_client.list_holds.return_value = {
+        "entities": {
+            "holds": {
+                "H1": {
+                    "metadataId": "S30C1",
+                    "bibTitle": "Ready One",
+                    "materialType": "PHYSICAL",
+                    "status": "READY_FOR_PICKUP",
+                },
+                "H2": {
+                    "metadataId": "S30C2",
+                    "bibTitle": "Still Waiting",
+                    "materialType": "PHYSICAL",
+                    "status": "NOT_YET_AVAILABLE",
+                },
+                "H3": {
+                    "metadataId": "S30C3",
+                    "bibTitle": "Ready Two",
+                    "materialType": "PHYSICAL",
+                    "status": "READY_FOR_PICKUP",
+                },
+            }
+        }
+    }
+    out = srv.ready_for_pickup()
+    assert out.count == 2
+    titles = {h.title for h in out.holds}
+    assert titles == {"Ready One", "Ready Two"}
+
+
+def test_ready_for_pickup_returns_empty_when_none_ready(mock_client):
+    mock_client.list_holds.return_value = {
+        "entities": {
+            "holds": {
+                "H1": {
+                    "metadataId": "S30C1",
+                    "bibTitle": "x",
+                    "materialType": "PHYSICAL",
+                    "status": "NOT_YET_AVAILABLE",
+                }
+            }
+        }
+    }
+    out = srv.ready_for_pickup()
+    assert out.count == 0
+    assert out.holds == []
+
+
+# ─────────────────────────────── cancel_holds (bulk) ───────────────────────────────
+
+
+def test_cancel_holds_bulk_success(mock_client):
+    from bibliocommons_mcp.models import HoldRef
+
+    mock_client.cancel_holds.return_value = {"failures": {}}
+    out = srv.cancel_holds(
+        [HoldRef(hold_id="H1", bib_id="S30C1"), HoldRef(hold_id="H2", bib_id="S30C2")]
+    )
+    assert sorted(out.cancelled) == ["H1", "H2"]
+    assert out.failures == {}
+    assert out.dry_run is False
+    mock_client.cancel_holds.assert_called_once_with([("H1", "S30C1"), ("H2", "S30C2")])
+
+
+def test_cancel_holds_bulk_partial_failure(mock_client):
+    from bibliocommons_mcp.models import HoldRef
+
+    mock_client.cancel_holds.return_value = {"failures": {"H2": "already gone"}}
+    out = srv.cancel_holds(
+        [HoldRef(hold_id="H1", bib_id="S30C1"), HoldRef(hold_id="H2", bib_id="S30C2")]
+    )
+    assert out.cancelled == ["H1"]
+    assert out.failures == {"H2": "already gone"}
+
+
+def test_cancel_holds_bulk_dry_run(mock_client):
+    """dry_run=True should look up each hold and describe what would
+    happen without calling cancel_holds on the client."""
+    from bibliocommons_mcp.models import HoldRef
+
+    mock_client.list_holds.return_value = {
+        "entities": {
+            "holds": {
+                "H1": {"bibTitle": "Plastic Eternity", "holdsPosition": 3},
+                "H2": {"bibTitle": "In Utero", "holdsPosition": 1},
+            }
+        }
+    }
+    out = srv.cancel_holds(
+        [HoldRef(hold_id="H1", bib_id="S30C1"), HoldRef(hold_id="H2", bib_id="S30C2")],
+        dry_run=True,
+    )
+    assert out.dry_run is True
+    assert out.cancelled == []
+    assert len(out.would_cancel) == 2
+    joined = " ".join(out.would_cancel)
+    assert "Plastic Eternity" in joined
+    assert "In Utero" in joined
+    mock_client.cancel_holds.assert_not_called()
+
+
+def test_cancel_holds_empty_raises(mock_client):
+    with pytest.raises(ToolError, match="empty"):
+        srv.cancel_holds([])

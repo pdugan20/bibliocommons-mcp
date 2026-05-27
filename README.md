@@ -36,17 +36,19 @@ claude mcp add bibliocommons bibliocommons-mcp --scope user
 
 ## Tools
 
-| Tool             | Description                                       |
-| ---------------- | ------------------------------------------------- |
-| `search`         | Search the catalog, optionally filtered by format |
-| `availability`   | Show per-branch status for a bib                  |
-| `place_hold`     | Place a physical hold at your pickup branch       |
-| `borrow_digital` | Borrow an available digital item                  |
-| `list_holds`     | Show current holds and queue positions            |
-| `cancel_hold`    | Cancel a hold by ID                               |
-| `list_loans`     | Show checkouts with due dates                     |
-| `list_branches`  | List all branches at your library                 |
-| `library_health` | Check login and report hold quotas                |
+| Tool               | Description                                       |
+| ------------------ | ------------------------------------------------- |
+| `search`           | Search the catalog, optionally filtered by format |
+| `availability`     | Show per-branch status for a bib                  |
+| `place_hold`       | Place a physical hold at your pickup branch       |
+| `borrow_digital`   | Borrow an available digital item                  |
+| `list_holds`       | Show current holds and queue positions            |
+| `ready_for_pickup` | Show only the holds waiting at your branch        |
+| `cancel_hold`      | Cancel one hold by ID                             |
+| `cancel_holds`     | Cancel multiple holds in a single round-trip      |
+| `list_loans`       | Show checkouts with due dates                     |
+| `list_branches`    | List all branches at your library                 |
+| `library_health`   | Check login and report hold quotas                |
 
 ## Library compatibility
 

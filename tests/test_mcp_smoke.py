@@ -28,7 +28,9 @@ EXPECTED_TOOLS = {
     "place_hold",
     "borrow_digital",
     "list_holds",
+    "ready_for_pickup",
     "cancel_hold",
+    "cancel_holds",
     "list_loans",
     "list_branches",
     "library_health",
@@ -90,6 +92,7 @@ def test_annotations_advertise_safety_correctly():
         "search",
         "availability",
         "list_holds",
+        "ready_for_pickup",
         "list_loans",
         "list_branches",
         "library_health",
@@ -99,9 +102,10 @@ def test_annotations_advertise_safety_correctly():
         assert ann is not None, f"{name} missing annotations"
         assert ann.readOnlyHint is True, f"{name} should be readOnlyHint=True"
 
-    cancel = by_name["cancel_hold"].annotations
-    assert cancel is not None
-    assert cancel.destructiveHint is True, "cancel_hold should be destructiveHint=True"
+    for name in ("cancel_hold", "cancel_holds"):
+        ann = by_name[name].annotations
+        assert ann is not None
+        assert ann.destructiveHint is True, f"{name} must be destructiveHint=True"
 
     # Mutations are neither read-only nor destructive
     for name in ("place_hold", "borrow_digital"):
