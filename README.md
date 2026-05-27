@@ -48,13 +48,15 @@ Restart your client. That's it.
 
 ## What this feels like
 
-> Find me an available Mudhoney CD I can pick up at Lake City this week.
+> Any Mark Lanegan available at Lake City this week?
 >
-> Search for "Heavier Than Heaven" by Charles Cross — is the print edition or the audiobook closer to my branch?
+> Find me a Sub Pop CD from the last five years I haven't held yet — closest branch to Lake City wins.
 >
 > What's on hold for me and how far up the queue am I?
 >
-> Cancel that hold on the Cobain book — I bought it instead.
+> Cancel the hold on the Cobain biography — I bought it.
+
+Each prompt becomes a chain of MCP tool calls — typically `search` → `availability` → `place_hold`, or `list_holds` → `cancel_hold` for cleanup.
 
 ## Tools
 
@@ -94,6 +96,8 @@ Tested against `seattle` and `sfpl`. NYPL is no longer on BiblioCommons (`410 Si
 
 - [`docs/architecture.md`](docs/architecture.md) — how the gateway client works and what we had to discover to make holds POST cleanly
 - [`docs/format-codes.md`](docs/format-codes.md) — known format facet codes
+- [`docs/troubleshooting.md`](docs/troubleshooting.md) — common errors and fixes
+- [`docs/roadmap.md`](docs/roadmap.md) — what's planned for v1.1+
 - [`docs/releasing.md`](docs/releasing.md) — automated release flow
 
 ## Contributing / Security / License

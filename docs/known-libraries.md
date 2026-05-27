@@ -2,8 +2,6 @@
 
 The BiblioCommons gateway endpoints are uniform across the SaaS, so any library on the platform _should_ work. This page tracks what's actually been tried.
 
-If you try a new library, please [file a compatibility report](https://github.com/pdugan20/bibliocommons-mcp/issues/new?template=library_compatibility.yml) — even a "works fine" report is useful.
-
 ## Confirmed working
 
 | Library                      | Subdomain | Notes                                                                                                                 |
@@ -17,22 +15,13 @@ If you try a new library, please [file a compatibility report](https://github.co
 | ----------------------- | --------- | -------------------------------------------------------------------- |
 | New York Public Library | `nypl`    | Migrated off BiblioCommons. Gateway returns `410 SiteDisabledError`. |
 
-## Untested but expected to work
+## Tried it? Report back
 
-The same gateway shape serves every BiblioCommons-hosted library. These are commonly mentioned but haven't been confirmed:
-
-- Boston Public Library (`bpl`)
-- Vancouver Public Library, BC (`vpl`)
-- Edmonton Public Library (`epl`)
-- Burnaby Public Library (`burnaby`)
-- Ottawa Public Library (`ottawa`)
-- Many others in `bibliophile-backend`'s [list of supported subdomains](https://github.com/DavidCain/bibliophile-backend)
-
-If you've used this against one of these (or a different library entirely), the [compatibility issue template](https://github.com/pdugan20/bibliocommons-mcp/issues/new?template=library_compatibility.yml) is the way to get it on the list.
+The same gateway shape serves every BiblioCommons-hosted library, so the odds of your library "just working" are good. If you try it — even just `library_health` and a search — please [file a compatibility report](https://github.com/pdugan20/bibliocommons-mcp/issues/new?template=library_compatibility.yml). It's the only way this list grows. "Works fine" reports are as useful as bug reports.
 
 ## What "works" means here
 
-A library is "confirmed working" once these are exercised against a live account:
+A library is _confirmed working_ once these are exercised against a live account:
 
 - `library_health` returns `logged_in: true`
 - `list_branches` returns a non-empty branch list with 3-letter codes
@@ -41,4 +30,4 @@ A library is "confirmed working" once these are exercised against a live account
 - `place_hold` + `cancel_hold` round-trip successfully on a physical item
 - `list_holds` + `list_loans` reflect current account state
 
-Read-only verification (no place_hold/cancel_hold) gets a library into "branches + search verified" status. That's enough for most users; placement/cancellation are very likely to work if the read paths do.
+Read-only verification (no `place_hold` / `cancel_hold`) gets a library into _branches + search verified_ status. That's enough for most users; placement and cancellation are very likely to work if the read paths do.
