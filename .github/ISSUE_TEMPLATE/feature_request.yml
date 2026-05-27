@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a new MCP tool, format, or capability
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Concrete user scenario, not a generic "wouldn't it be nice if…".
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Tool name + arguments if it's a new MCP tool. Body shape if it's a new endpoint.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

@@ -1,5 +1,10 @@
 # bibliocommons-mcp
 
+[![PyPI](https://img.shields.io/pypi/v/bibliocommons-mcp?logo=pypi&logoColor=white)](https://pypi.org/project/bibliocommons-mcp/)
+[![CI](https://github.com/pdugan20/bibliocommons-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/pdugan20/bibliocommons-mcp/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-%3E%3D3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
+
 MCP server for [BiblioCommons](https://bibliocommons.com/)-powered public libraries — Seattle, San Francisco, ~190 others. Search the catalog, place holds, manage checkouts, all from any MCP-capable client (Claude, Cursor, etc.).
 
 Built because placing a hold on a CD shouldn't take seven clicks.
@@ -23,7 +28,13 @@ Built because placing a hold on a CD shouldn't take seven clicks.
 ## Install
 
 ```bash
-pip install -e .
+pipx install bibliocommons-mcp
+```
+
+Or with `pip`:
+
+```bash
+pip install bibliocommons-mcp
 ```
 
 Requires Python 3.11+.
@@ -149,6 +160,14 @@ POST /v2/libraries/{library}/holds?locale=en-US
 - [`python-bibliocommons`](https://github.com/williamjacksn/python-bibliocommons) by William Jackson — handles the modern login flow.
 - [`SFPL` by kaijchang](https://github.com/kaijchang/SFPL) — first sighting of the BiblioCommons place-hold endpoint pattern.
 - [`bibliophile-backend` by DavidCain](https://github.com/DavidCain/bibliophile-backend) — proof that this approach generalizes across ~190 libraries.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, testing, and the conventional-commits release flow. Releases are automated via [release-please](https://github.com/googleapis/release-please) — see [docs/releasing.md](docs/releasing.md).
+
+## Security
+
+If you discover a security issue (e.g. credential leakage in cassettes, request smuggling), see [SECURITY.md](SECURITY.md) before opening a public issue.
 
 ## License
 

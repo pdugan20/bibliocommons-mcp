@@ -1,0 +1,32 @@
+name: Library compatibility report
+description: Tested this against {your-library} — works, partially works, or breaks
+labels: [compatibility]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us build a known-libraries list. The endpoints generalize across ~190 BiblioCommons libraries, but specific quirks (login flow variants, format codes, branch-list shapes) can differ.
+  - type: input
+    id: library
+    attributes:
+      label: Library subdomain
+      placeholder: nypl
+    validations:
+      required: true
+  - type: dropdown
+    id: status
+    attributes:
+      label: Overall status
+      options:
+        - Everything works
+        - Reads work, holds don't
+        - Login fails
+        - Site disabled / not BiblioCommons anymore
+        - Other (explain below)
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: Which tools work, which fail, any error messages. Redact creds.
