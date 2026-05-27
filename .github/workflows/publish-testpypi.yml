@@ -1,0 +1,47 @@
+name: Publish to TestPyPI
+
+# Staging publish that fires whenever release-please updates a release PR.
+# Catches packaging-time errors (bad classifiers, missing wheel files,
+# trusted-publisher misconfig) before they hit prod PyPI.
+#
+# One-time setup before this works:
+#   1. Create a TestPyPI account at https://test.pypi.org
+#   2. Configure a "pending publisher" on TestPyPI for project
+#      `bibliocommons-mcp` pointing at this workflow filename
+#      (`publish-testpypi.yml`) and the `testpypi` environment below.
+#   3. Create a `testpypi` environment in the repo settings.
+#
+# Until then this workflow will fail on the publish step — that's expected.
+# CI on `main` is unaffected.
+#
+# `skip-existing: true` handles the case where release-please updates the
+# same release PR multiple times (TestPyPI rejects duplicate versions).
+
+on:
+  push:
+    branches:
+      - "release-please--branches--main--*"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-testpypi:
+    name: Build and publish to TestPyPI
+    runs-on: ubuntu-latest
+    environment: testpypi
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: pip install build
+      - name: Build package
+        run: python -m build
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true

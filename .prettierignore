@@ -1,9 +1,11 @@
 CHANGELOG.md
 tests/cassettes/
+tests/__snapshots__/
 dist/
 build/
 .venv/
 spike/
 .pytest_cache/
 .ruff_cache/
+.claudelint-cache/
 htmlcov/

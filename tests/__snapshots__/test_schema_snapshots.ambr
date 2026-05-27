@@ -1,0 +1,1783 @@
+# serializer version: 1
+# name: test_tool_schemas_match_snapshot
+  dict({
+    'availability': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': '''
+        Show per-branch copy status for a bib.
+        
+        Args:
+            bib_id: The bib id (e.g. `S30C3857930`). Get one from
+                `search` results.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+          'bib_id': dict({
+            'title': 'Bib Id',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'bib_id',
+        ]),
+        'title': 'availabilityArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'AvailabilityCopy': dict({
+            'description': 'One physical copy of a bib.',
+            'properties': dict({
+              'branch_code': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Branch Code',
+              }),
+              'branch_name': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Branch Name',
+              }),
+              'call_number': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Call Number',
+              }),
+              'collection': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Collection',
+              }),
+              'library_status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Human-readable status from the ILS.',
+                'title': 'Library Status',
+              }),
+              'status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Copy status, e.g. 'AVAILABLE', 'CHECKED_OUT', 'ON_HOLDSHELF'.",
+                'title': 'Status',
+              }),
+            }),
+            'title': 'AvailabilityCopy',
+            'type': 'object',
+          }),
+          'DigitalFormat': dict({
+            'description': 'One downloadable format for a digital bib (Kindle, OverDrive Read, ...).',
+            'properties': dict({
+              'has_download_link': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'boolean',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Has Download Link',
+              }),
+              'must_be_read_online': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'boolean',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Must Be Read Online',
+              }),
+              'name': dict({
+                'title': 'Name',
+                'type': 'string',
+              }),
+            }),
+            'required': list([
+              'name',
+            ]),
+            'title': 'DigitalFormat',
+            'type': 'object',
+          }),
+        }),
+        'description': 'Per-branch availability + status for a bib.',
+        'properties': dict({
+          'available_copies': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Available Copies',
+          }),
+          'bib_id': dict({
+            'title': 'Bib Id',
+            'type': 'string',
+          }),
+          'copies': dict({
+            'items': dict({
+              '$ref': '#/$defs/AvailabilityCopy',
+            }),
+            'title': 'Copies',
+            'type': 'array',
+          }),
+          'digital_formats': dict({
+            'items': dict({
+              '$ref': '#/$defs/DigitalFormat',
+            }),
+            'title': 'Digital Formats',
+            'type': 'array',
+          }),
+          'held_copies': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Held Copies',
+          }),
+          'status': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'Aggregate status.',
+            'title': 'Status',
+          }),
+          'total_copies': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Total Copies',
+          }),
+        }),
+        'required': list([
+          'bib_id',
+        ]),
+        'title': 'Availability',
+        'type': 'object',
+      }),
+      'title': 'Show per-branch availability',
+    }),
+    'borrow_digital': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'description': '''
+        Check out an immediately-available digital item.
+        
+        Use this when an ebook or e-audiobook is "Available Now" rather
+        than queued. For unavailable digital items (Libby waitlist),
+        direct the user to the Libby app — joining waitlists is not
+        supported here yet.
+        
+        Args:
+            bib_id: The bib id of the digital item.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+          'bib_id': dict({
+            'title': 'Bib Id',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'bib_id',
+        ]),
+        'title': 'borrow_digitalArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'properties': dict({
+          'call_number': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Call Number',
+          }),
+          'checkout_id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Checkout Id',
+          }),
+          'due': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Due',
+          }),
+          'material_type': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Material Type',
+          }),
+          'success': dict({
+            'title': 'Success',
+            'type': 'boolean',
+          }),
+          'title': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Title',
+          }),
+          'volume': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Volume',
+          }),
+        }),
+        'required': list([
+          'success',
+        ]),
+        'title': 'BorrowDigitalResult',
+        'type': 'object',
+      }),
+      'title': 'Borrow an available digital item',
+    }),
+    'cancel_hold': dict({
+      'annotations': dict({
+        'destructiveHint': True,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'description': '''
+        Cancel a hold by id.
+        
+        **Irreversible** — cancelling loses your queue position. Confirm
+        with the user first.
+        
+        For multiple holds, prefer `cancel_holds` — it's one round-trip
+        instead of N.
+        
+        Args:
+            hold_id: From `list_holds().holds[i].hold_id`.
+            bib_id: From the same row's `metadata_id`. Both are required by
+                the gateway.
+            dry_run: If true, look up the hold and describe what would be
+                cancelled without actually cancelling it. Useful as an
+                agent self-check before calling with `dry_run=False`.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+          'bib_id': dict({
+            'title': 'Bib Id',
+            'type': 'string',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'hold_id': dict({
+            'title': 'Hold Id',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'hold_id',
+          'bib_id',
+        ]),
+        'title': 'cancel_holdArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'properties': dict({
+          'dry_run': dict({
+            'default': False,
+            'description': 'If true, nothing was actually cancelled — the tool was called with dry_run=True and only describes what would happen.',
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Hold-id-keyed map of failure reasons. Empty on full success.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'success': dict({
+            'title': 'Success',
+            'type': 'boolean',
+          }),
+          'would_cancel': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'On a dry run, a human-readable summary of the hold that would be cancelled (title + queue position). None when dry_run=False.',
+            'title': 'Would Cancel',
+          }),
+        }),
+        'required': list([
+          'success',
+        ]),
+        'title': 'CancelHoldResult',
+        'type': 'object',
+      }),
+      'title': 'Cancel a hold',
+    }),
+    'cancel_holds': dict({
+      'annotations': dict({
+        'destructiveHint': True,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'description': '''
+        Cancel one or more holds in a single gateway call.
+        
+        **Irreversible** for each cancelled hold (lost queue position).
+        Confirm with the user before calling with `dry_run=False`.
+        
+        Prefer this over multiple `cancel_hold` calls when the user has a
+        list — it's one HTTP round-trip and one server-side transaction.
+        
+        Args:
+            holds: List of `{hold_id, bib_id}` pairs. Construct each entry
+                from a row in `list_holds().holds` — `hold_id` and
+                `metadata_id` map directly.
+            dry_run: If true, look up each hold and report what would be
+                cancelled without doing it. Use as a self-check before
+                committing.
+  
+      ''',
+      'inputSchema': dict({
+        '$defs': dict({
+          'HoldRef': dict({
+            'description': 'Reference to a hold + its bib. Both are required to cancel.',
+            'properties': dict({
+              'bib_id': dict({
+                'description': 'From `Hold.metadata_id`.',
+                'title': 'Bib Id',
+                'type': 'string',
+              }),
+              'hold_id': dict({
+                'description': 'From `Hold.hold_id`.',
+                'title': 'Hold Id',
+                'type': 'string',
+              }),
+            }),
+            'required': list([
+              'hold_id',
+              'bib_id',
+            ]),
+            'title': 'HoldRef',
+            'type': 'object',
+          }),
+        }),
+        'properties': dict({
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'holds': dict({
+            'items': dict({
+              '$ref': '#/$defs/HoldRef',
+            }),
+            'title': 'Holds',
+            'type': 'array',
+          }),
+        }),
+        'required': list([
+          'holds',
+        ]),
+        'title': 'cancel_holdsArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'description': 'Result of `cancel_holds(...)`. Per-hold success/failure breakdown.',
+        'properties': dict({
+          'cancelled': dict({
+            'description': 'Hold IDs successfully cancelled.',
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Cancelled',
+            'type': 'array',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Hold-id-keyed map of failure reasons.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'would_cancel': dict({
+            'description': 'On a dry run, one human-readable summary per hold that would be cancelled (title + queue position). Empty when dry_run=False.',
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Would Cancel',
+            'type': 'array',
+          }),
+        }),
+        'title': 'BulkCancelHoldsResult',
+        'type': 'object',
+      }),
+      'title': 'Cancel multiple holds in one call',
+    }),
+    'library_health': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': '''
+        Verify login + report hold counts vs. caps.
+        
+        Run this first if something seems off — it confirms the configured
+        library, the account id the gateway recognises, and the user's
+        current hold quotas.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+        }),
+        'title': 'library_healthArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'description': 'Login probe + hold quotas.',
+        'properties': dict({
+          'account_id': dict({
+            'title': 'Account Id',
+            'type': 'integer',
+          }),
+          'default_pickup_branch': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Default Pickup Branch',
+          }),
+          'digital_holds': dict({
+            'description': "Current count vs. cap, e.g. '3/10'.",
+            'title': 'Digital Holds',
+            'type': 'string',
+          }),
+          'digital_remaining': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Digital Remaining',
+          }),
+          'library': dict({
+            'title': 'Library',
+            'type': 'string',
+          }),
+          'logged_in': dict({
+            'title': 'Logged In',
+            'type': 'boolean',
+          }),
+          'physical_holds': dict({
+            'description': "Current count vs. cap, e.g. '2/unlimited' or '0/0'.",
+            'title': 'Physical Holds',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'library',
+          'account_id',
+          'logged_in',
+          'physical_holds',
+          'digital_holds',
+        ]),
+        'title': 'LibraryHealth',
+        'type': 'object',
+      }),
+      'title': 'Check login and hold quotas',
+    }),
+    'list_branches': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': 'List every branch with its 3-letter pickup code.',
+      'inputSchema': dict({
+        'properties': dict({
+        }),
+        'title': 'list_branchesArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'Branch': dict({
+            'description': 'One branch at the configured library.',
+            'properties': dict({
+              'code': dict({
+                'description': "Three-letter branch code, e.g. 'LCY'.",
+                'title': 'Code',
+                'type': 'string',
+              }),
+              'name': dict({
+                'description': "Display name, e.g. 'Lake City Branch'.",
+                'title': 'Name',
+                'type': 'string',
+              }),
+            }),
+            'required': list([
+              'code',
+              'name',
+            ]),
+            'title': 'Branch',
+            'type': 'object',
+          }),
+        }),
+        'properties': dict({
+          'branches': dict({
+            'items': dict({
+              '$ref': '#/$defs/Branch',
+            }),
+            'title': 'Branches',
+            'type': 'array',
+          }),
+          'library': dict({
+            'description': "Library subdomain, e.g. 'seattle'.",
+            'title': 'Library',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'library',
+        ]),
+        'title': 'BranchList',
+        'type': 'object',
+      }),
+      'title': 'List branches at your library',
+    }),
+    'list_holds': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': 'Show current holds (physical + digital) with queue positions.',
+      'inputSchema': dict({
+        'properties': dict({
+        }),
+        'title': 'list_holdsArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'Hold': dict({
+            'description': "One hold on the user's account.",
+            'properties': dict({
+              'expiry': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Expiry',
+              }),
+              'hold_id': dict({
+                'title': 'Hold Id',
+                'type': 'string',
+              }),
+              'jacket': dict({
+                'anyOf': list([
+                  dict({
+                    '$ref': '#/$defs/Jacket',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+              }),
+              'material_type': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "'PHYSICAL' or 'DIGITAL'.",
+                'title': 'Material Type',
+              }),
+              'metadata_id': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Bib id.',
+                'title': 'Metadata Id',
+              }),
+              'pickup_branch': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Three-letter branch code; null for digital holds.',
+                'title': 'Pickup Branch',
+              }),
+              'placed': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'ISO date the hold was placed.',
+                'title': 'Placed',
+              }),
+              'position': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Position in the holds queue (1 = front).',
+                'title': 'Position',
+              }),
+              'status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "'NOT_YET_AVAILABLE', 'READY_FOR_PICKUP', etc.",
+                'title': 'Status',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+            }),
+            'required': list([
+              'hold_id',
+            ]),
+            'title': 'Hold',
+            'type': 'object',
+          }),
+          'Jacket': dict({
+            'description': '''
+              Cover-art URLs from BiblioCommons (typically Syndetics-hosted).
+              
+              Three sizes plus an optional library-uploaded override. Clients that
+              support image rendering can use any of these — small for list views,
+              medium for cards, large for detail pages.
+            ''',
+            'properties': dict({
+              'large': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Large',
+              }),
+              'local_url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Library-uploaded override, when present. Prefer over Syndetics.',
+                'title': 'Local Url',
+              }),
+              'medium': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Medium',
+              }),
+              'small': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Small',
+              }),
+            }),
+            'title': 'Jacket',
+            'type': 'object',
+          }),
+        }),
+        'properties': dict({
+          'count': dict({
+            'title': 'Count',
+            'type': 'integer',
+          }),
+          'holds': dict({
+            'items': dict({
+              '$ref': '#/$defs/Hold',
+            }),
+            'title': 'Holds',
+            'type': 'array',
+          }),
+        }),
+        'required': list([
+          'count',
+        ]),
+        'title': 'HoldList',
+        'type': 'object',
+      }),
+      'title': 'List your holds',
+    }),
+    'list_loans': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': 'Show current checkouts (physical + digital) with due dates.',
+      'inputSchema': dict({
+        'properties': dict({
+        }),
+        'title': 'list_loansArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'Jacket': dict({
+            'description': '''
+              Cover-art URLs from BiblioCommons (typically Syndetics-hosted).
+              
+              Three sizes plus an optional library-uploaded override. Clients that
+              support image rendering can use any of these — small for list views,
+              medium for cards, large for detail pages.
+            ''',
+            'properties': dict({
+              'large': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Large',
+              }),
+              'local_url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Library-uploaded override, when present. Prefer over Syndetics.',
+                'title': 'Local Url',
+              }),
+              'medium': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Medium',
+              }),
+              'small': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Small',
+              }),
+            }),
+            'title': 'Jacket',
+            'type': 'object',
+          }),
+          'Loan': dict({
+            'description': "One current checkout on the user's account.",
+            'properties': dict({
+              'branch': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Branch',
+              }),
+              'call_number': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Call Number',
+              }),
+              'checkout_id': dict({
+                'title': 'Checkout Id',
+                'type': 'string',
+              }),
+              'due': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'ISO date due back.',
+                'title': 'Due',
+              }),
+              'jacket': dict({
+                'anyOf': list([
+                  dict({
+                    '$ref': '#/$defs/Jacket',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+              }),
+              'material_type': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Material Type',
+              }),
+              'metadata_id': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Metadata Id',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+            }),
+            'required': list([
+              'checkout_id',
+            ]),
+            'title': 'Loan',
+            'type': 'object',
+          }),
+        }),
+        'properties': dict({
+          'count': dict({
+            'title': 'Count',
+            'type': 'integer',
+          }),
+          'loans': dict({
+            'items': dict({
+              '$ref': '#/$defs/Loan',
+            }),
+            'title': 'Loans',
+            'type': 'array',
+          }),
+        }),
+        'required': list([
+          'count',
+        ]),
+        'title': 'LoanList',
+        'type': 'object',
+      }),
+      'title': 'List checkouts with due dates',
+    }),
+    'place_hold': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'description': '''
+        Place a physical hold on a bib (CD, book, DVD, etc.).
+        
+        Args:
+            bib_id: The bib id (e.g. `S30C3857930`).
+            pickup_branch: Branch name or 3-letter code (e.g. `Lake City`
+                or `LCY`). Defaults to `default_pickup_branch` from config.
+                Names are matched case-insensitively; locker variants are
+                de-prioritized when the query is ambiguous.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+          'bib_id': dict({
+            'title': 'Bib Id',
+            'type': 'string',
+          }),
+          'pickup_branch': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Pickup Branch',
+          }),
+        }),
+        'required': list([
+          'bib_id',
+        ]),
+        'title': 'place_holdArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'properties': dict({
+          'expiry': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Expiry',
+          }),
+          'hold_id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Hold Id',
+          }),
+          'material_type': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Material Type',
+          }),
+          'pickup_branch': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Pickup Branch',
+          }),
+          'position': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Position',
+          }),
+          'status': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Status',
+          }),
+          'success': dict({
+            'title': 'Success',
+            'type': 'boolean',
+          }),
+          'title': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Title',
+          }),
+        }),
+        'required': list([
+          'success',
+        ]),
+        'title': 'PlaceHoldResult',
+        'type': 'object',
+      }),
+      'title': 'Place a physical hold',
+    }),
+    'ready_for_pickup': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': '''
+        Show only the holds that have arrived at the user's pickup branch.
+        
+        Filters `list_holds` to `status == "READY_FOR_PICKUP"`. The same
+        fields as `list_holds`; use this when the user asks "what's waiting
+        for me at the library" so the model doesn't have to filter
+        client-side.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+        }),
+        'title': 'ready_for_pickupArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'Hold': dict({
+            'description': "One hold on the user's account.",
+            'properties': dict({
+              'expiry': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Expiry',
+              }),
+              'hold_id': dict({
+                'title': 'Hold Id',
+                'type': 'string',
+              }),
+              'jacket': dict({
+                'anyOf': list([
+                  dict({
+                    '$ref': '#/$defs/Jacket',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+              }),
+              'material_type': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "'PHYSICAL' or 'DIGITAL'.",
+                'title': 'Material Type',
+              }),
+              'metadata_id': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Bib id.',
+                'title': 'Metadata Id',
+              }),
+              'pickup_branch': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Three-letter branch code; null for digital holds.',
+                'title': 'Pickup Branch',
+              }),
+              'placed': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'ISO date the hold was placed.',
+                'title': 'Placed',
+              }),
+              'position': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Position in the holds queue (1 = front).',
+                'title': 'Position',
+              }),
+              'status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "'NOT_YET_AVAILABLE', 'READY_FOR_PICKUP', etc.",
+                'title': 'Status',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+            }),
+            'required': list([
+              'hold_id',
+            ]),
+            'title': 'Hold',
+            'type': 'object',
+          }),
+          'Jacket': dict({
+            'description': '''
+              Cover-art URLs from BiblioCommons (typically Syndetics-hosted).
+              
+              Three sizes plus an optional library-uploaded override. Clients that
+              support image rendering can use any of these — small for list views,
+              medium for cards, large for detail pages.
+            ''',
+            'properties': dict({
+              'large': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Large',
+              }),
+              'local_url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Library-uploaded override, when present. Prefer over Syndetics.',
+                'title': 'Local Url',
+              }),
+              'medium': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Medium',
+              }),
+              'small': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Small',
+              }),
+            }),
+            'title': 'Jacket',
+            'type': 'object',
+          }),
+        }),
+        'properties': dict({
+          'count': dict({
+            'title': 'Count',
+            'type': 'integer',
+          }),
+          'holds': dict({
+            'items': dict({
+              '$ref': '#/$defs/Hold',
+            }),
+            'title': 'Holds',
+            'type': 'array',
+          }),
+        }),
+        'required': list([
+          'count',
+        ]),
+        'title': 'HoldList',
+        'type': 'object',
+      }),
+      'title': 'Show holds ready for pickup',
+    }),
+    'search': dict({
+      'annotations': dict({
+        'destructiveHint': None,
+        'idempotentHint': True,
+        'openWorldHint': True,
+        'readOnlyHint': True,
+        'title': None,
+      }),
+      'description': '''
+        Search the catalog by keyword, optionally filtered by format.
+        
+        Args:
+            query: Keyword search string.
+            format: Format facet (e.g. `MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`,
+                `AUDIOBOOK_CD`, `DVD`). Omit for any format. Defaults to
+                `default_format` from config if set.
+            page: 1-indexed page number. The gateway returns up to 25
+                results per page; use the `pages` field in the response to
+                page further.
+            sort_by: Optional sort key. One of `relevancy`, `newly_acquired`,
+                `title`, `author`, `published_date`, `ugc_rating`.
+  
+      ''',
+      'inputSchema': dict({
+        'properties': dict({
+          'format': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Format',
+          }),
+          'page': dict({
+            'default': 1,
+            'title': 'Page',
+            'type': 'integer',
+          }),
+          'query': dict({
+            'title': 'Query',
+            'type': 'string',
+          }),
+          'sort_by': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Sort By',
+          }),
+        }),
+        'required': list([
+          'query',
+        ]),
+        'title': 'searchArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        '$defs': dict({
+          'BibSummary': dict({
+            'description': 'Compact view of a catalog bib (book, CD, etc.).',
+            'properties': dict({
+              'authors': dict({
+                'items': dict({
+                  'type': 'string',
+                }),
+                'title': 'Authors',
+                'type': 'array',
+              }),
+              'bib_id': dict({
+                'description': "BiblioCommons bib id, e.g. 'S30C3857930'.",
+                'title': 'Bib Id',
+                'type': 'string',
+              }),
+              'call_number': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Call Number',
+              }),
+              'format': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Format facet, e.g. 'MUSIC_CD', 'BK', 'EBOOK'.",
+                'title': 'Format',
+              }),
+              'jacket': dict({
+                'anyOf': list([
+                  dict({
+                    '$ref': '#/$defs/Jacket',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+              }),
+              'subtitle': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Subtitle',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+              'year': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Publication date as printed.',
+                'title': 'Year',
+              }),
+            }),
+            'required': list([
+              'bib_id',
+            ]),
+            'title': 'BibSummary',
+            'type': 'object',
+          }),
+          'Jacket': dict({
+            'description': '''
+              Cover-art URLs from BiblioCommons (typically Syndetics-hosted).
+              
+              Three sizes plus an optional library-uploaded override. Clients that
+              support image rendering can use any of these — small for list views,
+              medium for cards, large for detail pages.
+            ''',
+            'properties': dict({
+              'large': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Large',
+              }),
+              'local_url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Library-uploaded override, when present. Prefer over Syndetics.',
+                'title': 'Local Url',
+              }),
+              'medium': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Medium',
+              }),
+              'small': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Small',
+              }),
+            }),
+            'title': 'Jacket',
+            'type': 'object',
+          }),
+        }),
+        'description': 'Paginated search results. Page size is fixed at 25 by the gateway.',
+        'properties': dict({
+          'page': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': '1-indexed current page.',
+            'title': 'Page',
+          }),
+          'pages': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'Total page count.',
+            'title': 'Pages',
+          }),
+          'results': dict({
+            'items': dict({
+              '$ref': '#/$defs/BibSummary',
+            }),
+            'title': 'Results',
+            'type': 'array',
+          }),
+          'total': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'Total matching bibs.',
+            'title': 'Total',
+          }),
+        }),
+        'title': 'SearchResult',
+        'type': 'object',
+      }),
+      'title': 'Search the catalog',
+    }),
+  })
+# ---

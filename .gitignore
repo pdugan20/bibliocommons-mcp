@@ -15,5 +15,6 @@ dist/
 .coverage.*
 .pytest_cache/
 .ruff_cache/
+.claudelint-cache/
 htmlcov/
 coverage.xml

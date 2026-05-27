@@ -45,6 +45,14 @@ jobs:
       - name: Run Prettier check
         run: npx prettier@3 --check '**/*.{json,yml,yaml,md}' --ignore-path .prettierignore
 
+  claude-lint:
+    name: Claude Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run claude-code-lint
+        run: npx claude-code-lint@latest
+
   test:
     name: Tests (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
