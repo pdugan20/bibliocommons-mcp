@@ -303,12 +303,37 @@ def _setup_logging() -> None:
 
 
 def main() -> None:
-    """Console-script entry point. Runs over stdio."""
+    """Console-script entry point.
+
+    Subcommands:
+      (no args)   start the MCP server over stdio (default)
+      init        run the interactive setup wizard
+      --version   print the package version
+      --help      print this message
+    """
+    argv = sys.argv[1:]
+    if argv and argv[0] in {"-h", "--help"}:
+        print(main.__doc__.strip() if main.__doc__ else "bibliocommons-mcp")
+        return
+    if argv and argv[0] in {"-V", "--version"}:
+        from . import __version__
+
+        print(__version__)
+        return
+    if argv and argv[0] == "init":
+        from .init import run as init_run
+
+        sys.exit(init_run())
+
     _setup_logging()
     try:
         Config.load()  # fail-fast at startup
     except ConfigError as e:
         print(f"bibliocommons-mcp config error: {e}", file=sys.stderr)
+        print(
+            "Run 'bibliocommons-mcp init' to set up your config.",
+            file=sys.stderr,
+        )
         sys.exit(2)
     logger.info("Starting bibliocommons-mcp (stdio)")
     try:

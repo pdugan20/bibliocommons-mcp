@@ -5,9 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-%3E%3D3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 
-Place holds, search the catalog, and manage your account at any [BiblioCommons](https://bibliocommons.com/)-powered public library — Seattle, SFPL, BPL, ~190 others — from any MCP-aware client (Claude Code, Claude Desktop, Cursor). One library per server instance, configured via a small TOML file.
-
-Built because placing a hold on a CD shouldn't take seven clicks.
+MCP server for placing holds, searching, and managing your account at [BiblioCommons](https://bibliocommons.com/)-powered public libraries.
 
 ## Install
 
@@ -23,28 +21,15 @@ pip install bibliocommons-mcp
 
 ## Quick Start
 
-Drop your card and pickup branch into a config file:
-
 ```bash
-mkdir -p ~/.config/bibliocommons-mcp
-cat > ~/.config/bibliocommons-mcp/config.toml << 'EOF'
-library = "seattle"                  # your bibliocommons subdomain
-default_pickup_branch = "Lake City"  # branch name or 3-letter code
-
-[credentials]
-card = "YOUR_CARD_NUMBER"
-pin  = "YOUR_PIN"
-EOF
-chmod 600 ~/.config/bibliocommons-mcp/config.toml
-```
-
-Wire it into Claude Code:
-
-```bash
+pipx install bibliocommons-mcp
+bibliocommons-mcp init                                    # interactive setup
 claude mcp add bibliocommons bibliocommons-mcp --scope user
 ```
 
-Restart your client. That's it.
+`init` walks you through the four prompts it needs (library subdomain, card, PIN, default pickup branch), validates each step against the live gateway, and writes `~/.config/bibliocommons-mcp/config.toml` with mode 0600. If you'd rather skip the wizard and hand-write the file (or use env vars), see [`docs/configuration.md`](docs/configuration.md).
+
+After `claude mcp add`, restart your client. That's it.
 
 ## What this feels like
 

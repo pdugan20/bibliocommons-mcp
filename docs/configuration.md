@@ -4,6 +4,16 @@ bibliocommons-mcp reads from `~/.config/bibliocommons-mcp/config.toml`. Environm
 
 The file should be `chmod 600` — it contains your library PIN.
 
+## The easy path: `bibliocommons-mcp init`
+
+```bash
+bibliocommons-mcp init
+```
+
+Walks you through the four prompts (subdomain, card, PIN, default pickup branch), validates each one against the live gateway, and writes the file for you with the right permissions. Re-run it to update an existing config.
+
+The rest of this page is for people who'd rather hand-edit, or set things via environment variables in CI / MCP-client configs.
+
 ## Full schema
 
 ```toml
