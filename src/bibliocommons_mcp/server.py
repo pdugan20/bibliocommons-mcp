@@ -122,6 +122,15 @@ DESTRUCTIVE = ToolAnnotations(
 
 mcp = FastMCP("bibliocommons-mcp", instructions=INSTRUCTIONS.strip())
 
+# Register the prebuilt React bundles as MCP Apps UI resources. The
+# mapping is used below by tools that want to render a card; passing
+# `meta=ui_tool_meta(UI_RESOURCES[name])` to `@mcp.tool` tells a
+# UI-capable host (Claude Desktop, Inspector) which bundle to mount.
+from . import ui_resources  # noqa: E402  (import after FastMCP init)
+from .ui import ui_tool_meta  # noqa: E402
+
+UI_RESOURCES = ui_resources.register_all(mcp)
+
 _cfg: Config | None = None
 _client: Client | None = None
 
@@ -209,7 +218,11 @@ def _jacket_for(data: dict, metadata_id: str | None) -> Jacket | None:
 # ─────────────────────────────── tools ───────────────────────────────
 
 
-@mcp.tool(title="Search the catalog", annotations=READ_ONLY)
+@mcp.tool(
+    title="Search the catalog",
+    annotations=READ_ONLY,
+    meta=ui_tool_meta(UI_RESOURCES["search"]),
+)
 @_safe
 def search(
     query: str,
@@ -428,7 +441,11 @@ def _holds_from_response(data: dict) -> list[Hold]:
     ]
 
 
-@mcp.tool(title="List your holds", annotations=READ_ONLY)
+@mcp.tool(
+    title="List your holds",
+    annotations=READ_ONLY,
+    meta=ui_tool_meta(UI_RESOURCES["holds"]),
+)
 @_safe
 def list_holds() -> HoldList:
     """Show current holds (physical + digital) with queue positions."""
@@ -438,7 +455,11 @@ def list_holds() -> HoldList:
     return HoldList(count=len(out), holds=out)
 
 
-@mcp.tool(title="Show holds ready for pickup", annotations=READ_ONLY)
+@mcp.tool(
+    title="Show holds ready for pickup",
+    annotations=READ_ONLY,
+    meta=ui_tool_meta(UI_RESOURCES["holds"]),
+)
 @_safe
 def ready_for_pickup() -> HoldList:
     """Show only the holds that have arrived at the user's pickup branch.
@@ -549,7 +570,11 @@ def cancel_holds(holds: list[HoldRef], dry_run: bool = False) -> BulkCancelHolds
     return BulkCancelHoldsResult(cancelled=cancelled, failures=failures)
 
 
-@mcp.tool(title="List checkouts with due dates", annotations=READ_ONLY)
+@mcp.tool(
+    title="List checkouts with due dates",
+    annotations=READ_ONLY,
+    meta=ui_tool_meta(UI_RESOURCES["loans"]),
+)
 @_safe
 def list_loans() -> LoanList:
     """Show current checkouts (physical + digital) with due dates."""

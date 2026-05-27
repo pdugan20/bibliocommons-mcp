@@ -53,6 +53,40 @@ jobs:
       - name: Run claude-code-lint
         run: npx claude-code-lint@latest
 
+  web-bundles:
+    name: Web bundle freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: web/.nvmrc
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install web deps
+        run: npm ci
+        working-directory: web
+      - name: Rebuild bundles
+        run: npm run build:bundles
+        working-directory: web
+      # The committed _ui_bundles.py was emitted by the same build
+      # script. If a contributor edits anything in web/ but forgets
+      # to rerun `make build-web`, this diff catches it. Bundle output
+      # is byte-stable across Node 22 + the lockfile, so any drift
+      # here is a real out-of-sync, not flake.
+      - name: Diff against committed bundles
+        run: |
+          if ! git diff --exit-code -- src/bibliocommons_mcp/_ui_bundles.py; then
+            echo "::error::Web bundles are out of date. Run 'make build-web' and commit the regenerated _ui_bundles.py."
+            exit 1
+          fi
+      - name: Web lint + typecheck
+        run: |
+          npm run lint
+          npm run typecheck
+          npm run format:check
+        working-directory: web
+
   test:
     name: Tests (${{ matrix.os }}, ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
