@@ -18,3 +18,8 @@ dist/
 .claudelint-cache/
 htmlcov/
 coverage.xml
+
+# web workbench artifacts
+web/node_modules/
+web/dist/
+web/.eslintcache

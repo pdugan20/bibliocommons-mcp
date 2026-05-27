@@ -1,4 +1,4 @@
-.PHONY: dev lint format test build clean check-all
+.PHONY: dev lint format test build clean check-all dev-web build-web lint-web format-web
 
 dev:
 	pip install -e '.[dev]'
@@ -19,6 +19,28 @@ build: clean
 	python -m build
 
 clean:
-	rm -rf dist/ build/ *.egg-info src/*.egg-info
+	rm -rf dist/ build/ *.egg-info src/*.egg-info web/dist/
 
 check-all: lint test
+
+# ---- web (MCP Apps UI bundles) ----
+
+# Local design workbench with hot reload. Open http://localhost:5174/
+# after this prints the dev server URL.
+dev-web:
+	cd web && npm install
+	cd web && npm run dev
+
+# Rebuild the React entries via Vite and emit
+# src/bibliocommons_mcp/_ui_bundles.py. Run after editing anything
+# under web/ before committing.
+build-web:
+	cd web && npm install
+	cd web && npm run build:bundles
+
+lint-web:
+	cd web && npm run lint
+	cd web && npm run typecheck
+
+format-web:
+	cd web && npm run format
