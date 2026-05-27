@@ -41,6 +41,7 @@ Changelog = "https://github.com/pdugan20/bibliocommons-mcp/blob/main/CHANGELOG.m
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "pytest-timeout>=2.0",
     "vcrpy>=6.0",
     "ruff>=0.9",
     "build>=1.0",

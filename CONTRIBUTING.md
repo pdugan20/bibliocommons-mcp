@@ -24,6 +24,23 @@ make test
 Tests are recorded HTTP cassettes (via `vcrpy`) under `tests/cassettes/`. They
 replay deterministically in CI with no network access.
 
+The MCP smoke test (`tests/test_mcp_smoke.py`) spawns the server as a
+subprocess, completes the MCP handshake, and verifies all tools register
+with the expected schemas + annotations. It catches things that schema-level
+unit tests miss — broken imports at startup, server crashes during
+`initialize`, regressions in tool annotations.
+
+For manual debugging of the wire protocol, [MCP Inspector](https://github.com/modelcontextprotocol/inspector)
+is the official tool:
+
+```bash
+npx @modelcontextprotocol/inspector bibliocommons-mcp
+```
+
+It opens a web UI where you can drive the server and inspect every
+JSON-RPC exchange. Useful when something looks right in code but the
+client sees something different.
+
 To re-record cassettes (for example, after a real-world API change):
 
 ```bash
