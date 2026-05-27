@@ -41,6 +41,7 @@ claude mcp add bibliocommons bibliocommons-mcp --scope user
 | `search`           | Search the catalog, optionally filtered by format |
 | `availability`     | Show per-branch status for a bib                  |
 | `place_hold`       | Place a physical hold at your pickup branch       |
+| `place_holds`      | Place holds on multiple bibs at the same branch   |
 | `borrow_digital`   | Borrow an available digital item                  |
 | `list_holds`       | Show current holds and queue positions            |
 | `ready_for_pickup` | Show only the holds waiting at your branch        |
