@@ -341,7 +341,7 @@ def list_holds() -> HoldList:
 
 @mcp.tool(title="Cancel a hold", annotations=DESTRUCTIVE)
 @_safe
-def cancel_hold(hold_id: str, bib_id: str) -> CancelHoldResult:
+def cancel_hold(hold_id: str, bib_id: str, dry_run: bool = False) -> CancelHoldResult:
     """Cancel a hold by id.
 
     **Irreversible** — cancelling loses your queue position. Confirm
@@ -351,8 +351,28 @@ def cancel_hold(hold_id: str, bib_id: str) -> CancelHoldResult:
         hold_id: From `list_holds().holds[i].hold_id`.
         bib_id: From the same row's `metadata_id`. Both are required by
             the gateway.
+        dry_run: If true, look up the hold and describe what would be
+            cancelled without actually cancelling it. Useful as an
+            agent self-check before calling with `dry_run=False`.
     """
     client = _ensure_client()
+    if dry_run:
+        data = client.list_holds()
+        hold = data.get("entities", {}).get("holds", {}).get(hold_id)
+        if not hold:
+            return CancelHoldResult(
+                success=False,
+                dry_run=True,
+                failures={hold_id: "hold not found on this account"},
+            )
+        title = hold.get("bibTitle") or "(unknown title)"
+        position = hold.get("holdsPosition")
+        pos_str = f" at queue position {position}" if position else ""
+        return CancelHoldResult(
+            success=True,
+            dry_run=True,
+            would_cancel=f"{title!r}{pos_str}",
+        )
     data = client.cancel_holds([(hold_id, bib_id)])
     failures = data.get("failures") or {}
     return CancelHoldResult(success=not failures, failures=failures)

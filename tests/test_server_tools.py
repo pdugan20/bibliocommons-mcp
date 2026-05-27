@@ -224,6 +224,7 @@ def test_cancel_hold_returns_success_when_no_failures(mock_client):
     mock_client.cancel_holds.return_value = {"failures": {}}
     out = srv.cancel_hold("H1", "S30C1")
     assert out.success is True
+    assert out.dry_run is False
     mock_client.cancel_holds.assert_called_once_with([("H1", "S30C1")])
 
 
@@ -232,6 +233,38 @@ def test_cancel_hold_surfaces_failures(mock_client):
     out = srv.cancel_hold("H1", "S30C1")
     assert out.success is False
     assert "H1" in out.failures
+
+
+def test_cancel_hold_dry_run_does_not_call_cancel(mock_client):
+    """dry_run=True should look up the hold via list_holds and return what
+    would be cancelled, never calling cancel_holds."""
+    mock_client.list_holds.return_value = {
+        "entities": {
+            "holds": {
+                "H1": {
+                    "bibTitle": "Plastic Eternity",
+                    "holdsPosition": 3,
+                    "materialType": "PHYSICAL",
+                },
+            }
+        }
+    }
+    out = srv.cancel_hold("H1", "S30C1", dry_run=True)
+    assert out.success is True
+    assert out.dry_run is True
+    assert out.would_cancel is not None
+    assert "Plastic Eternity" in out.would_cancel
+    assert "position 3" in out.would_cancel
+    mock_client.cancel_holds.assert_not_called()
+
+
+def test_cancel_hold_dry_run_reports_missing_hold(mock_client):
+    mock_client.list_holds.return_value = {"entities": {"holds": {}}}
+    out = srv.cancel_hold("NOPE", "S30C1", dry_run=True)
+    assert out.success is False
+    assert out.dry_run is True
+    assert "NOPE" in out.failures
+    mock_client.cancel_holds.assert_not_called()
 
 
 def test_list_loans_shape(mock_client):

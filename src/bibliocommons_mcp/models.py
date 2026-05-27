@@ -174,7 +174,21 @@ class BorrowDigitalResult(BaseModel):
 
 class CancelHoldResult(BaseModel):
     success: bool
+    dry_run: bool = Field(
+        default=False,
+        description=(
+            "If true, nothing was actually cancelled — the tool was called "
+            "with dry_run=True and only describes what would happen."
+        ),
+    )
+    would_cancel: str | None = Field(
+        default=None,
+        description=(
+            "On a dry run, a human-readable summary of the hold that would "
+            "be cancelled (title + queue position). None when dry_run=False."
+        ),
+    )
     failures: dict[str, str] = Field(
         default_factory=dict,
-        description=("Hold-id-keyed map of failure reasons. Empty on full success."),
+        description="Hold-id-keyed map of failure reasons. Empty on full success.",
     )
