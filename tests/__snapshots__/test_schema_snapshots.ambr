@@ -15,7 +15,6 @@
         Args:
             bib_id: The bib id (e.g. `S30C3857930`). Get one from
                 `search` results.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -248,7 +247,6 @@
         
         Args:
             bib_id: The bib id of the digital item.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -374,7 +372,6 @@
             dry_run: If true, look up the hold and describe what would be
                 cancelled without actually cancelling it. Useful as an
                 agent self-check before calling with `dry_run=False`.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -465,7 +462,6 @@
             dry_run: If true, look up each hold and report what would be
                 cancelled without doing it. Use as a self-check before
                 committing.
-  
       ''',
       'inputSchema': dict({
         '$defs': dict({
@@ -563,7 +559,6 @@
         Run this first if something seems off — it confirms the configured
         library, the account id the gateway recognises, and the user's
         current hold quotas.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -1141,7 +1136,6 @@
                 or `LCY`). Defaults to `default_pickup_branch` from config.
                 Names are matched case-insensitively; locker variants are
                 de-prioritized when the query is ambiguous.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -1296,7 +1290,6 @@
             delay_seconds: Pause between each gateway call. The default of
                 1s is conservative; lower for small batches if you're
                 willing to risk a transient 429.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -1477,7 +1470,6 @@
         fields as `list_holds`; use this when the user asks "what's waiting
         for me at the library" so the model doesn't have to filter
         client-side.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
@@ -1719,7 +1711,6 @@
                 page further.
             sort_by: Optional sort key. One of `relevancy`, `newly_acquired`,
                 `title`, `author`, `published_date`, `ugc_rating`.
-  
       ''',
       'inputSchema': dict({
         'properties': dict({
