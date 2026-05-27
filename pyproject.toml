@@ -30,7 +30,7 @@ dependencies = [
 bibliocommons-mcp = "bibliocommons_mcp.server:main"
 
 [project.urls]
-Homepage = "https://github.com/pdugan20/bibliocommons-mcp"
+Homepage = "https://pypi.org/project/bibliocommons-mcp/"
 Repository = "https://github.com/pdugan20/bibliocommons-mcp"
 Issues = "https://github.com/pdugan20/bibliocommons-mcp/issues"
 Changelog = "https://github.com/pdugan20/bibliocommons-mcp/blob/main/CHANGELOG.md"

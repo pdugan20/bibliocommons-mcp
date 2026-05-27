@@ -5,25 +5,9 @@
 [![Python](https://img.shields.io/badge/Python-%3E%3D3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
 
-MCP server for [BiblioCommons](https://bibliocommons.com/)-powered public libraries — Seattle, San Francisco, ~190 others. Search the catalog, place holds, manage checkouts, all from any MCP-capable client (Claude, Cursor, etc.).
+Place holds, search the catalog, and manage your account at any [BiblioCommons](https://bibliocommons.com/)-powered public library — Seattle, SFPL, BPL, ~190 others — from any MCP-aware client (Claude Code, Claude Desktop, Cursor). One library per server instance, configured via a small TOML file.
 
 Built because placing a hold on a CD shouldn't take seven clicks.
-
-## What it does
-
-| Tool             | What it does                                                                                               |
-| ---------------- | ---------------------------------------------------------------------------------------------------------- |
-| `search`         | Search the catalog. Optional format filter (`MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`, `DVD`, etc.) and sort |
-| `availability`   | Per-branch availability for a specific bib                                                                 |
-| `place_hold`     | Place a physical hold (CD/book/DVD/etc.) with pickup branch                                                |
-| `borrow_digital` | Check out an immediately-available digital item                                                            |
-| `list_holds`     | All your current holds (physical + digital)                                                                |
-| `cancel_hold`    | Cancel one of your holds                                                                                   |
-| `list_loans`     | Current checkouts with due dates                                                                           |
-| `list_branches`  | All branches at your configured library                                                                    |
-| `library_health` | Login probe + hold counts/quotas                                                                           |
-
-**Not yet supported (v1.1):** placing a digital hold on an _unavailable_ digital item (joining a waitlist). Available digital items work via `borrow_digital`. Use the Libby app directly for digital waitlists in the meantime.
 
 ## Install
 
@@ -37,138 +21,83 @@ Or with `pip`:
 pip install bibliocommons-mcp
 ```
 
-Requires Python 3.11+.
+## Quick Start
 
-## Configure
+Drop your card and pickup branch into a config file:
 
-Create `~/.config/bibliocommons-mcp/config.toml`:
-
-```toml
-library = "seattle"                  # your BiblioCommons subdomain
+```bash
+mkdir -p ~/.config/bibliocommons-mcp
+cat > ~/.config/bibliocommons-mcp/config.toml << 'EOF'
+library = "seattle"                  # your bibliocommons subdomain
 default_pickup_branch = "Lake City"  # branch name or 3-letter code
-default_format = "MUSIC_CD"          # optional default for search
 
 [credentials]
-card = "1234567890"
-pin = "1234"
+card = "YOUR_CARD_NUMBER"
+pin  = "YOUR_PIN"
+EOF
+chmod 600 ~/.config/bibliocommons-mcp/config.toml
 ```
 
-`chmod 600` it. Or set everything via environment variables:
-
-```
-BIBLIOCOMMONS_LIBRARY=seattle
-BIBLIOCOMMONS_CARD=1234567890
-BIBLIOCOMMONS_PIN=1234
-BIBLIOCOMMONS_PICKUP_BRANCH="Lake City"
-```
-
-### Finding your library subdomain
-
-If your library uses BiblioCommons, the URL will be `{your-library}.bibliocommons.com`. Common examples:
-
-- Seattle: `seattle`
-- San Francisco: `sfpl`
-- Vancouver (BC): `vpl`
-- Boston: `bpl`
-
-If you visit `{name}.bibliocommons.com` and see a catalog, that's your subdomain.
-
-## Run
-
-Console script:
+Wire it into Claude Code:
 
 ```bash
-bibliocommons-mcp
+claude mcp add bibliocommons bibliocommons-mcp --scope user
 ```
 
-Or via Python:
+Restart your client. That's it.
 
-```bash
-python -m bibliocommons_mcp
-```
+## What this feels like
 
-The server speaks MCP over stdio.
+> Find me an available Mudhoney CD I can pick up at Lake City this week.
+>
+> Search for "Heavier Than Heaven" by Charles Cross — is the print edition or the audiobook closer to my branch?
+>
+> What's on hold for me and how far up the queue am I?
+>
+> Cancel that hold on the Cobain book — I bought it instead.
 
-## Add to Claude Desktop
+## Tools
 
-In `~/Library/Application Support/Claude/claude_desktop_config.json` (Mac) or the equivalent on your OS:
+| Tool             | Description                                                        |
+| ---------------- | ------------------------------------------------------------------ |
+| `search`         | Catalog search with format facet (`MUSIC_CD`, `BK`, `EBOOK`, etc.) |
+| `availability`   | Per-branch availability + status for a bib                         |
+| `place_hold`     | Physical hold with pickup branch (defaults to your config)         |
+| `borrow_digital` | Check out an immediately-available ebook / e-audiobook             |
+| `list_holds`     | Your current holds (physical + digital)                            |
+| `cancel_hold`    | Cancel a hold by ID                                                |
+| `list_loans`     | Current checkouts with due dates                                   |
+| `list_branches`  | All branches at your configured library                            |
+| `library_health` | Login probe + hold counts/quotas                                   |
 
-```json
-{
-  "mcpServers": {
-    "bibliocommons": {
-      "command": "bibliocommons-mcp"
-    }
-  }
-}
-```
+Placing a hold on an _unavailable_ digital item (joining a Libby waitlist) isn't supported in v1 — use the Libby app for that. `borrow_digital` covers available digital items.
 
-Restart Claude Desktop. Then ask Claude to "search the library for Mudhoney CDs" or "what holds do I have?"
+## Configuration
 
-## Format codes
+The example above is enough for most users. The full schema, environment-variable overrides, and tips for finding your library's subdomain are in [`docs/configuration.md`](docs/configuration.md).
 
-Common values for the `format` parameter of `search`:
+## MCP clients
 
-| Code           | Meaning                        |
-| -------------- | ------------------------------ |
-| `MUSIC_CD`     | Music CD                       |
-| `BK`           | Book                           |
-| `EBOOK`        | Ebook                          |
-| `EAUDIOBOOK`   | E-audiobook                    |
-| `AUDIOBOOK_CD` | Audiobook on CD                |
-| `DVD`          | DVD                            |
-| `BLU_RAY`      | Blu-ray                        |
-| `LARGEPRINT`   | Large print book               |
-| `MN`           | Music notation / printed music |
+The Quick Start uses Claude Code. For Claude Desktop, Cursor, Continue, Cline, Zed, and other MCP clients, see [`docs/mcp-clients.md`](docs/mcp-clients.md).
 
-The full facet list is available from a search response under `entities.bibs[*].briefInfo.format`.
+## Library compatibility
 
-## How it works
+Tested against `seattle` and `sfpl`. NYPL is no longer on BiblioCommons (`410 SiteDisabledError`). If you try it against your library, [open a compatibility report](https://github.com/pdugan20/bibliocommons-mcp/issues/new?template=library_compatibility.yml) — the running list lives in [`docs/known-libraries.md`](docs/known-libraries.md).
 
-1. Authenticates via the standard SPL/BiblioCommons login form (`POST /user/login`).
-2. Talks to the modern gateway at `gateway.bibliocommons.com/v2/libraries/{your-library}/` using your session cookies.
-3. Wraps and corrects the [`python-bibliocommons`](https://github.com/williamjacksn/python-bibliocommons) client — same auth, more endpoints (search, place hold, cancel hold, branches, availability).
+## Requirements
 
-The hold POST body shape we eventually figured out (see commit history for the saga):
+- Python 3.11+
+- A BiblioCommons library account in good standing (card + PIN)
+- The library must run on BiblioCommons (visit `{name}.bibliocommons.com` and confirm)
 
-```json
-POST /v2/libraries/{library}/holds?locale=en-US
-{
-  "metadataId": "S30C...",
-  "materialType": "PHYSICAL",
-  "accountId": 1234567890,
-  "enableSingleClickHolds": false,
-  "materialParams": {
-    "branchId": "LCY",
-    "expiryDate": null,
-    "errorMessageLocale": "en-US"
-  }
-}
-```
+## Further reading
 
-`errorMessageLocale` is the killer field — without it, the gateway 500s with a generic Internal Server Error.
+- [`docs/architecture.md`](docs/architecture.md) — how the gateway client works and what we had to discover to make holds POST cleanly
+- [`docs/format-codes.md`](docs/format-codes.md) — known format facet codes
+- [`docs/releasing.md`](docs/releasing.md) — automated release flow
 
-## Limitations
+## Contributing / Security / License
 
-- **Digital queue holds** (joining a waitlist for an unavailable ebook/audiobook) aren't supported yet — only `borrow_digital` for items currently available. Use Libby for waitlists.
-- **No suspend/unsuspend holds** in v1. Cancel works.
-- **No renewals** in v1. Use the library website to renew.
-- **One library per server instance.** Run two servers if you have cards at multiple libraries.
-
-## Acknowledgments
-
-- [`python-bibliocommons`](https://github.com/williamjacksn/python-bibliocommons) by William Jackson — handles the modern login flow.
-- [`SFPL` by kaijchang](https://github.com/kaijchang/SFPL) — first sighting of the BiblioCommons place-hold endpoint pattern.
-- [`bibliophile-backend` by DavidCain](https://github.com/DavidCain/bibliophile-backend) — proof that this approach generalizes across ~190 libraries.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, testing, and the conventional-commits release flow. Releases are automated via [release-please](https://github.com/googleapis/release-please) — see [docs/releasing.md](docs/releasing.md).
-
-## Security
-
-If you discover a security issue (e.g. credential leakage in cassettes, request smuggling), see [SECURITY.md](SECURITY.md) before opening a public issue.
-
-## License
-
-MIT
+- Setup, tests, commit conventions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Vulnerability disclosure: [SECURITY.md](SECURITY.md)
+- MIT
