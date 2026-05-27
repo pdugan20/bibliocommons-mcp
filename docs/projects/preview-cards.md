@@ -1,5 +1,33 @@
 # Project: Preview cards (inline UI bundles)
 
+> **Status: milestones 1–3 shipped in v0.3.0.** Milestone 4 (polish +
+> mobile responsive) deferred. See `web/` for the React bundles
+> (`HoldCard`, `LoanCard`, `BibCard`), `web/workbench/` for the local
+> design environment, `src/bibliocommons_mcp/ui.py` +
+> `ui_resources.py` for the MCP Apps wiring.
+>
+> Notes vs. the original plan:
+>
+> - **Framework choice landed on React 19 + Vite 5** (not the leaned
+>   vanilla/Lit option). Card layouts stayed simple, but the workbench
+>   ergonomics from clickwheel's React setup were worth borrowing
+>   wholesale.
+> - **Bundle size:** ~520 KB per bundle (3 bundles), well over the
+>   "aim for <500KB total" target. React 19 + ext-apps SDK is most of
+>   the weight. Acceptable for now; deferred optimization.
+> - **CSP:** allow-listed `secure.syndetics.com`, `*.syndetics.com`,
+>   and `cor-cdn-static.bibliocommons.com` for jacket images. Defined
+>   in `ui.py::DEFAULT_IMG_SRC`.
+> - **Bundle freshness CI:** the `web-bundles` job in
+>   `.github/workflows/ci.yml` runs `make build-web` on Node 22
+>   (pinned via `.nvmrc`) and diffs `_ui_bundles.py`. Bundles are
+>   byte-stable across the lockfile.
+> - **Manual QA plan:** see `docs/web-testing.md`.
+>
+> Open milestone-4 items if/when polish becomes priority: tap-to-
+> expand, status-aware visual treatment beyond the existing pill,
+> Claude Desktop iOS layout audit, lazy-loading covers past row 3.
+
 ## Goal
 
 When the user asks "show me my holds" or "what's available?", the MCP client renders an inline card per item — cover art + title + author + status — instead of (or alongside) the JSON. Like the iPod-capacity widget clickwheel ships, or the album/article cards rewind ships.

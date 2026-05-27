@@ -1,5 +1,34 @@
 # Project: Renew loans
 
+> **Status: shipped in v0.3.0** (commits `ac52ff2` + `4ca9d1f`, 2026-05-27).
+> Live as `renew_loan` and `renew_loans` MCP tools. See
+> `src/bibliocommons_mcp/server.py` for the tool defs and
+> `src/bibliocommons_mcp/client.py::Client.renew_checkouts` for the
+> endpoint wiring.
+>
+> Notes from the actual implementation that the plan below got wrong:
+>
+> - The endpoint is **PATCH** `/v2/libraries/{lib}/checkouts?locale=en-US`,
+>   not a per-checkout PUT. Body shape: `accountId`, `checkoutIds` array,
+>   `renew: true`. Bulk-shaped action-flag PATCH. `renew_loan` wraps
+>   the single-id case; both call the same client method.
+> - **No `errorMessageLocale` in the body.** This is the first BC
+>   mutation we've seen that doesn't require it. The web UI doesn't
+>   send it; we match wire exactly.
+> - The error-classification work below is **deferred** — the only
+>   failure shape observed so far is `failures: []` (success).
+>   `_renewal_failures` in `server.py` handles both list-of-objects and
+>   dict-keyed-by-id shapes defensively. First real failure response
+>   will let us simplify.
+> - `Loan` picked up two new fields from the GET response: `actions`
+>   (e.g. `["renew", "updateFormat"]` vs `["checkIn", "updateFormat"]`)
+>   and `times_renewed`. Dry-run mode reads `actions` to skip the
+>   gateway call when renewal is obviously not allowed.
+>
+> Outstanding follow-ups: bulk-renew UI capture (the array shape is
+> structurally supported but only single-id has been observed end-to-end),
+> and a real failure response so we can tighten `_renewal_failures`.
+
 ## Goal
 
 A `renew_loan(checkout_id)` MCP tool that extends the due date on a physical or digital checkout the user currently has out.

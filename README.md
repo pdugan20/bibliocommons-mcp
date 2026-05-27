@@ -48,6 +48,8 @@ claude mcp add bibliocommons bibliocommons-mcp --scope user
 | `cancel_hold`      | Cancel one hold by ID                             |
 | `cancel_holds`     | Cancel multiple holds in a single round-trip      |
 | `list_loans`       | Show checkouts with due dates                     |
+| `renew_loan`       | Renew one checkout by ID                          |
+| `renew_loans`      | Renew multiple checkouts in one PATCH             |
 | `list_branches`    | List all branches at your library                 |
 | `library_health`   | Check login and report hold quotas                |
 
