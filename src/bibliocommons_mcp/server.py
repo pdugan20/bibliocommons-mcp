@@ -40,6 +40,8 @@ from .models import (
     Loan,
     LoanList,
     PlaceHoldResult,
+    BulkRenewLoansResult,
+    RenewLoanResult,
     SearchResult,
 )
 from .models import Branch as BranchModel
@@ -202,6 +204,23 @@ def _bib_summary(bib: dict) -> BibSummary:
         year=bi.get("publicationDate"),
         call_number=bi.get("callNumber"),
         jacket=_extract_jacket(bi),
+    )
+
+
+def _loan_from_entity(checkout_id: str, c: dict, data: dict) -> Loan:
+    """Project a `entities.checkouts[id]` dict into a `Loan` model."""
+    branch_obj = c.get("branch") or {}
+    return Loan(
+        checkout_id=checkout_id,
+        metadata_id=c.get("metadataId"),
+        title=c.get("bibTitle") or c.get("title"),
+        material_type=c.get("materialType"),
+        due=c.get("dueDate"),
+        call_number=c.get("callNumber"),
+        branch=branch_obj.get("code") if branch_obj else None,
+        jacket=_jacket_for(data, c.get("metadataId")),
+        actions=list(c.get("actions") or []),
+        times_renewed=c.get("timesRenewed") or 0,
     )
 
 
@@ -577,24 +596,174 @@ def cancel_holds(holds: list[HoldRef], dry_run: bool = False) -> BulkCancelHolds
 )
 @_safe
 def list_loans() -> LoanList:
-    """Show current checkouts (physical + digital) with due dates."""
+    """Show current checkouts (physical + digital) with due dates.
+
+    Each `Loan` carries an `actions` list copied from the gateway —
+    items with `"renew"` are renewable via `renew_loan`; items with
+    `"checkIn"` are digital loans returnable early. `times_renewed`
+    shows how many times each has already been renewed.
+    """
     client = _ensure_client()
     data = client.list_loans()
     checkouts = data.get("entities", {}).get("checkouts", {})
-    out = [
-        Loan(
-            checkout_id=cid,
-            metadata_id=c.get("metadataId"),
-            title=c.get("bibTitle") or c.get("title"),
-            material_type=c.get("materialType"),
-            due=c.get("dueDate"),
-            call_number=c.get("callNumber"),
-            branch=(c.get("branch") or {}).get("code") if c.get("branch") else None,
-            jacket=_jacket_for(data, c.get("metadataId")),
-        )
-        for cid, c in checkouts.items()
-    ]
+    out = [_loan_from_entity(cid, c, data) for cid, c in checkouts.items()]
     return LoanList(count=len(out), loans=out)
+
+
+def _lookup_checkout(client: Client, checkout_id: str) -> dict | None:
+    """Find one checkout entity by id; None if absent on this account."""
+    data = client.list_loans()
+    return data.get("entities", {}).get("checkouts", {}).get(checkout_id)
+
+
+@mcp.tool(title="Renew a checkout", annotations=MUTATION)
+@_safe
+def renew_loan(checkout_id: str, dry_run: bool = False) -> RenewLoanResult:
+    """Renew one physical checkout by id.
+
+    Reversible in spirit — renewal just pushes the due date out. But
+    not all loans renew: digital items, items with holds queued behind
+    them, and items at the renewal cap are rejected by the gateway.
+    Use `dry_run=True` to pre-check via the `actions` list before
+    spending an API call.
+
+    For multiple checkouts, prefer `renew_loans` — it's one PATCH
+    instead of N.
+
+    Args:
+        checkout_id: From `list_loans().loans[i].checkout_id`.
+        dry_run: If true, look up the checkout and describe whether it
+            *appears* renewable (based on the gateway's `actions`
+            array) without making a call. Useful as an agent self-check.
+    """
+    client = _ensure_client()
+    if dry_run:
+        c = _lookup_checkout(client, checkout_id)
+        if not c:
+            return RenewLoanResult(
+                success=False,
+                dry_run=True,
+                failures={checkout_id: "checkout not found on this account"},
+            )
+        actions = c.get("actions") or []
+        if "renew" not in actions:
+            return RenewLoanResult(
+                success=False,
+                dry_run=True,
+                failures={
+                    checkout_id: (
+                        f"gateway does not list 'renew' as an available "
+                        f"action (actions={actions})"
+                    )
+                },
+            )
+        title = c.get("bibTitle") or "(unknown title)"
+        due = c.get("dueDate")
+        due_str = f", currently due {due}" if due else ""
+        return RenewLoanResult(
+            success=True,
+            dry_run=True,
+            would_renew=f"{title!r}{due_str}",
+        )
+    data = client.renew_checkouts([checkout_id])
+    failures = _renewal_failures(data)
+    if checkout_id in failures:
+        return RenewLoanResult(success=False, failures=failures)
+    renewed = data.get("entities", {}).get("checkouts", {}).get(checkout_id) or {}
+    return RenewLoanResult(
+        success=True,
+        new_due=renewed.get("dueDate"),
+        times_renewed=renewed.get("timesRenewed"),
+    )
+
+
+@mcp.tool(title="Renew multiple checkouts in one call", annotations=MUTATION)
+@_safe
+def renew_loans(
+    checkout_ids: list[str], dry_run: bool = False
+) -> BulkRenewLoansResult:
+    """Renew one or more checkouts in a single gateway call.
+
+    Prefer this over multiple `renew_loan` calls when the user has a
+    list — it's one PATCH and one server-side transaction.
+
+    Args:
+        checkout_ids: From `list_loans().loans[i].checkout_id`.
+        dry_run: If true, look up each checkout and report whether each
+            *appears* renewable (based on the gateway's `actions`
+            array) without making a call.
+    """
+    if not checkout_ids:
+        raise ToolError("checkout_ids list is empty — nothing to renew")
+
+    client = _ensure_client()
+
+    if dry_run:
+        existing = client.list_loans().get("entities", {}).get("checkouts", {})
+        would: list[str] = []
+        failures: dict[str, str] = {}
+        for cid in checkout_ids:
+            c = existing.get(cid)
+            if not c:
+                failures[cid] = "checkout not found on this account"
+                continue
+            actions = c.get("actions") or []
+            if "renew" not in actions:
+                failures[cid] = (
+                    f"gateway does not list 'renew' as an available "
+                    f"action (actions={actions})"
+                )
+                continue
+            title = c.get("bibTitle") or "(unknown title)"
+            due = c.get("dueDate")
+            due_str = f", currently due {due}" if due else ""
+            would.append(f"{title!r}{due_str}")
+        return BulkRenewLoansResult(
+            renewed={},
+            failures=failures,
+            dry_run=True,
+            would_renew=would,
+        )
+
+    data = client.renew_checkouts(checkout_ids)
+    failures = _renewal_failures(data)
+    renewed_entities = data.get("entities", {}).get("checkouts", {}) or {}
+    renewed: dict[str, str] = {}
+    for cid in checkout_ids:
+        if cid in failures:
+            continue
+        entity = renewed_entities.get(cid) or {}
+        # Gateway always echoes the renewed checkout entity back with
+        # the new due date. If we requested it and it's not in failures,
+        # we expect it here — but fall back gracefully if BC's envelope
+        # ever omits the entity for some reason.
+        renewed[cid] = entity.get("dueDate") or ""
+    return BulkRenewLoansResult(renewed=renewed, failures=failures)
+
+
+def _renewal_failures(data: dict) -> dict[str, str]:
+    """Normalize the gateway's `failures` array to {checkout_id: reason}.
+
+    The successful capture showed `failures: []` — an empty list. The
+    failure shape isn't directly observed yet; the gateway likely emits
+    either a list of objects (with checkoutId + message) or a dict keyed
+    by id. Handle both defensively; first real failure surface will tell
+    us which it is and we can simplify.
+    """
+    fails = data.get("failures")
+    if not fails:
+        return {}
+    if isinstance(fails, dict):
+        return {str(k): str(v) for k, v in fails.items()}
+    out: dict[str, str] = {}
+    for item in fails:
+        if not isinstance(item, dict):
+            continue
+        cid = item.get("checkoutId") or item.get("id") or item.get("itemId") or ""
+        msg = item.get("message") or item.get("error") or item.get("reason") or str(item)
+        if cid:
+            out[str(cid)] = str(msg)
+    return out
 
 
 @mcp.tool(title="List branches at your library", annotations=READ_ONLY)

@@ -129,6 +129,59 @@ def test_cancel_empty_raises(client):
         client.cancel_holds([])
 
 
+def test_renew_checkouts_uses_patch_with_action_flag(client):
+    # Body shape captured verbatim from the seattle.bibliocommons.com
+    # web UI on 2026-05-27. Notable: no `errorMessageLocale` field —
+    # unlike `_post`/`_delete`, PATCH on the checkouts collection does
+    # not require it, and adding it would be guessing.
+    _mock_response(
+        client,
+        body={
+            "failures": [],
+            "entities": {
+                "checkouts": {
+                    "-3399081509618396918": {
+                        "checkoutId": "-3399081509618396918",
+                        "dueDate": "2026-06-17",
+                        "timesRenewed": 1,
+                    }
+                }
+            },
+        },
+    )
+    client.renew_checkouts(["-3399081509618396918"])
+    url, body, headers = _last_request(client, "PATCH")
+
+    assert (
+        url
+        == "https://gateway.bibliocommons.com/v2/libraries/seattle/checkouts?locale=en-US"
+    )
+    assert body == {
+        "accountId": 1142365318,
+        "checkoutIds": ["-3399081509618396918"],
+        "renew": True,
+    }
+    # No errorMessageLocale in body — match wire exactly.
+    assert "errorMessageLocale" not in body
+    assert headers["Origin"] == "https://seattle.bibliocommons.com"
+
+
+def test_renew_checkouts_bulk_grows_array(client):
+    _mock_response(client, body={"failures": [], "entities": {"checkouts": {}}})
+    client.renew_checkouts(["A1", "B2", "C3"])
+    _url, body, _h = _last_request(client, "PATCH")
+    assert body == {
+        "accountId": 1142365318,
+        "checkoutIds": ["A1", "B2", "C3"],
+        "renew": True,
+    }
+
+
+def test_renew_empty_raises(client):
+    with pytest.raises(ValueError):
+        client.renew_checkouts([])
+
+
 def test_gateway_5xx_raises_bcerror(client):
     _mock_response(
         client, status=500, body={"error": {"message": "Internal Server Error"}}

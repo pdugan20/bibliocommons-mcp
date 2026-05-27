@@ -75,6 +75,8 @@ export const fixtures: Fixture[] = [
           call_number: "EBOOK OVERDRIVE",
           branch: null,
           jacket: COVER_EVERYBODY,
+          actions: ["checkIn", "updateFormat"],
+          times_renewed: 0,
         },
         {
           checkout_id: "1477017860",
@@ -85,6 +87,8 @@ export const fixtures: Fixture[] = [
           call_number: "EBOOK OVERDRIVE",
           branch: null,
           jacket: COVER_SINGULARITY,
+          actions: ["checkIn", "updateFormat"],
+          times_renewed: 0,
         },
         {
           checkout_id: "1559494087",
@@ -95,6 +99,8 @@ export const fixtures: Fixture[] = [
           call_number: "EAUDIO OVERDRIVE",
           branch: null,
           jacket: COVER_COME_AS_YOU_ARE,
+          actions: ["checkIn", "updateFormat"],
+          times_renewed: 0,
         },
       ],
     },
@@ -141,6 +147,30 @@ export const fixtures: Fixture[] = [
           call_number: "B COBAIN, K. CROSS",
           branch: "LCY",
           jacket: null,
+          actions: ["renew", "updateFormat"],
+          times_renewed: 1,
+        },
+      ],
+    },
+  },
+  {
+    name: "Renewable physical (already renewed once)",
+    description:
+      "Physical loan with `actions: ['renew', ...]` and `times_renewed: 1` — card surfaces 'Renewable · 1× renewed'.",
+    structuredContent: {
+      count: 1,
+      loans: [
+        {
+          checkout_id: "-3399081509618396918",
+          metadata_id: "S30C3680329",
+          title: "A Garden to Save the Birds",
+          material_type: "PHYSICAL",
+          due: isoOffset(20),
+          call_number: "E MCCLURE",
+          branch: "LCY",
+          jacket: null,
+          actions: ["renew", "updateFormat"],
+          times_renewed: 1,
         },
       ],
     },

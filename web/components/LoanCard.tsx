@@ -22,6 +22,8 @@ export type Loan = {
   call_number?: string | null;
   branch?: string | null;
   jacket?: Jacket | null;
+  actions?: string[];
+  times_renewed?: number;
 };
 
 const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
@@ -179,9 +181,21 @@ function CoverImage({ loan }: { loan: Loan }) {
   );
 }
 
+function renewalHint(loan: Loan): string | null {
+  const actions = loan.actions ?? [];
+  if (actions.includes("renew")) {
+    const n = loan.times_renewed ?? 0;
+    if (n > 0) return `Renewable · ${n}× renewed`;
+    return "Renewable";
+  }
+  if (actions.includes("checkIn")) return "Digital · return only";
+  return null;
+}
+
 export function LoanCard({ loan, isFirst }: { loan: Loan; isFirst?: boolean }) {
   const due = dueForRender(loan);
   const material = loan.material_type === "DIGITAL" ? "Digital" : "Physical";
+  const hint = renewalHint(loan);
 
   return (
     <div style={isFirst ? firstRowStyle : rowStyle}>
@@ -201,7 +215,13 @@ export function LoanCard({ loan, isFirst }: { loan: Loan; isFirst?: boolean }) {
           <span style={lineStyle}>{material}</span>
           {loan.branch && <span style={lineStyle}>{loan.branch}</span>}
         </div>
-        {loan.call_number && <p style={lineStyle}>{loan.call_number}</p>}
+        {(loan.call_number || hint) && (
+          <p style={lineStyle}>
+            {loan.call_number ?? ""}
+            {loan.call_number && hint ? " · " : ""}
+            {hint ?? ""}
+          </p>
+        )}
       </div>
     </div>
   );

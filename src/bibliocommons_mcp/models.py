@@ -152,6 +152,20 @@ class Loan(BaseModel):
     call_number: str | None = Field(default=None)
     branch: str | None = Field(default=None)
     jacket: Jacket | None = Field(default=None)
+    actions: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Actions the gateway says are available on this checkout, "
+            "e.g. ['renew', 'updateFormat'] for renewable physical items "
+            "or ['checkIn', 'updateFormat'] for digital items that can "
+            "be returned early. Use this to pre-check before calling "
+            "renew_loan — if 'renew' is absent, the call will fail."
+        ),
+    )
+    times_renewed: int = Field(
+        default=0,
+        description="How many times this checkout has already been renewed.",
+    )
 
 
 class LoanList(BaseModel):
@@ -237,6 +251,56 @@ class BulkCancelHoldsResult(BaseModel):
         description=(
             "On a dry run, one human-readable summary per hold that would "
             "be cancelled (title + queue position). Empty when dry_run=False."
+        ),
+    )
+
+
+class RenewLoanResult(BaseModel):
+    """Result of `renew_loan(...)` — single-checkout renewal."""
+
+    success: bool
+    dry_run: bool = Field(default=False)
+    new_due: str | None = Field(
+        default=None,
+        description="New ISO due date after renewal. None on dry run or failure.",
+    )
+    times_renewed: int | None = Field(
+        default=None,
+        description="Renewal count after this call, taken from the gateway response.",
+    )
+    would_renew: str | None = Field(
+        default=None,
+        description=(
+            "On a dry run, a human-readable summary of the checkout that "
+            "would be renewed (title + current due date). None otherwise."
+        ),
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Checkout-id-keyed failure reasons. Empty on full success.",
+    )
+
+
+class BulkRenewLoansResult(BaseModel):
+    """Result of `renew_loans(...)`. Per-checkout success/failure breakdown."""
+
+    renewed: dict[str, str] = Field(
+        default_factory=dict,
+        description=(
+            "Map of checkout_id → new ISO due date for items that renewed "
+            "successfully."
+        ),
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Checkout-id-keyed map of failure reasons.",
+    )
+    dry_run: bool = Field(default=False)
+    would_renew: list[str] = Field(
+        default_factory=list,
+        description=(
+            "On a dry run, one human-readable summary per checkout that "
+            "would be renewed (title + current due date). Empty otherwise."
         ),
     )
 

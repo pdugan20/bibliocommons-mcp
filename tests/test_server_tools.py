@@ -372,13 +372,115 @@ def test_list_loans_shape(mock_client):
                     "dueDate": "2026-06-11",
                     "callNumber": "EBOOK OVERDRIVE",
                     "branch": None,
-                }
+                    "actions": ["checkIn", "updateFormat"],
+                    "timesRenewed": 0,
+                },
+                "C2": {
+                    "metadataId": "S30C2",
+                    "bibTitle": "Old Wood Boat",
+                    "materialType": "PHYSICAL",
+                    "dueDate": "2026-06-16",
+                    "actions": ["renew", "updateFormat"],
+                    "timesRenewed": 1,
+                    "branch": {"code": "LCY", "name": "Lake City Branch"},
+                },
             }
         }
     }
     out = srv.list_loans()
-    assert out.count == 1
-    assert out.loans[0].due == "2026-06-11"
+    assert out.count == 2
+    by_id = {loan.checkout_id: loan for loan in out.loans}
+    assert by_id["C1"].due == "2026-06-11"
+    # Digital item: no "renew" in actions → model can pre-check before
+    # calling renew_loan.
+    assert "renew" not in by_id["C1"].actions
+    assert by_id["C1"].times_renewed == 0
+    # Physical item: renewable, branch code lifted from the nested object.
+    assert "renew" in by_id["C2"].actions
+    assert by_id["C2"].times_renewed == 1
+    assert by_id["C2"].branch == "LCY"
+
+
+def test_renew_loan_success(mock_client):
+    mock_client.renew_checkouts.return_value = {
+        "failures": [],
+        "entities": {
+            "checkouts": {
+                "-3399081509618396918": {
+                    "dueDate": "2026-06-17",
+                    "timesRenewed": 1,
+                }
+            }
+        },
+    }
+    out = srv.renew_loan("-3399081509618396918")
+    assert out.success is True
+    assert out.dry_run is False
+    assert out.new_due == "2026-06-17"
+    assert out.times_renewed == 1
+    mock_client.renew_checkouts.assert_called_once_with(["-3399081509618396918"])
+
+
+def test_renew_loan_dry_run_pre_checks_actions(mock_client):
+    """dry_run uses the gateway's `actions` array to decide whether
+    the call would even be allowed — no network call."""
+    mock_client.list_loans.return_value = {
+        "entities": {
+            "checkouts": {
+                "C_PHYSICAL": {
+                    "bibTitle": "Old Wood Boat",
+                    "dueDate": "2026-06-16",
+                    "actions": ["renew", "updateFormat"],
+                },
+                "C_DIGITAL": {
+                    "bibTitle": "An eBook",
+                    "dueDate": "2026-06-11",
+                    "actions": ["checkIn", "updateFormat"],
+                },
+            }
+        }
+    }
+    ok = srv.renew_loan("C_PHYSICAL", dry_run=True)
+    assert ok.success is True and ok.dry_run is True
+    assert ok.would_renew is not None
+    assert "Old Wood Boat" in ok.would_renew
+    assert "2026-06-16" in ok.would_renew
+
+    blocked = srv.renew_loan("C_DIGITAL", dry_run=True)
+    assert blocked.success is False and blocked.dry_run is True
+    assert "C_DIGITAL" in blocked.failures
+    assert "renew" in blocked.failures["C_DIGITAL"]
+
+    missing = srv.renew_loan("NOPE", dry_run=True)
+    assert missing.success is False and missing.dry_run is True
+    assert "NOPE" in missing.failures
+
+    mock_client.renew_checkouts.assert_not_called()
+
+
+def test_renew_loans_bulk_partial_failure(mock_client):
+    """Bulk renewal where the gateway accepts one and rejects the other."""
+    mock_client.renew_checkouts.return_value = {
+        "failures": [
+            {"checkoutId": "B2", "message": "Item has holds; cannot renew"}
+        ],
+        "entities": {
+            "checkouts": {
+                "A1": {"dueDate": "2026-06-30", "timesRenewed": 2},
+            }
+        },
+    }
+    out = srv.renew_loans(["A1", "B2"])
+    assert out.renewed == {"A1": "2026-06-30"}
+    assert out.failures == {"B2": "Item has holds; cannot renew"}
+    mock_client.renew_checkouts.assert_called_once_with(["A1", "B2"])
+
+
+def test_renew_loans_empty_raises(mock_client):
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    with pytest.raises(ToolError):
+        srv.renew_loans([])
 
 
 def test_list_branches(mock_client):

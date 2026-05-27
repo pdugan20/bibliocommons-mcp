@@ -937,6 +937,14 @@
           'Loan': dict({
             'description': "One current checkout on the user's account.",
             'properties': dict({
+              'actions': dict({
+                'description': "Actions the gateway says are available on this checkout, e.g. ['renew', 'updateFormat'] for renewable physical items or ['checkIn', 'updateFormat'] for digital items that can be returned early. Use this to pre-check before calling renew_loan — if 'renew' is absent, the call will fail.",
+                'items': dict({
+                  'type': 'string',
+                }),
+                'title': 'Actions',
+                'type': 'array',
+              }),
               'branch': dict({
                 'anyOf': list([
                   dict({
@@ -1012,6 +1020,12 @@
                 ]),
                 'default': None,
                 'title': 'Metadata Id',
+              }),
+              'times_renewed': dict({
+                'default': 0,
+                'description': 'How many times this checkout has already been renewed.',
+                'title': 'Times Renewed',
+                'type': 'integer',
               }),
               'title': dict({
                 'anyOf': list([
@@ -1584,6 +1598,167 @@
         'type': 'object',
       }),
       'title': 'Show holds ready for pickup',
+    }),
+    'renew_loan': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'inputSchema': dict({
+        'properties': dict({
+          'checkout_id': dict({
+            'title': 'Checkout Id',
+            'type': 'string',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+        }),
+        'required': list([
+          'checkout_id',
+        ]),
+        'title': 'renew_loanArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'description': 'Result of `renew_loan(...)` — single-checkout renewal.',
+        'properties': dict({
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Checkout-id-keyed failure reasons. Empty on full success.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'new_due': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'New ISO due date after renewal. None on dry run or failure.',
+            'title': 'New Due',
+          }),
+          'success': dict({
+            'title': 'Success',
+            'type': 'boolean',
+          }),
+          'times_renewed': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'Renewal count after this call, taken from the gateway response.',
+            'title': 'Times Renewed',
+          }),
+          'would_renew': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'On a dry run, a human-readable summary of the checkout that would be renewed (title + current due date). None otherwise.',
+            'title': 'Would Renew',
+          }),
+        }),
+        'required': list([
+          'success',
+        ]),
+        'title': 'RenewLoanResult',
+        'type': 'object',
+      }),
+      'title': 'Renew a checkout',
+    }),
+    'renew_loans': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'inputSchema': dict({
+        'properties': dict({
+          'checkout_ids': dict({
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Checkout Ids',
+            'type': 'array',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+        }),
+        'required': list([
+          'checkout_ids',
+        ]),
+        'title': 'renew_loansArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'description': 'Result of `renew_loans(...)`. Per-checkout success/failure breakdown.',
+        'properties': dict({
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Checkout-id-keyed map of failure reasons.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'renewed': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Map of checkout_id → new ISO due date for items that renewed successfully.',
+            'title': 'Renewed',
+            'type': 'object',
+          }),
+          'would_renew': dict({
+            'description': 'On a dry run, one human-readable summary per checkout that would be renewed (title + current due date). Empty otherwise.',
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Would Renew',
+            'type': 'array',
+          }),
+        }),
+        'title': 'BulkRenewLoansResult',
+        'type': 'object',
+      }),
+      'title': 'Renew multiple checkouts in one call',
     }),
     'search': dict({
       'annotations': dict({

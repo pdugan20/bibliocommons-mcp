@@ -33,6 +33,8 @@ EXPECTED_TOOLS = {
     "cancel_hold",
     "cancel_holds",
     "list_loans",
+    "renew_loan",
+    "renew_loans",
     "list_branches",
     "library_health",
 }

@@ -104,6 +104,15 @@ class Client:
         r = self.http.request("DELETE", url, json=body, headers=self._post_headers())
         return self._unwrap(r)
 
+    def _patch(self, path: str, body: dict, locale: str = "en-US") -> dict:
+        # PATCH on the checkouts collection does NOT need `errorMessageLocale`
+        # in the body (unlike _post/_delete). Web UI doesn't send it; the
+        # gateway accepts without it. Don't add it back "defensively" — BC
+        # has rejected unknown fields in the past.
+        url = f"{self._base()}{path}?locale={locale}"
+        r = self.http.request("PATCH", url, json=body, headers=self._post_headers())
+        return self._unwrap(r)
+
     def _get(self, path: str, params: dict | None = None) -> dict:
         url = f"{self._base()}{path}"
         r = self.http.get(url, params=params or {})
@@ -224,6 +233,27 @@ class Client:
             "errorMessageLocale": "en-US",
         }
         return self._delete("/holds", body)
+
+    def renew_checkouts(self, checkout_ids: list[str]) -> dict:
+        """Renew one or more checkouts in a single PATCH.
+
+        Body shape lifted verbatim from the web UI's renew call (captured
+        2026-05-27). The `renew: true` discriminator is what tells the
+        gateway this PATCH is a renewal rather than e.g. a digital check-in
+        (which uses `checkIn: true` on the same endpoint family).
+
+        The response envelope mirrors `list_loans`: a `failures` array
+        plus `entities.checkouts[id]` for every successfully renewed item
+        with the new `dueDate` and incremented `timesRenewed`.
+        """
+        if not checkout_ids:
+            raise ValueError("no checkouts to renew")
+        body = {
+            "accountId": self.account_id,
+            "checkoutIds": list(checkout_ids),
+            "renew": True,
+        }
+        return self._patch("/checkouts", body)
 
     def find_user_account_id(self) -> int | None:
         """Backup: scrape currentUserId from /v2/holds catalog page (user_id, not
