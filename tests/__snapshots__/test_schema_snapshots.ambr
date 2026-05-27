@@ -9,13 +9,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': '''
-        Show per-branch copy status for a bib.
-        
-        Args:
-            bib_id: The bib id (e.g. `S30C3857930`). Get one from
-                `search` results.
-      ''',
       'inputSchema': dict({
         'properties': dict({
           'bib_id': dict({
@@ -237,17 +230,6 @@
         'readOnlyHint': False,
         'title': None,
       }),
-      'description': '''
-        Check out an immediately-available digital item.
-        
-        Use this when an ebook or e-audiobook is "Available Now" rather
-        than queued. For unavailable digital items (Libby waitlist),
-        direct the user to the Libby app — joining waitlists is not
-        supported here yet.
-        
-        Args:
-            bib_id: The bib id of the digital item.
-      ''',
       'inputSchema': dict({
         'properties': dict({
           'bib_id': dict({
@@ -356,23 +338,6 @@
         'readOnlyHint': False,
         'title': None,
       }),
-      'description': '''
-        Cancel a hold by id.
-        
-        **Irreversible** — cancelling loses your queue position. Confirm
-        with the user first.
-        
-        For multiple holds, prefer `cancel_holds` — it's one round-trip
-        instead of N.
-        
-        Args:
-            hold_id: From `list_holds().holds[i].hold_id`.
-            bib_id: From the same row's `metadata_id`. Both are required by
-                the gateway.
-            dry_run: If true, look up the hold and describe what would be
-                cancelled without actually cancelling it. Useful as an
-                agent self-check before calling with `dry_run=False`.
-      ''',
       'inputSchema': dict({
         'properties': dict({
           'bib_id': dict({
@@ -446,23 +411,6 @@
         'readOnlyHint': False,
         'title': None,
       }),
-      'description': '''
-        Cancel one or more holds in a single gateway call.
-        
-        **Irreversible** for each cancelled hold (lost queue position).
-        Confirm with the user before calling with `dry_run=False`.
-        
-        Prefer this over multiple `cancel_hold` calls when the user has a
-        list — it's one HTTP round-trip and one server-side transaction.
-        
-        Args:
-            holds: List of `{hold_id, bib_id}` pairs. Construct each entry
-                from a row in `list_holds().holds` — `hold_id` and
-                `metadata_id` map directly.
-            dry_run: If true, look up each hold and report what would be
-                cancelled without doing it. Use as a self-check before
-                committing.
-      ''',
       'inputSchema': dict({
         '$defs': dict({
           'HoldRef': dict({
@@ -553,13 +501,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': '''
-        Verify login + report hold counts vs. caps.
-        
-        Run this first if something seems off — it confirms the configured
-        library, the account id the gateway recognises, and the user's
-        current hold quotas.
-      ''',
       'inputSchema': dict({
         'properties': dict({
         }),
@@ -636,7 +577,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': 'List every branch with its 3-letter pickup code.',
       'inputSchema': dict({
         'properties': dict({
         }),
@@ -697,7 +637,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': 'Show current holds (physical + digital) with queue positions.',
       'inputSchema': dict({
         'properties': dict({
         }),
@@ -925,7 +864,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': 'Show current checkouts (physical + digital) with due dates.',
       'inputSchema': dict({
         'properties': dict({
         }),
@@ -1124,19 +1062,6 @@
         'readOnlyHint': False,
         'title': None,
       }),
-      'description': '''
-        Place a physical hold on a bib (CD, book, DVD, etc.).
-        
-        For multiple bibs, prefer `place_holds` — it batches with a built-in
-        inter-call delay to avoid gateway rate-limiting.
-        
-        Args:
-            bib_id: The bib id (e.g. `S30C3857930`).
-            pickup_branch: Branch name or 3-letter code (e.g. `Lake City`
-                or `LCY`). Defaults to `default_pickup_branch` from config.
-                Names are matched case-insensitively; locker variants are
-                de-prioritized when the query is ambiguous.
-      ''',
       'inputSchema': dict({
         'properties': dict({
           'bib_id': dict({
@@ -1269,28 +1194,6 @@
         'readOnlyHint': False,
         'title': None,
       }),
-      'description': '''
-        Place physical holds on several bibs at the same pickup branch.
-        
-        The gateway has no batch endpoint for placement, so this is N
-        sequential POSTs. A short delay between each (default 1s) keeps
-        the BC gateway from rate-limiting after several rapid requests.
-        
-        Per-bib failures don't stop the run — placement continues and the
-        result splits successes (`placed`) and failures (`failures`) so the
-        agent can report partial completion. Common failure causes: the
-        user already has the item on hold (409), the item isn't holdable
-        (reference-only), or a transient gateway 5xx.
-        
-        Args:
-            bib_ids: List of bib IDs. Order is preserved during placement
-                (first attempted first).
-            pickup_branch: Branch name or 3-letter code applied to every
-                hold. Defaults to `default_pickup_branch` from config.
-            delay_seconds: Pause between each gateway call. The default of
-                1s is conservative; lower for small batches if you're
-                willing to risk a transient 429.
-      ''',
       'inputSchema': dict({
         'properties': dict({
           'bib_ids': dict({
@@ -1463,14 +1366,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': '''
-        Show only the holds that have arrived at the user's pickup branch.
-        
-        Filters `list_holds` to `status == "READY_FOR_PICKUP"`. The same
-        fields as `list_holds`; use this when the user asks "what's waiting
-        for me at the library" so the model doesn't have to filter
-        client-side.
-      ''',
       'inputSchema': dict({
         'properties': dict({
         }),
@@ -1698,20 +1593,6 @@
         'readOnlyHint': True,
         'title': None,
       }),
-      'description': '''
-        Search the catalog by keyword, optionally filtered by format.
-        
-        Args:
-            query: Keyword search string.
-            format: Format facet (e.g. `MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`,
-                `AUDIOBOOK_CD`, `DVD`). Omit for any format. Defaults to
-                `default_format` from config if set.
-            page: 1-indexed page number. The gateway returns up to 25
-                results per page; use the `pages` field in the response to
-                page further.
-            sort_by: Optional sort key. One of `relevancy`, `newly_acquired`,
-                `title`, `author`, `published_date`, `ugc_rating`.
-      ''',
       'inputSchema': dict({
         'properties': dict({
           'format': dict({
