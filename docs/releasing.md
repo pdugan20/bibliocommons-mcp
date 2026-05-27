@@ -19,12 +19,12 @@ Maintainers do not run release commands locally — every release is a GitHub PR
 
 ## Conventional Commits → version bump
 
-| Commit type          | Bump  |
-|----------------------|-------|
-| `fix:`               | patch |
-| `feat:`              | minor |
-| `feat!:` / `BREAKING CHANGE:` in body | major |
-| `chore:`, `docs:`, `test:`, `refactor:`, `style:`, `ci:` | none |
+| Commit type                                              | Bump  |
+| -------------------------------------------------------- | ----- |
+| `fix:`                                                   | patch |
+| `feat:`                                                  | minor |
+| `feat!:` / `BREAKING CHANGE:` in body                    | major |
+| `chore:`, `docs:`, `test:`, `refactor:`, `style:`, `ci:` | none  |
 
 PR titles are validated by `pr-lint.yml` to match this scheme.
 

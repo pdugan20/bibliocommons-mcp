@@ -6,19 +6,19 @@ Built because placing a hold on a CD shouldn't take seven clicks.
 
 ## What it does
 
-| Tool | What it does |
-|---|---|
-| `search` | Search the catalog. Optional format filter (`MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`, `DVD`, etc.) and sort |
-| `availability` | Per-branch availability for a specific bib |
-| `place_hold` | Place a physical hold (CD/book/DVD/etc.) with pickup branch |
-| `borrow_digital` | Check out an immediately-available digital item |
-| `list_holds` | All your current holds (physical + digital) |
-| `cancel_hold` | Cancel one of your holds |
-| `list_loans` | Current checkouts with due dates |
-| `list_branches` | All branches at your configured library |
-| `library_health` | Login probe + hold counts/quotas |
+| Tool             | What it does                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| `search`         | Search the catalog. Optional format filter (`MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`, `DVD`, etc.) and sort |
+| `availability`   | Per-branch availability for a specific bib                                                                 |
+| `place_hold`     | Place a physical hold (CD/book/DVD/etc.) with pickup branch                                                |
+| `borrow_digital` | Check out an immediately-available digital item                                                            |
+| `list_holds`     | All your current holds (physical + digital)                                                                |
+| `cancel_hold`    | Cancel one of your holds                                                                                   |
+| `list_loans`     | Current checkouts with due dates                                                                           |
+| `list_branches`  | All branches at your configured library                                                                    |
+| `library_health` | Login probe + hold counts/quotas                                                                           |
 
-**Not yet supported (v1.1):** placing a digital hold on an *unavailable* digital item (joining a waitlist). Available digital items work via `borrow_digital`. Use the Libby app directly for digital waitlists in the meantime.
+**Not yet supported (v1.1):** placing a digital hold on an _unavailable_ digital item (joining a waitlist). Available digital items work via `borrow_digital`. Use the Libby app directly for digital waitlists in the meantime.
 
 ## Install
 
@@ -65,11 +65,13 @@ If you visit `{name}.bibliocommons.com` and see a catalog, that's your subdomain
 ## Run
 
 Console script:
+
 ```bash
 bibliocommons-mcp
 ```
 
 Or via Python:
+
 ```bash
 python -m bibliocommons_mcp
 ```
@@ -96,17 +98,17 @@ Restart Claude Desktop. Then ask Claude to "search the library for Mudhoney CDs"
 
 Common values for the `format` parameter of `search`:
 
-| Code | Meaning |
-|---|---|
-| `MUSIC_CD` | Music CD |
-| `BK` | Book |
-| `EBOOK` | Ebook |
-| `EAUDIOBOOK` | E-audiobook |
-| `AUDIOBOOK_CD` | Audiobook on CD |
-| `DVD` | DVD |
-| `BLU_RAY` | Blu-ray |
-| `LARGEPRINT` | Large print book |
-| `MN` | Music notation / printed music |
+| Code           | Meaning                        |
+| -------------- | ------------------------------ |
+| `MUSIC_CD`     | Music CD                       |
+| `BK`           | Book                           |
+| `EBOOK`        | Ebook                          |
+| `EAUDIOBOOK`   | E-audiobook                    |
+| `AUDIOBOOK_CD` | Audiobook on CD                |
+| `DVD`          | DVD                            |
+| `BLU_RAY`      | Blu-ray                        |
+| `LARGEPRINT`   | Large print book               |
+| `MN`           | Music notation / printed music |
 
 The full facet list is available from a search response under `entities.bibs[*].briefInfo.format`.
 

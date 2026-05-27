@@ -36,6 +36,7 @@ place holds, manage checkouts via an MCP client.
 
 2. **The hold POST body shape is non-obvious.** Required fields for a
    physical hold:
+
    ```json
    {
      "metadataId": "S30C...",
@@ -49,6 +50,7 @@ place holds, manage checkouts via an MCP client.
      }
    }
    ```
+
    `errorMessageLocale` is the killer field — without it, the gateway returns
    a generic 500 ("Internal Server Error"). The validator passes without it,
    but the ILS adapter NPEs.

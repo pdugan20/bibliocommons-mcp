@@ -1,9 +1,11 @@
 config:
   default: true
-  MD013: false   # line length — long URLs and embedded JSON are fine
-  MD024: false   # duplicate headers — releasing.md has nested troubleshooting headings
-  MD033: false   # inline HTML — README uses tables with badges later
-  MD041: false   # first line h1 — README has front-matter style intros sometimes
+  MD013: false # line length — long URLs and embedded JSON are fine
+  MD024: false # duplicate headers — releasing.md has nested troubleshooting headings
+  MD033: false # inline HTML — README uses tables with badges later
+  MD041: false # first line h1 — README has front-matter style intros sometimes
+  MD060: false # table column style — prettier handles consistency
+  MD040: false # fenced code language — we use bare ``` for plain text blocks
 ignores:
   - CHANGELOG.md
   - tests/cassettes/
