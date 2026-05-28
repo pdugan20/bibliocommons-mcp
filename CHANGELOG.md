@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.3.0...v1.0.0) (2026-05-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* All mutation tools now accept lists. Callers using `place_hold(bib_id="X")` must update to `place_hold(bib_ids=["X"])`. Singular variants (place_hold, cancel_hold, renew_loan, check_in_loan, borrow_digital, place_digital_hold) and their result types (CancelHoldResult, CheckInLoanResult, RenewLoanResult) are removed in favor of the new list-accepting forms. Triggers v0.4.0 via release-please.
+
+### Code Refactoring
+
+* collapse mutation tools to list-accepting only ([bcb8a79](https://github.com/pdugan20/bibliocommons-mcp/commit/bcb8a793e3e1536ba4426dd42038ec3653f4d50e))
+
 ## [0.3.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.2.0...v0.3.0) (2026-05-28)
 
 
