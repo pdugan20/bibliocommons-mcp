@@ -255,6 +255,66 @@ class BulkCancelHoldsResult(BaseModel):
     )
 
 
+class CheckoutRef(BaseModel):
+    """Pair of (checkout_id, metadata_id) the gateway needs to act on a checkout.
+
+    Both come from a row in `list_loans().loans`. The gateway requires the
+    bib reference even when the checkout id is in the URL — same pattern
+    as `HoldRef` for holds.
+    """
+
+    checkout_id: str = Field(description="From `list_loans().loans[i].checkout_id`.")
+    metadata_id: str = Field(description="From `list_loans().loans[i].metadata_id`.")
+
+
+class CheckInLoanResult(BaseModel):
+    """Result of `check_in_loan(...)` — single-checkout digital return."""
+
+    success: bool
+    metadata_id: str | None = Field(
+        default=None,
+        description="Metadata id echoed by the gateway's minimal response.",
+    )
+    dry_run: bool = Field(default=False)
+    would_check_in: str | None = Field(
+        default=None,
+        description=(
+            "On a dry run, a human-readable summary of the checkout that "
+            "would be checked in (title + format). None otherwise."
+        ),
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Checkout-id-keyed failure reasons. Empty on full success.",
+    )
+
+
+class BulkCheckInLoansResult(BaseModel):
+    """Result of `check_in_loans(...)`. Per-checkout success/failure breakdown.
+
+    There's no native bulk endpoint — the client loops sequentially with
+    a small inter-call delay, same pattern as `place_holds`. Each row
+    succeeds or fails independently.
+    """
+
+    checked_in: list[str] = Field(
+        default_factory=list,
+        description="Checkout IDs successfully checked in.",
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Checkout-id-keyed map of failure reasons.",
+    )
+    dry_run: bool = Field(default=False)
+    would_check_in: list[str] = Field(
+        default_factory=list,
+        description=(
+            "On a dry run, one human-readable summary per checkout that "
+            "would be checked in. Empty otherwise."
+        ),
+    )
+
+
 class RenewLoanResult(BaseModel):
     """Result of `renew_loan(...)` — single-checkout renewal."""
 

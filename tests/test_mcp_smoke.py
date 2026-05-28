@@ -35,6 +35,8 @@ EXPECTED_TOOLS = {
     "list_loans",
     "renew_loan",
     "renew_loans",
+    "check_in_loan",
+    "check_in_loans",
     "list_branches",
     "library_health",
 }

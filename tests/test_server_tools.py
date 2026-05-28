@@ -481,6 +481,85 @@ def test_renew_loans_empty_raises(mock_client):
         srv.renew_loans([])
 
 
+def test_check_in_loan_success(mock_client):
+    mock_client.check_in_loan.return_value = {"id": "S30C2636037"}
+    out = srv.check_in_loan("1477017860", "S30C2636037")
+    assert out.success is True
+    assert out.dry_run is False
+    assert out.metadata_id == "S30C2636037"
+    mock_client.check_in_loan.assert_called_once_with("1477017860", "S30C2636037")
+
+
+def test_check_in_loan_dry_run_blocks_physical(mock_client):
+    mock_client.list_loans.return_value = {
+        "entities": {
+            "checkouts": {
+                "C_DIGITAL": {
+                    "bibTitle": "An eBook",
+                    "actions": ["checkIn", "updateFormat"],
+                    "callNumber": "EBOOK OVERDRIVE",
+                },
+                "C_PHYSICAL": {
+                    "bibTitle": "A Garden to Save the Birds",
+                    "actions": ["renew", "updateFormat"],
+                    "callNumber": "E MCCLURE",
+                },
+            }
+        }
+    }
+    ok = srv.check_in_loan("C_DIGITAL", "S30C1", dry_run=True)
+    assert ok.success is True and ok.dry_run is True
+    assert ok.would_check_in is not None
+    assert "An eBook" in ok.would_check_in
+
+    blocked = srv.check_in_loan("C_PHYSICAL", "S30C2", dry_run=True)
+    assert blocked.success is False and blocked.dry_run is True
+    assert "C_PHYSICAL" in blocked.failures
+    assert "checkIn" in blocked.failures["C_PHYSICAL"]
+
+    missing = srv.check_in_loan("NOPE", "S30C3", dry_run=True)
+    assert missing.success is False and missing.dry_run is True
+    assert "NOPE" in missing.failures
+
+    mock_client.check_in_loan.assert_not_called()
+
+
+def test_check_in_loans_bulk_sequential(mock_client):
+    """Bulk check-in is N×1 sequential DELETEs, not a single round-trip.
+
+    Each succeeds or fails independently; one failure shouldn't abort
+    the rest. Delay is zeroed in tests so they run quickly.
+    """
+    from bibliocommons_mcp.client import BCError
+    from bibliocommons_mcp.models import CheckoutRef
+
+    def fake_check_in(checkout_id, metadata_id):
+        if checkout_id == "C_FAILS":
+            raise BCError(403, "checkout not eligible for check-in")
+        return {"id": metadata_id}
+
+    mock_client.check_in_loan.side_effect = fake_check_in
+
+    out = srv.check_in_loans(
+        checkouts=[
+            CheckoutRef(checkout_id="C_OK1", metadata_id="S30C1"),
+            CheckoutRef(checkout_id="C_FAILS", metadata_id="S30C2"),
+            CheckoutRef(checkout_id="C_OK2", metadata_id="S30C3"),
+        ],
+        delay_seconds=0.0,
+    )
+    assert set(out.checked_in) == {"C_OK1", "C_OK2"}
+    assert "C_FAILS" in out.failures
+    assert mock_client.check_in_loan.call_count == 3
+
+
+def test_check_in_loans_empty_raises(mock_client):
+    from mcp.server.fastmcp.exceptions import ToolError
+
+    with pytest.raises(ToolError):
+        srv.check_in_loans(checkouts=[])
+
+
 def test_list_branches(mock_client):
     mock_client.branches.all.return_value = [
         Branch("LCY", "Lake City Branch"),

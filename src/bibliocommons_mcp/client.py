@@ -234,6 +234,41 @@ class Client:
         }
         return self._delete("/holds", body)
 
+    def check_in_loan(self, checkout_id: str, metadata_id: str) -> dict:
+        """Return a digital checkout early (the "check in" / "return now" button).
+
+        Endpoint shape captured 2026-05-27: a per-resource DELETE — not the
+        bulk PATCH that renew uses. Body is required even though `checkout_id`
+        is in the URL; BC's ILS adapter wants the bib reference for
+        auditing (same pattern as cancel_holds requiring both holdIds and
+        metadataIds).
+
+        Unlike `/holds` endpoints, this one does NOT need `errorMessageLocale`
+        in the body — `_post`/`_delete` enforce that invariant for holds,
+        but check-in's body shape is just `{metadataId, accountId}`. Match
+        the wire exactly.
+
+        Response is minimal: `{"id": <metadataId>}`. No new state in the
+        response — caller refetches list_loans if it needs the current
+        view.
+
+        Only digital items have a `checkIn` action; physical items return
+        through the ILS at the branch.
+        """
+        path = f"/checkouts/{checkout_id}"
+        body = {
+            "metadataId": metadata_id,
+            "accountId": self.account_id,
+        }
+        # Reuse the existing `_delete` — its URL builder appends
+        # ?locale=en-US, which is what we want. The body invariant
+        # (errorMessageLocale being required) is enforced at the
+        # _post/_delete layer for holds; for /checkouts here we
+        # deliberately omit it because the captured wire didn't carry it.
+        url = f"{self._base()}{path}?locale=en-US"
+        r = self.http.request("DELETE", url, json=body, headers=self._post_headers())
+        return self._unwrap(r)
+
     def renew_checkouts(self, checkout_ids: list[str]) -> dict:
         """Renew one or more checkouts in a single PATCH.
 

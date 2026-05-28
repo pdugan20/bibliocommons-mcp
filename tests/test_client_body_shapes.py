@@ -182,6 +182,29 @@ def test_renew_empty_raises(client):
         client.renew_checkouts([])
 
 
+def test_check_in_loan_per_resource_delete(client):
+    # Body shape captured verbatim from the seattle.bibliocommons.com
+    # web UI on 2026-05-27. Per-resource DELETE — NOT the bulk PATCH
+    # that renew uses. Body is `{metadataId, accountId}`; no
+    # errorMessageLocale (unlike /holds endpoints).
+    _mock_response(client, body={"id": "S30C2636037"})
+    client.check_in_loan("1477017860", "S30C2636037")
+    url, body, headers = _last_request(client, "DELETE")
+
+    assert (
+        url
+        == "https://gateway.bibliocommons.com/v2/libraries/seattle/checkouts/1477017860?locale=en-US"
+    )
+    assert body == {
+        "metadataId": "S30C2636037",
+        "accountId": 1142365318,
+    }
+    # No errorMessageLocale — match wire exactly. The /holds endpoints
+    # enforce it via `_post`/`_delete`; `/checkouts` endpoints don't.
+    assert "errorMessageLocale" not in body
+    assert headers["Origin"] == "https://seattle.bibliocommons.com"
+
+
 def test_gateway_5xx_raises_bcerror(client):
     _mock_response(
         client, status=500, body={"error": {"message": "Internal Server Error"}}

@@ -493,6 +493,199 @@
       }),
       'title': 'Cancel multiple holds in one call',
     }),
+    'check_in_loan': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'inputSchema': dict({
+        'properties': dict({
+          'checkout_id': dict({
+            'title': 'Checkout Id',
+            'type': 'string',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'metadata_id': dict({
+            'title': 'Metadata Id',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'checkout_id',
+          'metadata_id',
+        ]),
+        'title': 'check_in_loanArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'description': 'Result of `check_in_loan(...)` — single-checkout digital return.',
+        'properties': dict({
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Checkout-id-keyed failure reasons. Empty on full success.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'metadata_id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Metadata id echoed by the gateway's minimal response.",
+            'title': 'Metadata Id',
+          }),
+          'success': dict({
+            'title': 'Success',
+            'type': 'boolean',
+          }),
+          'would_check_in': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': 'On a dry run, a human-readable summary of the checkout that would be checked in (title + format). None otherwise.',
+            'title': 'Would Check In',
+          }),
+        }),
+        'required': list([
+          'success',
+        ]),
+        'title': 'CheckInLoanResult',
+        'type': 'object',
+      }),
+      'title': 'Return (check in) a digital checkout early',
+    }),
+    'check_in_loans': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'inputSchema': dict({
+        '$defs': dict({
+          'CheckoutRef': dict({
+            'description': '''
+              Pair of (checkout_id, metadata_id) the gateway needs to act on a checkout.
+              
+              Both come from a row in `list_loans().loans`. The gateway requires the
+              bib reference even when the checkout id is in the URL — same pattern
+              as `HoldRef` for holds.
+            ''',
+            'properties': dict({
+              'checkout_id': dict({
+                'description': 'From `list_loans().loans[i].checkout_id`.',
+                'title': 'Checkout Id',
+                'type': 'string',
+              }),
+              'metadata_id': dict({
+                'description': 'From `list_loans().loans[i].metadata_id`.',
+                'title': 'Metadata Id',
+                'type': 'string',
+              }),
+            }),
+            'required': list([
+              'checkout_id',
+              'metadata_id',
+            ]),
+            'title': 'CheckoutRef',
+            'type': 'object',
+          }),
+        }),
+        'properties': dict({
+          'checkouts': dict({
+            'items': dict({
+              '$ref': '#/$defs/CheckoutRef',
+            }),
+            'title': 'Checkouts',
+            'type': 'array',
+          }),
+          'delay_seconds': dict({
+            'default': 0.5,
+            'title': 'Delay Seconds',
+            'type': 'number',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+        }),
+        'required': list([
+          'checkouts',
+        ]),
+        'title': 'check_in_loansArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'description': '''
+          Result of `check_in_loans(...)`. Per-checkout success/failure breakdown.
+          
+          There's no native bulk endpoint — the client loops sequentially with
+          a small inter-call delay, same pattern as `place_holds`. Each row
+          succeeds or fails independently.
+        ''',
+        'properties': dict({
+          'checked_in': dict({
+            'description': 'Checkout IDs successfully checked in.',
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Checked In',
+            'type': 'array',
+          }),
+          'dry_run': dict({
+            'default': False,
+            'title': 'Dry Run',
+            'type': 'boolean',
+          }),
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Checkout-id-keyed map of failure reasons.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'would_check_in': dict({
+            'description': 'On a dry run, one human-readable summary per checkout that would be checked in. Empty otherwise.',
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Would Check In',
+            'type': 'array',
+          }),
+        }),
+        'title': 'BulkCheckInLoansResult',
+        'type': 'object',
+      }),
+      'title': 'Return multiple digital checkouts in one call',
+    }),
     'library_health': dict({
       'annotations': dict({
         'destructiveHint': None,

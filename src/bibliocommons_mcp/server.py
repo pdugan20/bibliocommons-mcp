@@ -29,9 +29,12 @@ from .models import (
     BorrowDigitalResult,
     BranchList,
     BulkCancelHoldsResult,
+    BulkCheckInLoansResult,
     BulkPlaceHoldResult,
     BulkRenewLoansResult,
     CancelHoldResult,
+    CheckInLoanResult,
+    CheckoutRef,
     DigitalFormat,
     Hold,
     HoldList,
@@ -764,6 +767,139 @@ def _renewal_failures(data: dict) -> dict[str, str]:
         if cid:
             out[str(cid)] = str(msg)
     return out
+
+
+@mcp.tool(title="Return (check in) a digital checkout early", annotations=MUTATION)
+@_safe
+def check_in_loan(
+    checkout_id: str, metadata_id: str, dry_run: bool = False
+) -> CheckInLoanResult:
+    """Return one digital checkout (ebook / eaudiobook) early.
+
+    Only works on items where `list_loans().loans[i].actions` includes
+    `"checkIn"` — physical items are returned at the branch and don't
+    have this affordance. The freed slot reflects in the OverDrive
+    quota immediately.
+
+    For multiple checkouts prefer `check_in_loans` — it's still N×1
+    calls under the hood (no native bulk endpoint), but batches the
+    delay and returns one result.
+
+    Args:
+        checkout_id: From `list_loans().loans[i].checkout_id`.
+        metadata_id: From the same row's `metadata_id`. Both are
+            required by the gateway; passing them explicitly avoids an
+            extra round-trip to look one up from the other.
+        dry_run: If true, look up the checkout and confirm whether
+            `"checkIn"` is in its `actions` list without making a call.
+    """
+    client = _ensure_client()
+    if dry_run:
+        c = _lookup_checkout(client, checkout_id)
+        if not c:
+            return CheckInLoanResult(
+                success=False,
+                dry_run=True,
+                failures={checkout_id: "checkout not found on this account"},
+            )
+        actions = c.get("actions") or []
+        if "checkIn" not in actions:
+            return CheckInLoanResult(
+                success=False,
+                dry_run=True,
+                failures={
+                    checkout_id: (
+                        f"gateway does not list 'checkIn' as an available "
+                        f"action (actions={actions}) — most likely a physical "
+                        f"item that returns at the branch"
+                    )
+                },
+            )
+        title = c.get("bibTitle") or "(unknown title)"
+        call = c.get("callNumber")
+        call_str = f", {call}" if call else ""
+        return CheckInLoanResult(
+            success=True,
+            dry_run=True,
+            would_check_in=f"{title!r}{call_str}",
+        )
+    data = client.check_in_loan(checkout_id, metadata_id)
+    # Successful response is just {"id": <metadata_id>}. The presence
+    # of an id confirms the check-in landed; absence would indicate
+    # something odd happened.
+    returned_id = data.get("id") if isinstance(data, dict) else None
+    return CheckInLoanResult(success=bool(returned_id), metadata_id=returned_id)
+
+
+@mcp.tool(title="Return multiple digital checkouts in one call", annotations=MUTATION)
+@_safe
+def check_in_loans(
+    checkouts: list[CheckoutRef],
+    dry_run: bool = False,
+    delay_seconds: float = 0.5,
+) -> BulkCheckInLoansResult:
+    """Return one or more digital checkouts early.
+
+    There's no native bulk endpoint — the client sends N sequential
+    DELETEs with `delay_seconds` between each to avoid hammering the
+    gateway. Each row succeeds or fails independently; partial success
+    is normal.
+
+    Args:
+        checkouts: List of `{checkout_id, metadata_id}` pairs. Build
+            each entry from a row in `list_loans().loans`.
+        dry_run: If true, look up each checkout and report whether
+            `"checkIn"` is in its `actions` list, without making any
+            calls.
+        delay_seconds: Sleep between calls. Default 0.5s; raise this
+            if you start seeing 429s.
+    """
+    if not checkouts:
+        raise ToolError("checkouts list is empty — nothing to check in")
+
+    client = _ensure_client()
+
+    if dry_run:
+        existing = client.list_loans().get("entities", {}).get("checkouts", {})
+        would: list[str] = []
+        failures: dict[str, str] = {}
+        for ref in checkouts:
+            c = existing.get(ref.checkout_id)
+            if not c:
+                failures[ref.checkout_id] = "checkout not found on this account"
+                continue
+            actions = c.get("actions") or []
+            if "checkIn" not in actions:
+                failures[ref.checkout_id] = (
+                    f"gateway does not list 'checkIn' as an available "
+                    f"action (actions={actions})"
+                )
+                continue
+            title = c.get("bibTitle") or "(unknown title)"
+            would.append(repr(title))
+        return BulkCheckInLoansResult(
+            checked_in=[],
+            failures=failures,
+            dry_run=True,
+            would_check_in=would,
+        )
+
+    checked_in: list[str] = []
+    failures: dict[str, str] = {}
+    for i, ref in enumerate(checkouts):
+        if i > 0:
+            time.sleep(delay_seconds)
+        try:
+            data = client.check_in_loan(ref.checkout_id, ref.metadata_id)
+            if isinstance(data, dict) and data.get("id"):
+                checked_in.append(ref.checkout_id)
+            else:
+                failures[ref.checkout_id] = (
+                    "gateway returned no id — check_in may not have landed"
+                )
+        except BCError as e:
+            failures[ref.checkout_id] = str(e)
+    return BulkCheckInLoansResult(checked_in=checked_in, failures=failures)
 
 
 @mcp.tool(title="List branches at your library", annotations=READ_ONLY)
