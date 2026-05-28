@@ -232,178 +232,144 @@
       }),
       'inputSchema': dict({
         'properties': dict({
-          'bib_id': dict({
-            'title': 'Bib Id',
-            'type': 'string',
+          'bib_ids': dict({
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Bib Ids',
+            'type': 'array',
+          }),
+          'delay_seconds': dict({
+            'default': 1.0,
+            'title': 'Delay Seconds',
+            'type': 'number',
           }),
         }),
         'required': list([
-          'bib_id',
+          'bib_ids',
         ]),
         'title': 'borrow_digitalArguments',
         'type': 'object',
       }),
       'outputSchema': dict({
-        'properties': dict({
-          'call_number': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
+        '$defs': dict({
+          'BorrowDigitalResult': dict({
+            'properties': dict({
+              'call_number': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Call Number',
               }),
-              dict({
-                'type': 'null',
+              'checkout_id': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Checkout Id',
               }),
+              'due': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Due',
+              }),
+              'material_type': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Material Type',
+              }),
+              'success': dict({
+                'title': 'Success',
+                'type': 'boolean',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+              'volume': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Volume',
+              }),
+            }),
+            'required': list([
+              'success',
             ]),
-            'default': None,
-            'title': 'Call Number',
-          }),
-          'checkout_id': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Checkout Id',
-          }),
-          'due': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Due',
-          }),
-          'material_type': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Material Type',
-          }),
-          'success': dict({
-            'title': 'Success',
-            'type': 'boolean',
-          }),
-          'title': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Title',
-          }),
-          'volume': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Volume',
+            'title': 'BorrowDigitalResult',
+            'type': 'object',
           }),
         }),
-        'required': list([
-          'success',
-        ]),
-        'title': 'BorrowDigitalResult',
-        'type': 'object',
-      }),
-      'title': 'Borrow an available digital item',
-    }),
-    'cancel_hold': dict({
-      'annotations': dict({
-        'destructiveHint': True,
-        'idempotentHint': False,
-        'openWorldHint': True,
-        'readOnlyHint': False,
-        'title': None,
-      }),
-      'inputSchema': dict({
+        'description': '''
+          Result of a multi-item `borrow_digital` call.
+          
+          No native bulk endpoint exists — the tool issues N sequential
+          `POST /checkouts` calls with a small delay. Each row succeeds or
+          fails independently.
+        ''',
         'properties': dict({
-          'bib_id': dict({
-            'title': 'Bib Id',
-            'type': 'string',
-          }),
-          'dry_run': dict({
-            'default': False,
-            'title': 'Dry Run',
-            'type': 'boolean',
-          }),
-          'hold_id': dict({
-            'title': 'Hold Id',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'hold_id',
-          'bib_id',
-        ]),
-        'title': 'cancel_holdArguments',
-        'type': 'object',
-      }),
-      'outputSchema': dict({
-        'properties': dict({
-          'dry_run': dict({
-            'default': False,
-            'description': 'If true, nothing was actually cancelled — the tool was called with dry_run=True and only describes what would happen.',
-            'title': 'Dry Run',
-            'type': 'boolean',
+          'borrowed': dict({
+            'additionalProperties': dict({
+              '$ref': '#/$defs/BorrowDigitalResult',
+            }),
+            'description': 'Map of bib_id → per-item borrow result.',
+            'title': 'Borrowed',
+            'type': 'object',
           }),
           'failures': dict({
             'additionalProperties': dict({
               'type': 'string',
             }),
-            'description': 'Hold-id-keyed map of failure reasons. Empty on full success.',
+            'description': 'Bib-id-keyed map of failure reasons.',
             'title': 'Failures',
             'type': 'object',
           }),
-          'success': dict({
-            'title': 'Success',
-            'type': 'boolean',
-          }),
-          'would_cancel': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'description': 'On a dry run, a human-readable summary of the hold that would be cancelled (title + queue position). None when dry_run=False.',
-            'title': 'Would Cancel',
-          }),
         }),
-        'required': list([
-          'success',
-        ]),
-        'title': 'CancelHoldResult',
+        'title': 'BulkBorrowDigitalResult',
         'type': 'object',
       }),
-      'title': 'Cancel a hold',
+      'title': 'Borrow available digital items',
     }),
-    'cancel_holds': dict({
+    'cancel_hold': dict({
       'annotations': dict({
         'destructiveHint': True,
         'idempotentHint': False,
@@ -452,7 +418,7 @@
         'required': list([
           'holds',
         ]),
-        'title': 'cancel_holdsArguments',
+        'title': 'cancel_holdArguments',
         'type': 'object',
       }),
       'outputSchema': dict({
@@ -491,95 +457,9 @@
         'title': 'BulkCancelHoldsResult',
         'type': 'object',
       }),
-      'title': 'Cancel multiple holds in one call',
+      'title': 'Cancel holds',
     }),
     'check_in_loan': dict({
-      'annotations': dict({
-        'destructiveHint': False,
-        'idempotentHint': False,
-        'openWorldHint': True,
-        'readOnlyHint': False,
-        'title': None,
-      }),
-      'inputSchema': dict({
-        'properties': dict({
-          'checkout_id': dict({
-            'title': 'Checkout Id',
-            'type': 'string',
-          }),
-          'dry_run': dict({
-            'default': False,
-            'title': 'Dry Run',
-            'type': 'boolean',
-          }),
-          'metadata_id': dict({
-            'title': 'Metadata Id',
-            'type': 'string',
-          }),
-        }),
-        'required': list([
-          'checkout_id',
-          'metadata_id',
-        ]),
-        'title': 'check_in_loanArguments',
-        'type': 'object',
-      }),
-      'outputSchema': dict({
-        'description': 'Result of `check_in_loan(...)` — single-checkout digital return.',
-        'properties': dict({
-          'dry_run': dict({
-            'default': False,
-            'title': 'Dry Run',
-            'type': 'boolean',
-          }),
-          'failures': dict({
-            'additionalProperties': dict({
-              'type': 'string',
-            }),
-            'description': 'Checkout-id-keyed failure reasons. Empty on full success.',
-            'title': 'Failures',
-            'type': 'object',
-          }),
-          'metadata_id': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'description': "Metadata id echoed by the gateway's minimal response.",
-            'title': 'Metadata Id',
-          }),
-          'success': dict({
-            'title': 'Success',
-            'type': 'boolean',
-          }),
-          'would_check_in': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'description': 'On a dry run, a human-readable summary of the checkout that would be checked in (title + format). None otherwise.',
-            'title': 'Would Check In',
-          }),
-        }),
-        'required': list([
-          'success',
-        ]),
-        'title': 'CheckInLoanResult',
-        'type': 'object',
-      }),
-      'title': 'Return (check in) a digital checkout early',
-    }),
-    'check_in_loans': dict({
       'annotations': dict({
         'destructiveHint': False,
         'idempotentHint': False,
@@ -639,7 +519,7 @@
         'required': list([
           'checkouts',
         ]),
-        'title': 'check_in_loansArguments',
+        'title': 'check_in_loanArguments',
         'type': 'object',
       }),
       'outputSchema': dict({
@@ -684,7 +564,7 @@
         'title': 'BulkCheckInLoansResult',
         'type': 'object',
       }),
-      'title': 'Return multiple digital checkouts in one call',
+      'title': 'Return (check in) digital checkouts early',
     }),
     'library_health': dict({
       'annotations': dict({
@@ -1271,249 +1151,156 @@
       }),
       'inputSchema': dict({
         'properties': dict({
-          'bib_id': dict({
-            'title': 'Bib Id',
-            'type': 'string',
+          'bib_ids': dict({
+            'items': dict({
+              'type': 'string',
+            }),
+            'title': 'Bib Ids',
+            'type': 'array',
+          }),
+          'delay_seconds': dict({
+            'default': 1.0,
+            'title': 'Delay Seconds',
+            'type': 'number',
           }),
         }),
         'required': list([
-          'bib_id',
+          'bib_ids',
         ]),
         'title': 'place_digital_holdArguments',
         'type': 'object',
       }),
       'outputSchema': dict({
-        'properties': dict({
-          'expiry': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
+        '$defs': dict({
+          'PlaceHoldResult': dict({
+            'properties': dict({
+              'expiry': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Expiry',
               }),
-              dict({
-                'type': 'null',
+              'hold_id': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Hold Id',
               }),
+              'material_type': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Material Type',
+              }),
+              'pickup_branch': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Pickup Branch',
+              }),
+              'position': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Position',
+              }),
+              'status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Status',
+              }),
+              'success': dict({
+                'title': 'Success',
+                'type': 'boolean',
+              }),
+              'title': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Title',
+              }),
+            }),
+            'required': list([
+              'success',
             ]),
-            'default': None,
-            'title': 'Expiry',
-          }),
-          'hold_id': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Hold Id',
-          }),
-          'material_type': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Material Type',
-          }),
-          'pickup_branch': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Pickup Branch',
-          }),
-          'position': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Position',
-          }),
-          'status': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Status',
-          }),
-          'success': dict({
-            'title': 'Success',
-            'type': 'boolean',
-          }),
-          'title': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Title',
+            'title': 'PlaceHoldResult',
+            'type': 'object',
           }),
         }),
-        'required': list([
-          'success',
-        ]),
-        'title': 'PlaceHoldResult',
+        'description': '''
+          Result of a multi-item `place_digital_hold` call.
+          
+          Same shape pattern as `BulkPlaceHoldResult` but for the Libby
+          waitlist (`POST /holds` with `materialType: DIGITAL`). Sequential
+          calls with inter-call delay; per-bib failures don't stop the run.
+        ''',
+        'properties': dict({
+          'failures': dict({
+            'additionalProperties': dict({
+              'type': 'string',
+            }),
+            'description': 'Bib-id-keyed map of failure reasons.',
+            'title': 'Failures',
+            'type': 'object',
+          }),
+          'placed': dict({
+            'additionalProperties': dict({
+              '$ref': '#/$defs/PlaceHoldResult',
+            }),
+            'description': 'Map of bib_id → per-item hold result.',
+            'title': 'Placed',
+            'type': 'object',
+          }),
+        }),
+        'title': 'BulkPlaceDigitalHoldResult',
         'type': 'object',
       }),
-      'title': 'Place a hold on an unavailable digital item',
+      'title': 'Place holds on unavailable digital items',
     }),
     'place_hold': dict({
-      'annotations': dict({
-        'destructiveHint': False,
-        'idempotentHint': False,
-        'openWorldHint': True,
-        'readOnlyHint': False,
-        'title': None,
-      }),
-      'inputSchema': dict({
-        'properties': dict({
-          'bib_id': dict({
-            'title': 'Bib Id',
-            'type': 'string',
-          }),
-          'pickup_branch': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Pickup Branch',
-          }),
-        }),
-        'required': list([
-          'bib_id',
-        ]),
-        'title': 'place_holdArguments',
-        'type': 'object',
-      }),
-      'outputSchema': dict({
-        'properties': dict({
-          'expiry': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Expiry',
-          }),
-          'hold_id': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Hold Id',
-          }),
-          'material_type': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Material Type',
-          }),
-          'pickup_branch': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Pickup Branch',
-          }),
-          'position': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Position',
-          }),
-          'status': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Status',
-          }),
-          'success': dict({
-            'title': 'Success',
-            'type': 'boolean',
-          }),
-          'title': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Title',
-          }),
-        }),
-        'required': list([
-          'success',
-        ]),
-        'title': 'PlaceHoldResult',
-        'type': 'object',
-      }),
-      'title': 'Place a physical hold',
-    }),
-    'place_holds': dict({
       'annotations': dict({
         'destructiveHint': False,
         'idempotentHint': False,
@@ -1551,7 +1338,7 @@
         'required': list([
           'bib_ids',
         ]),
-        'title': 'place_holdsArguments',
+        'title': 'place_holdArguments',
         'type': 'object',
       }),
       'outputSchema': dict({
@@ -1683,7 +1470,7 @@
         'title': 'BulkPlaceHoldResult',
         'type': 'object',
       }),
-      'title': 'Place holds on multiple bibs',
+      'title': 'Place physical holds',
     }),
     'ready_for_pickup': dict({
       'annotations': dict({
@@ -1922,100 +1709,6 @@
       }),
       'inputSchema': dict({
         'properties': dict({
-          'checkout_id': dict({
-            'title': 'Checkout Id',
-            'type': 'string',
-          }),
-          'dry_run': dict({
-            'default': False,
-            'title': 'Dry Run',
-            'type': 'boolean',
-          }),
-        }),
-        'required': list([
-          'checkout_id',
-        ]),
-        'title': 'renew_loanArguments',
-        'type': 'object',
-      }),
-      'outputSchema': dict({
-        'description': 'Result of `renew_loan(...)` — single-checkout renewal.',
-        'properties': dict({
-          'dry_run': dict({
-            'default': False,
-            'title': 'Dry Run',
-            'type': 'boolean',
-          }),
-          'failures': dict({
-            'additionalProperties': dict({
-              'type': 'string',
-            }),
-            'description': 'Checkout-id-keyed failure reasons. Empty on full success.',
-            'title': 'Failures',
-            'type': 'object',
-          }),
-          'new_due': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'description': 'New ISO due date after renewal. None on dry run or failure.',
-            'title': 'New Due',
-          }),
-          'success': dict({
-            'title': 'Success',
-            'type': 'boolean',
-          }),
-          'times_renewed': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'description': 'Renewal count after this call, taken from the gateway response.',
-            'title': 'Times Renewed',
-          }),
-          'would_renew': dict({
-            'anyOf': list([
-              dict({
-                'type': 'string',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'description': 'On a dry run, a human-readable summary of the checkout that would be renewed (title + current due date). None otherwise.',
-            'title': 'Would Renew',
-          }),
-        }),
-        'required': list([
-          'success',
-        ]),
-        'title': 'RenewLoanResult',
-        'type': 'object',
-      }),
-      'title': 'Renew a checkout',
-    }),
-    'renew_loans': dict({
-      'annotations': dict({
-        'destructiveHint': False,
-        'idempotentHint': False,
-        'openWorldHint': True,
-        'readOnlyHint': False,
-        'title': None,
-      }),
-      'inputSchema': dict({
-        'properties': dict({
           'checkout_ids': dict({
             'items': dict({
               'type': 'string',
@@ -2032,7 +1725,7 @@
         'required': list([
           'checkout_ids',
         ]),
-        'title': 'renew_loansArguments',
+        'title': 'renew_loanArguments',
         'type': 'object',
       }),
       'outputSchema': dict({
@@ -2071,7 +1764,7 @@
         'title': 'BulkRenewLoansResult',
         'type': 'object',
       }),
-      'title': 'Renew multiple checkouts in one call',
+      'title': 'Renew checkouts',
     }),
     'search': dict({
       'annotations': dict({

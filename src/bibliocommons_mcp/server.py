@@ -28,12 +28,12 @@ from .models import (
     BibSummary,
     BorrowDigitalResult,
     BranchList,
+    BulkBorrowDigitalResult,
     BulkCancelHoldsResult,
     BulkCheckInLoansResult,
+    BulkPlaceDigitalHoldResult,
     BulkPlaceHoldResult,
     BulkRenewLoansResult,
-    CancelHoldResult,
-    CheckInLoanResult,
     CheckoutRef,
     DigitalFormat,
     Hold,
@@ -44,7 +44,6 @@ from .models import (
     Loan,
     LoanList,
     PlaceHoldResult,
-    RenewLoanResult,
     SearchResult,
 )
 from .models import Branch as BranchModel
@@ -62,18 +61,24 @@ bibliocommons-mcp connects to one BiblioCommons-powered public library
 (Seattle, SFPL, etc.) and exposes catalog search, holds, and account
 management as MCP tools.
 
+All mutation tools accept a list of IDs/refs — pass `[id]` for the
+common single-item case. Result envelopes carry per-item `placed`/
+`borrowed`/`renewed`/etc. dicts plus a `failures` dict so partial
+success is always representable.
+
 Common workflows:
 
 - "find a CD and place a hold" — `search` (with `format="MUSIC_CD"`),
   pick a result, optionally `availability` to confirm a copy at the
-  user's branch, then `place_hold`. The user's default pickup branch
-  comes from config; respect their choice unless they specify another.
+  user's branch, then `place_hold(bib_ids=[id])`. The user's default
+  pickup branch comes from config; respect their choice unless they
+  specify another.
 - "what am I waiting on" — `list_holds`. Position 1 means front of the
   queue; higher numbers mean farther back.
 - "what's due back" — `list_loans`.
 - "cancel a hold" — `list_holds` first to get the hold id, then
-  `cancel_hold(hold_id, bib_id)`. **Irreversible** — losing queue
-  position can't be recovered. Confirm before calling.
+  `cancel_hold(holds=[{hold_id, bib_id}])`. **Irreversible** — losing
+  queue position can't be recovered. Confirm before calling.
 - "is the catalog working" — `library_health` is the right first call
   when something seems off.
 
@@ -81,7 +86,7 @@ Important constraints:
 
 - One library per server instance; the configured subdomain is fixed
   at startup.
-- `place_hold` requires a physical bib (CD, book, DVD, ...). For
+- `place_hold` requires physical bibs (CD, book, DVD, ...). For
   available digital items, use `borrow_digital` (immediate borrow).
   For unavailable digital items, use `place_digital_hold` (joins the
   Libby waitlist).
@@ -340,38 +345,18 @@ def _place_hold_one(client: Client, bib_id: str, branch_code: str) -> PlaceHoldR
     )
 
 
-@mcp.tool(title="Place a physical hold", annotations=MUTATION)
+@mcp.tool(title="Place physical holds", annotations=MUTATION)
 @_safe
-def place_hold(bib_id: str, pickup_branch: str | None = None) -> PlaceHoldResult:
-    """Place a physical hold on a bib (CD, book, DVD, etc.).
-
-    For multiple bibs, prefer `place_holds` — it batches with a built-in
-    inter-call delay to avoid gateway rate-limiting.
-
-    Args:
-        bib_id: The bib id (e.g. `S30C3857930`).
-        pickup_branch: Branch name or 3-letter code (e.g. `Lake City`
-            or `LCY`). Defaults to `default_pickup_branch` from config.
-            Names are matched case-insensitively; locker variants are
-            de-prioritized when the query is ambiguous.
-    """
-    client = _ensure_client()
-    branch_code = _resolve_branch(pickup_branch)
-    return _place_hold_one(client, bib_id, branch_code)
-
-
-@mcp.tool(title="Place holds on multiple bibs", annotations=MUTATION)
-@_safe
-def place_holds(
+def place_hold(
     bib_ids: list[str],
     pickup_branch: str | None = None,
     delay_seconds: float = 1.0,
 ) -> BulkPlaceHoldResult:
-    """Place physical holds on several bibs at the same pickup branch.
+    """Place a physical hold on one or more bibs at the same pickup branch.
 
-    The gateway has no batch endpoint for placement, so this is N
-    sequential POSTs. A short delay between each (default 1s) keeps
-    the BC gateway from rate-limiting after several rapid requests.
+    Pass `[bib_id]` for the common single-item case. The gateway has no
+    batch endpoint for placement, so this is N sequential POSTs with a
+    small delay to avoid gateway rate-limiting.
 
     Per-bib failures don't stop the run — placement continues and the
     result splits successes (`placed`) and failures (`failures`) so the
@@ -380,10 +365,12 @@ def place_holds(
     (reference-only), or a transient gateway 5xx.
 
     Args:
-        bib_ids: List of bib IDs. Order is preserved during placement
-            (first attempted first).
+        bib_ids: List of bib IDs. Pass `[id]` for a single hold. Order
+            is preserved during placement (first attempted first).
         pickup_branch: Branch name or 3-letter code applied to every
             hold. Defaults to `default_pickup_branch` from config.
+            Names are matched case-insensitively; locker variants are
+            de-prioritized when the query is ambiguous.
         delay_seconds: Pause between each gateway call. The default of
             1s is conservative; lower for small batches if you're
             willing to risk a transient 429.
@@ -408,19 +395,8 @@ def place_holds(
     return BulkPlaceHoldResult(placed=placed, failures=failures)
 
 
-@mcp.tool(title="Borrow an available digital item", annotations=MUTATION)
-@_safe
-def borrow_digital(bib_id: str) -> BorrowDigitalResult:
-    """Check out an immediately-available digital item.
-
-    Use this when an ebook or e-audiobook is "Available Now" rather
-    than queued. For unavailable digital items, use
-    `place_digital_hold` to join the waitlist.
-
-    Args:
-        bib_id: The bib id of the digital item.
-    """
-    client = _ensure_client()
+def _borrow_digital_one(client: Client, bib_id: str) -> BorrowDigitalResult:
+    """Borrow one digital item; shared by the list-accepting tool."""
     data = client.borrow_digital(bib_id)
     checkouts = data.get("entities", {}).get("checkouts", {})
     if not checkouts:
@@ -438,38 +414,46 @@ def borrow_digital(bib_id: str) -> BorrowDigitalResult:
     )
 
 
-@mcp.tool(
-    title="Place a hold on an unavailable digital item",
-    annotations=MUTATION,
-)
+@mcp.tool(title="Borrow available digital items", annotations=MUTATION)
 @_safe
-def place_digital_hold(bib_id: str) -> PlaceHoldResult:
-    """Join the Libby-side waitlist for an ebook or e-audiobook that's
-    not currently available (`availableCopies: 0` on the bib).
+def borrow_digital(
+    bib_ids: list[str], delay_seconds: float = 1.0
+) -> BulkBorrowDigitalResult:
+    """Check out one or more immediately-available digital items.
 
-    Counts against your digital hold quota — see `library_health`.
+    Pass `[bib_id]` for the common single-item case. Use this when an
+    ebook or e-audiobook is "Available Now" rather than queued. For
+    unavailable digital items, use `place_digital_hold` to join the
+    waitlist.
 
-    Requires `digital_notification_email` to be set in config (or
-    `BIBLIOCOMMONS_DIGITAL_EMAIL` env var). The gateway emails that
-    address when the hold turns into a checkout, same as the Libby
-    app would.
-
-    For digital items that are immediately available, use
-    `borrow_digital` instead — that checks out the copy directly
-    rather than queueing a hold.
+    No native bulk endpoint exists — this is N sequential POSTs with
+    `delay_seconds` between each. Per-bib failures don't stop the run.
 
     Args:
-        bib_id: The bib id of the digital item.
+        bib_ids: List of bib IDs. Pass `[id]` for a single borrow.
+        delay_seconds: Pause between each gateway call.
     """
-    if not _cfg or not _cfg.digital_notification_email:
-        raise ToolError(
-            "digital_notification_email is required to place digital holds. "
-            "Set it in ~/.config/bibliocommons-mcp/config.toml or via the "
-            "BIBLIOCOMMONS_DIGITAL_EMAIL env var. Use the same email your "
-            "BiblioCommons account has on file for hold notifications."
-        )
+    if not bib_ids:
+        raise ToolError("bib_ids list is empty — nothing to borrow")
+
     client = _ensure_client()
-    data = client.place_digital_hold(bib_id, _cfg.digital_notification_email)
+    borrowed: dict[str, BorrowDigitalResult] = {}
+    failures: dict[str, str] = {}
+
+    for i, bib_id in enumerate(bib_ids):
+        if i > 0 and delay_seconds > 0:
+            time.sleep(delay_seconds)
+        try:
+            borrowed[bib_id] = _borrow_digital_one(client, bib_id)
+        except BCError as e:
+            failures[bib_id] = e.message
+
+    return BulkBorrowDigitalResult(borrowed=borrowed, failures=failures)
+
+
+def _place_digital_hold_one(client: Client, bib_id: str, email: str) -> PlaceHoldResult:
+    """Place one digital hold; shared by the list-accepting tool."""
+    data = client.place_digital_hold(bib_id, email)
     holds = data.get("entities", {}).get("holds", {})
     if not holds:
         return PlaceHoldResult(success=False)
@@ -481,13 +465,68 @@ def place_digital_hold(bib_id: str) -> PlaceHoldResult:
         title=hold.get("bibTitle"),
         material_type=hold.get("materialType"),
         # Digital holds don't have a pickup_branch — the email is the
-        # notification target. Leave the field empty rather than
-        # squeezing the email in there.
+        # notification target.
         pickup_branch=None,
         position=hold.get("holdsPosition"),
         status=hold.get("status"),
         expiry=hold.get("expiryDate"),
     )
+
+
+@mcp.tool(
+    title="Place holds on unavailable digital items",
+    annotations=MUTATION,
+)
+@_safe
+def place_digital_hold(
+    bib_ids: list[str], delay_seconds: float = 1.0
+) -> BulkPlaceDigitalHoldResult:
+    """Join the Libby-side waitlist for one or more unavailable digital items
+    (`availableCopies: 0` on the bib).
+
+    Pass `[bib_id]` for the common single-item case. Counts against
+    your digital hold quota — see `library_health`.
+
+    Requires `digital_notification_email` to be set in config (or
+    `BIBLIOCOMMONS_DIGITAL_EMAIL` env var). The gateway emails that
+    address when the hold turns into a checkout, same as the Libby
+    app would.
+
+    For digital items that are immediately available, use
+    `borrow_digital` instead — that checks out the copy directly
+    rather than queueing a hold.
+
+    No native bulk endpoint exists — this is N sequential POSTs with
+    `delay_seconds` between each.
+
+    Args:
+        bib_ids: List of bib IDs. Pass `[id]` for a single hold.
+        delay_seconds: Pause between each gateway call.
+    """
+    if not bib_ids:
+        raise ToolError("bib_ids list is empty — nothing to place")
+    if not _cfg or not _cfg.digital_notification_email:
+        raise ToolError(
+            "digital_notification_email is required to place digital holds. "
+            "Set it in ~/.config/bibliocommons-mcp/config.toml or via the "
+            "BIBLIOCOMMONS_DIGITAL_EMAIL env var. Use the same email your "
+            "BiblioCommons account has on file for hold notifications."
+        )
+
+    client = _ensure_client()
+    email = _cfg.digital_notification_email
+    placed: dict[str, PlaceHoldResult] = {}
+    failures: dict[str, str] = {}
+
+    for i, bib_id in enumerate(bib_ids):
+        if i > 0 and delay_seconds > 0:
+            time.sleep(delay_seconds)
+        try:
+            placed[bib_id] = _place_digital_hold_one(client, bib_id, email)
+        except BCError as e:
+            failures[bib_id] = e.message
+
+    return BulkPlaceDigitalHoldResult(placed=placed, failures=failures)
 
 
 def _holds_from_response(data: dict) -> list[Hold]:
@@ -549,63 +588,23 @@ def ready_for_pickup() -> HoldList:
     return HoldList(count=len(ready), holds=ready)
 
 
-@mcp.tool(title="Cancel a hold", annotations=DESTRUCTIVE)
+@mcp.tool(title="Cancel holds", annotations=DESTRUCTIVE)
 @_safe
-def cancel_hold(hold_id: str, bib_id: str, dry_run: bool = False) -> CancelHoldResult:
-    """Cancel a hold by id.
-
-    **Irreversible** — cancelling loses your queue position. Confirm
-    with the user first.
-
-    For multiple holds, prefer `cancel_holds` — it's one round-trip
-    instead of N.
-
-    Args:
-        hold_id: From `list_holds().holds[i].hold_id`.
-        bib_id: From the same row's `metadata_id`. Both are required by
-            the gateway.
-        dry_run: If true, look up the hold and describe what would be
-            cancelled without actually cancelling it. Useful as an
-            agent self-check before calling with `dry_run=False`.
-    """
-    client = _ensure_client()
-    if dry_run:
-        data = client.list_holds()
-        hold = data.get("entities", {}).get("holds", {}).get(hold_id)
-        if not hold:
-            return CancelHoldResult(
-                success=False,
-                dry_run=True,
-                failures={hold_id: "hold not found on this account"},
-            )
-        title = hold.get("bibTitle") or "(unknown title)"
-        position = hold.get("holdsPosition")
-        pos_str = f" at queue position {position}" if position else ""
-        return CancelHoldResult(
-            success=True,
-            dry_run=True,
-            would_cancel=f"{title!r}{pos_str}",
-        )
-    data = client.cancel_holds([(hold_id, bib_id)])
-    failures = data.get("failures") or {}
-    return CancelHoldResult(success=not failures, failures=failures)
-
-
-@mcp.tool(title="Cancel multiple holds in one call", annotations=DESTRUCTIVE)
-@_safe
-def cancel_holds(holds: list[HoldRef], dry_run: bool = False) -> BulkCancelHoldsResult:
+def cancel_hold(holds: list[HoldRef], dry_run: bool = False) -> BulkCancelHoldsResult:
     """Cancel one or more holds in a single gateway call.
 
+    Pass `[{hold_id, bib_id}]` for the common single-item case.
     **Irreversible** for each cancelled hold (lost queue position).
     Confirm with the user before calling with `dry_run=False`.
 
-    Prefer this over multiple `cancel_hold` calls when the user has a
-    list — it's one HTTP round-trip and one server-side transaction.
+    The gateway's DELETE /holds endpoint is natively bulk — every call
+    is one HTTP round-trip and one server-side transaction regardless
+    of array length.
 
     Args:
-        holds: List of `{hold_id, bib_id}` pairs. Construct each entry
-            from a row in `list_holds().holds` — `hold_id` and
-            `metadata_id` map directly.
+        holds: List of `{hold_id, bib_id}` pairs. Pass `[{...}]` for a
+            single cancel. Each pair maps to a row from
+            `list_holds().holds` — `hold_id` and `metadata_id`.
         dry_run: If true, look up each hold and report what would be
             cancelled without doing it. Use as a self-check before
             committing.
@@ -670,77 +669,24 @@ def _lookup_checkout(client: Client, checkout_id: str) -> dict | None:
     return data.get("entities", {}).get("checkouts", {}).get(checkout_id)
 
 
-@mcp.tool(title="Renew a checkout", annotations=MUTATION)
+@mcp.tool(title="Renew checkouts", annotations=MUTATION)
 @_safe
-def renew_loan(checkout_id: str, dry_run: bool = False) -> RenewLoanResult:
-    """Renew one physical checkout by id.
+def renew_loan(checkout_ids: list[str], dry_run: bool = False) -> BulkRenewLoansResult:
+    """Renew one or more physical checkouts in a single gateway call.
 
-    Reversible in spirit — renewal just pushes the due date out. But
-    not all loans renew: digital items, items with holds queued behind
-    them, and items at the renewal cap are rejected by the gateway.
-    Use `dry_run=True` to pre-check via the `actions` list before
-    spending an API call.
+    Pass `[checkout_id]` for the common single-item case. Reversible
+    in spirit — renewal just pushes the due date out. But not all
+    loans renew: digital items, items with holds queued behind them,
+    and items at the renewal cap are rejected by the gateway. Use
+    `dry_run=True` to pre-check via the `actions` list before spending
+    an API call.
 
-    For multiple checkouts, prefer `renew_loans` — it's one PATCH
-    instead of N.
+    The gateway's PATCH /checkouts endpoint is natively bulk — every
+    call is one HTTP round-trip regardless of array length.
 
     Args:
-        checkout_id: From `list_loans().loans[i].checkout_id`.
-        dry_run: If true, look up the checkout and describe whether it
-            *appears* renewable (based on the gateway's `actions`
-            array) without making a call. Useful as an agent self-check.
-    """
-    client = _ensure_client()
-    if dry_run:
-        c = _lookup_checkout(client, checkout_id)
-        if not c:
-            return RenewLoanResult(
-                success=False,
-                dry_run=True,
-                failures={checkout_id: "checkout not found on this account"},
-            )
-        actions = c.get("actions") or []
-        if "renew" not in actions:
-            return RenewLoanResult(
-                success=False,
-                dry_run=True,
-                failures={
-                    checkout_id: (
-                        f"gateway does not list 'renew' as an available "
-                        f"action (actions={actions})"
-                    )
-                },
-            )
-        title = c.get("bibTitle") or "(unknown title)"
-        due = c.get("dueDate")
-        due_str = f", currently due {due}" if due else ""
-        return RenewLoanResult(
-            success=True,
-            dry_run=True,
-            would_renew=f"{title!r}{due_str}",
-        )
-    data = client.renew_checkouts([checkout_id])
-    failures = _renewal_failures(data)
-    if checkout_id in failures:
-        return RenewLoanResult(success=False, failures=failures)
-    renewed = data.get("entities", {}).get("checkouts", {}).get(checkout_id) or {}
-    return RenewLoanResult(
-        success=True,
-        new_due=renewed.get("dueDate"),
-        times_renewed=renewed.get("timesRenewed"),
-    )
-
-
-@mcp.tool(title="Renew multiple checkouts in one call", annotations=MUTATION)
-@_safe
-def renew_loans(checkout_ids: list[str], dry_run: bool = False) -> BulkRenewLoansResult:
-    """Renew one or more checkouts in a single gateway call.
-
-    Prefer this over multiple `renew_loan` calls when the user has a
-    list — it's one PATCH and one server-side transaction.
-
-    Args:
-        checkout_ids: From `list_loans().loans[i].checkout_id`.
+        checkout_ids: From `list_loans().loans[i].checkout_id`. Pass
+            `[id]` for a single renewal.
         dry_run: If true, look up each checkout and report whether each
             *appears* renewable (based on the gateway's `actions`
             array) without making a call.
@@ -820,85 +766,29 @@ def _renewal_failures(data: dict) -> dict[str, str]:
     return out
 
 
-@mcp.tool(title="Return (check in) a digital checkout early", annotations=MUTATION)
+@mcp.tool(title="Return (check in) digital checkouts early", annotations=MUTATION)
 @_safe
 def check_in_loan(
-    checkout_id: str, metadata_id: str, dry_run: bool = False
-) -> CheckInLoanResult:
-    """Return one digital checkout (ebook / eaudiobook) early.
+    checkouts: list[CheckoutRef],
+    dry_run: bool = False,
+    delay_seconds: float = 0.5,
+) -> BulkCheckInLoansResult:
+    """Return one or more digital checkouts (ebook / eaudiobook) early.
 
+    Pass `[{checkout_id, metadata_id}]` for the common single-item case.
     Only works on items where `list_loans().loans[i].actions` includes
     `"checkIn"` — physical items are returned at the branch and don't
     have this affordance. The freed slot reflects in the OverDrive
     quota immediately.
 
-    For multiple checkouts prefer `check_in_loans` — it's still N×1
-    calls under the hood (no native bulk endpoint), but batches the
-    delay and returns one result.
+    No native bulk endpoint exists — this is N sequential DELETEs with
+    `delay_seconds` between each. Each row succeeds or fails
+    independently; partial success is normal.
 
     Args:
-        checkout_id: From `list_loans().loans[i].checkout_id`.
-        metadata_id: From the same row's `metadata_id`. Both are
-            required by the gateway; passing them explicitly avoids an
-            extra round-trip to look one up from the other.
-        dry_run: If true, look up the checkout and confirm whether
-            `"checkIn"` is in its `actions` list without making a call.
-    """
-    client = _ensure_client()
-    if dry_run:
-        c = _lookup_checkout(client, checkout_id)
-        if not c:
-            return CheckInLoanResult(
-                success=False,
-                dry_run=True,
-                failures={checkout_id: "checkout not found on this account"},
-            )
-        actions = c.get("actions") or []
-        if "checkIn" not in actions:
-            return CheckInLoanResult(
-                success=False,
-                dry_run=True,
-                failures={
-                    checkout_id: (
-                        f"gateway does not list 'checkIn' as an available "
-                        f"action (actions={actions}) — most likely a physical "
-                        f"item that returns at the branch"
-                    )
-                },
-            )
-        title = c.get("bibTitle") or "(unknown title)"
-        call = c.get("callNumber")
-        call_str = f", {call}" if call else ""
-        return CheckInLoanResult(
-            success=True,
-            dry_run=True,
-            would_check_in=f"{title!r}{call_str}",
-        )
-    data = client.check_in_loan(checkout_id, metadata_id)
-    # Successful response is just {"id": <metadata_id>}. The presence
-    # of an id confirms the check-in landed; absence would indicate
-    # something odd happened.
-    returned_id = data.get("id") if isinstance(data, dict) else None
-    return CheckInLoanResult(success=bool(returned_id), metadata_id=returned_id)
-
-
-@mcp.tool(title="Return multiple digital checkouts in one call", annotations=MUTATION)
-@_safe
-def check_in_loans(
-    checkouts: list[CheckoutRef],
-    dry_run: bool = False,
-    delay_seconds: float = 0.5,
-) -> BulkCheckInLoansResult:
-    """Return one or more digital checkouts early.
-
-    There's no native bulk endpoint — the client sends N sequential
-    DELETEs with `delay_seconds` between each to avoid hammering the
-    gateway. Each row succeeds or fails independently; partial success
-    is normal.
-
-    Args:
-        checkouts: List of `{checkout_id, metadata_id}` pairs. Build
-            each entry from a row in `list_loans().loans`.
+        checkouts: List of `{checkout_id, metadata_id}` pairs. Pass
+            `[{...}]` for a single check-in. Each pair maps to a row
+            from `list_loans().loans` — `checkout_id` and `metadata_id`.
         dry_run: If true, look up each checkout and report whether
             `"checkIn"` is in its `actions` list, without making any
             calls.

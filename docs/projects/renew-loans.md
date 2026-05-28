@@ -1,8 +1,9 @@
 # Project: Renew loans
 
-> **Status: shipped in v0.3.0** (commits `ac52ff2` + `4ca9d1f`, 2026-05-27).
-> Live as `renew_loan` and `renew_loans` MCP tools. See
-> `src/bibliocommons_mcp/server.py` for the tool defs and
+> **Status: shipped in v0.3.0**, refactored in v0.4.0. Live as the
+> single list-accepting `renew_loan` tool (the v0.3 singular +
+> `renew_loans` plural were collapsed in the v0.4 mutation refactor).
+> See `src/bibliocommons_mcp/server.py` for the tool def and
 > `src/bibliocommons_mcp/client.py::Client.renew_checkouts` for the
 > endpoint wiring.
 >

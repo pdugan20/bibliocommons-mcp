@@ -172,7 +172,7 @@ npx @modelcontextprotocol/inspector bibliocommons-mcp
 
 In the Inspector:
 
-1. Connect; verify the server lists 14 tools including the four
+1. Connect; verify the server lists 13 tools including the four
    UI-annotated ones (`search`, `list_holds`, `ready_for_pickup`,
    `list_loans`).
 2. Verify the server lists three resources under `ui://`:

@@ -111,7 +111,8 @@ def test_availability_flattens_per_copy(mock_client):
     assert out.copies[0].branch_code in {"LCY", "CEN"}
 
 
-def test_place_hold_default_branch(mock_client):
+def test_place_hold_single_item_uses_default_branch(mock_client):
+    """Pass a one-element list — the common single-item case."""
     mock_client.branches.resolve.return_value = Branch(
         code="LCY", name="Lake City Branch"
     )
@@ -130,10 +131,12 @@ def test_place_hold_default_branch(mock_client):
             }
         },
     }
-    out = srv.place_hold("S30C1")
-    assert out.success is True
-    assert out.hold_id == "H1"
-    assert out.pickup_branch == "LCY"
+    out = srv.place_hold(bib_ids=["S30C1"], delay_seconds=0.0)
+    assert out.failures == {}
+    assert "S30C1" in out.placed
+    assert out.placed["S30C1"].success is True
+    assert out.placed["S30C1"].hold_id == "H1"
+    assert out.placed["S30C1"].pickup_branch == "LCY"
     mock_client.branches.resolve.assert_called_once_with("Lake City")
     mock_client.place_physical_hold.assert_called_once_with("S30C1", "LCY")
 
@@ -155,13 +158,12 @@ def test_place_hold_explicit_branch(mock_client):
             }
         }
     }
-    srv.place_hold("S30C1", pickup_branch="Central")
+    srv.place_hold(bib_ids=["S30C1"], pickup_branch="Central", delay_seconds=0.0)
     mock_client.branches.resolve.assert_called_once_with("Central")
 
 
-def test_place_holds_bulk_success(mock_client):
-    """Bulk placement should call place_physical_hold once per bib and
-    return a per-bib map of PlaceHoldResults."""
+def test_place_hold_bulk_success(mock_client):
+    """Three bibs in one call → per-bib map of PlaceHoldResults."""
     mock_client.branches.resolve.return_value = Branch(code="LCY", name="Lake City")
 
     def fake_place(bib_id, branch_code):
@@ -181,16 +183,16 @@ def test_place_holds_bulk_success(mock_client):
 
     mock_client.place_physical_hold.side_effect = fake_place
 
-    out = srv.place_holds(bib_ids=["S30C1", "S30C2", "S30C3"], delay_seconds=0.0)
+    out = srv.place_hold(bib_ids=["S30C1", "S30C2", "S30C3"], delay_seconds=0.0)
     assert out.failures == {}
     assert set(out.placed.keys()) == {"S30C1", "S30C2", "S30C3"}
     assert all(r.success for r in out.placed.values())
     assert mock_client.place_physical_hold.call_count == 3
 
 
-def test_place_holds_bulk_partial_failure(mock_client):
-    """When one bib 409s, the others should still complete and the
-    failure should land in `failures`."""
+def test_place_hold_bulk_partial_failure(mock_client):
+    """When one bib 409s, the others still complete and the failure
+    lands in `failures`."""
     from bibliocommons_mcp.client import BCError
 
     mock_client.branches.resolve.return_value = Branch(code="LCY", name="Lake City")
@@ -214,7 +216,7 @@ def test_place_holds_bulk_partial_failure(mock_client):
 
     mock_client.place_physical_hold.side_effect = fake_place
 
-    out = srv.place_holds(
+    out = srv.place_hold(
         bib_ids=["S30C_OK", "S30C_DUP", "S30C_ALSO_OK"], delay_seconds=0.0
     )
     assert set(out.placed.keys()) == {"S30C_OK", "S30C_ALSO_OK"}
@@ -222,9 +224,9 @@ def test_place_holds_bulk_partial_failure(mock_client):
     assert "already on your holds list" in out.failures["S30C_DUP"]
 
 
-def test_place_holds_applies_delay_between_calls(mock_client, monkeypatch):
-    """The tool should call time.sleep(delay_seconds) between bibs, but
-    not before the first one or after the last."""
+def test_place_hold_applies_delay_between_calls(mock_client, monkeypatch):
+    """time.sleep(delay_seconds) between bibs, not before the first or
+    after the last."""
     sleeps: list[float] = []
     monkeypatch.setattr(srv.time, "sleep", lambda s: sleeps.append(s))
 
@@ -243,35 +245,34 @@ def test_place_holds_applies_delay_between_calls(mock_client, monkeypatch):
         }
     }
 
-    srv.place_holds(bib_ids=["A", "B", "C"], delay_seconds=0.5)
+    srv.place_hold(bib_ids=["A", "B", "C"], delay_seconds=0.5)
     # 3 bibs → 2 sleeps (between, not before/after)
     assert sleeps == [0.5, 0.5]
 
 
-def test_place_holds_empty_raises(mock_client):
+def test_place_hold_empty_raises(mock_client):
     with pytest.raises(ToolError, match="empty"):
-        srv.place_holds(bib_ids=[])
+        srv.place_hold(bib_ids=[])
 
 
 def test_place_hold_with_no_branch_or_default_raises(mock_client, monkeypatch):
     cfg = MagicMock()
     cfg.default_pickup_branch = None
     monkeypatch.setattr(srv, "_cfg", cfg)
-    # _resolve_branch now raises ToolError directly (was ValueError before).
     with pytest.raises(ToolError, match="pickup_branch"):
-        srv.place_hold("S30C1")
+        srv.place_hold(bib_ids=["S30C1"], delay_seconds=0.0)
 
 
 def test_place_hold_unknown_branch_surfaces_as_tool_error(mock_client):
-    """BranchNotFound from the resolver gets wrapped in ToolError by _safe."""
     from bibliocommons_mcp.branches import BranchNotFound
 
     mock_client.branches.resolve.side_effect = BranchNotFound("no match")
     with pytest.raises(ToolError, match="no match"):
-        srv.place_hold("S30C1", pickup_branch="Hogwarts")
+        srv.place_hold(bib_ids=["S30C1"], pickup_branch="Hogwarts", delay_seconds=0.0)
 
 
-def test_borrow_digital_shape(mock_client):
+def test_borrow_digital_single_item(mock_client):
+    """Pass `[bib_id]` for the single-item case."""
     mock_client.borrow_digital.return_value = {
         "id": "S30C5",
         "entities": {
@@ -286,10 +287,43 @@ def test_borrow_digital_shape(mock_client):
             }
         },
     }
-    out = srv.borrow_digital("S30C5")
-    assert out.success is True
-    assert out.title == "Come as You Are"
-    assert out.due == "2026-06-17"
+    out = srv.borrow_digital(bib_ids=["S30C5"], delay_seconds=0.0)
+    assert out.failures == {}
+    assert "S30C5" in out.borrowed
+    assert out.borrowed["S30C5"].success is True
+    assert out.borrowed["S30C5"].title == "Come as You Are"
+    assert out.borrowed["S30C5"].due == "2026-06-17"
+
+
+def test_borrow_digital_bulk_partial_failure(mock_client):
+    from bibliocommons_mcp.client import BCError
+
+    def fake_borrow(bib_id):
+        if bib_id == "S30C_GONE":
+            raise BCError(409, "Item is no longer available")
+        return {
+            "entities": {
+                "checkouts": {
+                    f"C_{bib_id}": {
+                        "bibTitle": f"Title {bib_id}",
+                        "materialType": "DIGITAL",
+                        "dueDate": "2026-06-17",
+                    }
+                }
+            }
+        }
+
+    mock_client.borrow_digital.side_effect = fake_borrow
+    out = srv.borrow_digital(
+        bib_ids=["S30C_OK", "S30C_GONE", "S30C_OK2"], delay_seconds=0.0
+    )
+    assert set(out.borrowed.keys()) == {"S30C_OK", "S30C_OK2"}
+    assert "S30C_GONE" in out.failures
+
+
+def test_borrow_digital_empty_raises(mock_client):
+    with pytest.raises(ToolError, match="empty"):
+        srv.borrow_digital(bib_ids=[])
 
 
 def test_list_holds_shape(mock_client):
@@ -314,24 +348,30 @@ def test_list_holds_shape(mock_client):
     assert out.holds[0].pickup_branch == "LCY"
 
 
-def test_cancel_hold_returns_success_when_no_failures(mock_client):
+def test_cancel_hold_single_item(mock_client):
+    """Pass `[HoldRef]` for the common single-item case."""
+    from bibliocommons_mcp.models import HoldRef
+
     mock_client.cancel_holds.return_value = {"failures": {}}
-    out = srv.cancel_hold("H1", "S30C1")
-    assert out.success is True
+    out = srv.cancel_hold(holds=[HoldRef(hold_id="H1", bib_id="S30C1")])
+    assert out.cancelled == ["H1"]
+    assert out.failures == {}
     assert out.dry_run is False
     mock_client.cancel_holds.assert_called_once_with([("H1", "S30C1")])
 
 
 def test_cancel_hold_surfaces_failures(mock_client):
+    from bibliocommons_mcp.models import HoldRef
+
     mock_client.cancel_holds.return_value = {"failures": {"H1": "already canceled"}}
-    out = srv.cancel_hold("H1", "S30C1")
-    assert out.success is False
+    out = srv.cancel_hold(holds=[HoldRef(hold_id="H1", bib_id="S30C1")])
+    assert out.cancelled == []
     assert "H1" in out.failures
 
 
 def test_cancel_hold_dry_run_does_not_call_cancel(mock_client):
-    """dry_run=True should look up the hold via list_holds and return what
-    would be cancelled, never calling cancel_holds."""
+    from bibliocommons_mcp.models import HoldRef
+
     mock_client.list_holds.return_value = {
         "entities": {
             "holds": {
@@ -343,22 +383,28 @@ def test_cancel_hold_dry_run_does_not_call_cancel(mock_client):
             }
         }
     }
-    out = srv.cancel_hold("H1", "S30C1", dry_run=True)
-    assert out.success is True
+    out = srv.cancel_hold(holds=[HoldRef(hold_id="H1", bib_id="S30C1")], dry_run=True)
     assert out.dry_run is True
-    assert out.would_cancel is not None
-    assert "Plastic Eternity" in out.would_cancel
-    assert "position 3" in out.would_cancel
+    assert out.cancelled == []
+    assert len(out.would_cancel) == 1
+    assert "Plastic Eternity" in out.would_cancel[0]
+    assert "position 3" in out.would_cancel[0]
     mock_client.cancel_holds.assert_not_called()
 
 
 def test_cancel_hold_dry_run_reports_missing_hold(mock_client):
+    from bibliocommons_mcp.models import HoldRef
+
     mock_client.list_holds.return_value = {"entities": {"holds": {}}}
-    out = srv.cancel_hold("NOPE", "S30C1", dry_run=True)
-    assert out.success is False
+    out = srv.cancel_hold(holds=[HoldRef(hold_id="NOPE", bib_id="S30C1")], dry_run=True)
     assert out.dry_run is True
     assert "NOPE" in out.failures
     mock_client.cancel_holds.assert_not_called()
+
+
+def test_cancel_hold_empty_raises(mock_client):
+    with pytest.raises(ToolError, match="empty"):
+        srv.cancel_hold(holds=[])
 
 
 def test_list_loans_shape(mock_client):
@@ -401,7 +447,7 @@ def test_list_loans_shape(mock_client):
     assert by_id["C2"].branch == "LCY"
 
 
-def test_place_digital_hold_success(mock_client, monkeypatch):
+def test_place_digital_hold_single_item(mock_client, monkeypatch):
     cfg = MagicMock()
     cfg.digital_notification_email = "patron@example.com"
     monkeypatch.setattr(srv, "_cfg", cfg)
@@ -418,13 +464,15 @@ def test_place_digital_hold_success(mock_client, monkeypatch):
             }
         },
     }
-    out = srv.place_digital_hold("S30C3007805")
-    assert out.success is True
-    assert out.hold_id == "H_DIGITAL"
-    assert out.material_type == "DIGITAL"
+    out = srv.place_digital_hold(bib_ids=["S30C3007805"], delay_seconds=0.0)
+    assert out.failures == {}
+    assert "S30C3007805" in out.placed
+    assert out.placed["S30C3007805"].success is True
+    assert out.placed["S30C3007805"].hold_id == "H_DIGITAL"
+    assert out.placed["S30C3007805"].material_type == "DIGITAL"
     # Digital holds have no pickup_branch — the email is the
     # notification target instead.
-    assert out.pickup_branch is None
+    assert out.placed["S30C3007805"].pickup_branch is None
     mock_client.place_digital_hold.assert_called_once_with(
         "S30C3007805", "patron@example.com"
     )
@@ -437,12 +485,21 @@ def test_place_digital_hold_requires_email_in_config(mock_client, monkeypatch):
     cfg.digital_notification_email = None
     monkeypatch.setattr(srv, "_cfg", cfg)
     with pytest.raises(ToolError) as exc:
-        srv.place_digital_hold("S30C3007805")
+        srv.place_digital_hold(bib_ids=["S30C3007805"], delay_seconds=0.0)
     assert "digital_notification_email" in str(exc.value)
     mock_client.place_digital_hold.assert_not_called()
 
 
-def test_renew_loan_success(mock_client):
+def test_place_digital_hold_empty_raises(mock_client, monkeypatch):
+    cfg = MagicMock()
+    cfg.digital_notification_email = "patron@example.com"
+    monkeypatch.setattr(srv, "_cfg", cfg)
+    with pytest.raises(ToolError, match="empty"):
+        srv.place_digital_hold(bib_ids=[])
+
+
+def test_renew_loan_single_item(mock_client):
+    """Pass `[checkout_id]` for the single-item case."""
     mock_client.renew_checkouts.return_value = {
         "failures": [],
         "entities": {
@@ -454,17 +511,16 @@ def test_renew_loan_success(mock_client):
             }
         },
     }
-    out = srv.renew_loan("-3399081509618396918")
-    assert out.success is True
+    out = srv.renew_loan(["-3399081509618396918"])
     assert out.dry_run is False
-    assert out.new_due == "2026-06-17"
-    assert out.times_renewed == 1
+    assert out.renewed == {"-3399081509618396918": "2026-06-17"}
+    assert out.failures == {}
     mock_client.renew_checkouts.assert_called_once_with(["-3399081509618396918"])
 
 
 def test_renew_loan_dry_run_pre_checks_actions(mock_client):
-    """dry_run uses the gateway's `actions` array to decide whether
-    the call would even be allowed — no network call."""
+    """dry_run uses the gateway's `actions` array to decide eligibility
+    per id — no network call."""
     mock_client.list_loans.return_value = {
         "entities": {
             "checkouts": {
@@ -481,26 +537,19 @@ def test_renew_loan_dry_run_pre_checks_actions(mock_client):
             }
         }
     }
-    ok = srv.renew_loan("C_PHYSICAL", dry_run=True)
-    assert ok.success is True and ok.dry_run is True
-    assert ok.would_renew is not None
-    assert "Old Wood Boat" in ok.would_renew
-    assert "2026-06-16" in ok.would_renew
-
-    blocked = srv.renew_loan("C_DIGITAL", dry_run=True)
-    assert blocked.success is False and blocked.dry_run is True
-    assert "C_DIGITAL" in blocked.failures
-    assert "renew" in blocked.failures["C_DIGITAL"]
-
-    missing = srv.renew_loan("NOPE", dry_run=True)
-    assert missing.success is False and missing.dry_run is True
-    assert "NOPE" in missing.failures
-
+    out = srv.renew_loan(["C_PHYSICAL", "C_DIGITAL", "NOPE"], dry_run=True)
+    assert out.dry_run is True
+    # C_PHYSICAL is renewable
+    assert any("Old Wood Boat" in w for w in out.would_renew)
+    # C_DIGITAL has no "renew" action; NOPE doesn't exist
+    assert "C_DIGITAL" in out.failures
+    assert "renew" in out.failures["C_DIGITAL"]
+    assert "NOPE" in out.failures
     mock_client.renew_checkouts.assert_not_called()
 
 
-def test_renew_loans_bulk_partial_failure(mock_client):
-    """Bulk renewal where the gateway accepts one and rejects the other."""
+def test_renew_loan_bulk_partial_failure(mock_client):
+    """Native bulk: one PATCH, partial-success returned."""
     mock_client.renew_checkouts.return_value = {
         "failures": [{"checkoutId": "B2", "message": "Item has holds; cannot renew"}],
         "entities": {
@@ -509,29 +558,35 @@ def test_renew_loans_bulk_partial_failure(mock_client):
             }
         },
     }
-    out = srv.renew_loans(["A1", "B2"])
+    out = srv.renew_loan(["A1", "B2"])
     assert out.renewed == {"A1": "2026-06-30"}
     assert out.failures == {"B2": "Item has holds; cannot renew"}
     mock_client.renew_checkouts.assert_called_once_with(["A1", "B2"])
 
 
-def test_renew_loans_empty_raises(mock_client):
-    from mcp.server.fastmcp.exceptions import ToolError
-
+def test_renew_loan_empty_raises(mock_client):
     with pytest.raises(ToolError):
-        srv.renew_loans([])
+        srv.renew_loan([])
 
 
-def test_check_in_loan_success(mock_client):
+def test_check_in_loan_single_item(mock_client):
+    """Pass `[CheckoutRef]` for the single-item case."""
+    from bibliocommons_mcp.models import CheckoutRef
+
     mock_client.check_in_loan.return_value = {"id": "S30C2636037"}
-    out = srv.check_in_loan("1477017860", "S30C2636037")
-    assert out.success is True
+    out = srv.check_in_loan(
+        checkouts=[CheckoutRef(checkout_id="1477017860", metadata_id="S30C2636037")],
+        delay_seconds=0.0,
+    )
     assert out.dry_run is False
-    assert out.metadata_id == "S30C2636037"
+    assert out.checked_in == ["1477017860"]
+    assert out.failures == {}
     mock_client.check_in_loan.assert_called_once_with("1477017860", "S30C2636037")
 
 
 def test_check_in_loan_dry_run_blocks_physical(mock_client):
+    from bibliocommons_mcp.models import CheckoutRef
+
     mock_client.list_loans.return_value = {
         "entities": {
             "checkouts": {
@@ -548,29 +603,27 @@ def test_check_in_loan_dry_run_blocks_physical(mock_client):
             }
         }
     }
-    ok = srv.check_in_loan("C_DIGITAL", "S30C1", dry_run=True)
-    assert ok.success is True and ok.dry_run is True
-    assert ok.would_check_in is not None
-    assert "An eBook" in ok.would_check_in
-
-    blocked = srv.check_in_loan("C_PHYSICAL", "S30C2", dry_run=True)
-    assert blocked.success is False and blocked.dry_run is True
-    assert "C_PHYSICAL" in blocked.failures
-    assert "checkIn" in blocked.failures["C_PHYSICAL"]
-
-    missing = srv.check_in_loan("NOPE", "S30C3", dry_run=True)
-    assert missing.success is False and missing.dry_run is True
-    assert "NOPE" in missing.failures
-
+    out = srv.check_in_loan(
+        checkouts=[
+            CheckoutRef(checkout_id="C_DIGITAL", metadata_id="S30C1"),
+            CheckoutRef(checkout_id="C_PHYSICAL", metadata_id="S30C2"),
+            CheckoutRef(checkout_id="NOPE", metadata_id="S30C3"),
+        ],
+        dry_run=True,
+    )
+    assert out.dry_run is True
+    # C_DIGITAL is checkable
+    assert any("An eBook" in w for w in out.would_check_in)
+    # C_PHYSICAL has no "checkIn"; NOPE doesn't exist
+    assert "C_PHYSICAL" in out.failures
+    assert "checkIn" in out.failures["C_PHYSICAL"]
+    assert "NOPE" in out.failures
     mock_client.check_in_loan.assert_not_called()
 
 
-def test_check_in_loans_bulk_sequential(mock_client):
-    """Bulk check-in is N×1 sequential DELETEs, not a single round-trip.
-
-    Each succeeds or fails independently; one failure shouldn't abort
-    the rest. Delay is zeroed in tests so they run quickly.
-    """
+def test_check_in_loan_bulk_sequential(mock_client):
+    """N×1 sequential DELETEs (no native bulk endpoint). Each row
+    succeeds or fails independently; one failure doesn't abort the rest."""
     from bibliocommons_mcp.client import BCError
     from bibliocommons_mcp.models import CheckoutRef
 
@@ -581,7 +634,7 @@ def test_check_in_loans_bulk_sequential(mock_client):
 
     mock_client.check_in_loan.side_effect = fake_check_in
 
-    out = srv.check_in_loans(
+    out = srv.check_in_loan(
         checkouts=[
             CheckoutRef(checkout_id="C_OK1", metadata_id="S30C1"),
             CheckoutRef(checkout_id="C_FAILS", metadata_id="S30C2"),
@@ -594,11 +647,9 @@ def test_check_in_loans_bulk_sequential(mock_client):
     assert mock_client.check_in_loan.call_count == 3
 
 
-def test_check_in_loans_empty_raises(mock_client):
-    from mcp.server.fastmcp.exceptions import ToolError
-
+def test_check_in_loan_empty_raises(mock_client):
     with pytest.raises(ToolError):
-        srv.check_in_loans(checkouts=[])
+        srv.check_in_loan(checkouts=[])
 
 
 def test_list_branches(mock_client):
@@ -772,15 +823,18 @@ def test_ready_for_pickup_returns_empty_when_none_ready(mock_client):
     assert out.holds == []
 
 
-# ─────────────────────────────── cancel_holds (bulk) ───────────────────────────────
+# ─────────────────────────────── cancel_hold (bulk) ───────────────────────────────
 
 
-def test_cancel_holds_bulk_success(mock_client):
+def test_cancel_hold_bulk_success(mock_client):
     from bibliocommons_mcp.models import HoldRef
 
     mock_client.cancel_holds.return_value = {"failures": {}}
-    out = srv.cancel_holds(
-        [HoldRef(hold_id="H1", bib_id="S30C1"), HoldRef(hold_id="H2", bib_id="S30C2")]
+    out = srv.cancel_hold(
+        holds=[
+            HoldRef(hold_id="H1", bib_id="S30C1"),
+            HoldRef(hold_id="H2", bib_id="S30C2"),
+        ]
     )
     assert sorted(out.cancelled) == ["H1", "H2"]
     assert out.failures == {}
@@ -788,20 +842,21 @@ def test_cancel_holds_bulk_success(mock_client):
     mock_client.cancel_holds.assert_called_once_with([("H1", "S30C1"), ("H2", "S30C2")])
 
 
-def test_cancel_holds_bulk_partial_failure(mock_client):
+def test_cancel_hold_bulk_partial_failure(mock_client):
     from bibliocommons_mcp.models import HoldRef
 
     mock_client.cancel_holds.return_value = {"failures": {"H2": "already gone"}}
-    out = srv.cancel_holds(
-        [HoldRef(hold_id="H1", bib_id="S30C1"), HoldRef(hold_id="H2", bib_id="S30C2")]
+    out = srv.cancel_hold(
+        holds=[
+            HoldRef(hold_id="H1", bib_id="S30C1"),
+            HoldRef(hold_id="H2", bib_id="S30C2"),
+        ]
     )
     assert out.cancelled == ["H1"]
     assert out.failures == {"H2": "already gone"}
 
 
-def test_cancel_holds_bulk_dry_run(mock_client):
-    """dry_run=True should look up each hold and describe what would
-    happen without calling cancel_holds on the client."""
+def test_cancel_hold_bulk_dry_run(mock_client):
     from bibliocommons_mcp.models import HoldRef
 
     mock_client.list_holds.return_value = {
@@ -812,8 +867,11 @@ def test_cancel_holds_bulk_dry_run(mock_client):
             }
         }
     }
-    out = srv.cancel_holds(
-        [HoldRef(hold_id="H1", bib_id="S30C1"), HoldRef(hold_id="H2", bib_id="S30C2")],
+    out = srv.cancel_hold(
+        holds=[
+            HoldRef(hold_id="H1", bib_id="S30C1"),
+            HoldRef(hold_id="H2", bib_id="S30C2"),
+        ],
         dry_run=True,
     )
     assert out.dry_run is True
@@ -823,8 +881,3 @@ def test_cancel_holds_bulk_dry_run(mock_client):
     assert "Plastic Eternity" in joined
     assert "In Utero" in joined
     mock_client.cancel_holds.assert_not_called()
-
-
-def test_cancel_holds_empty_raises(mock_client):
-    with pytest.raises(ToolError, match="empty"):
-        srv.cancel_holds([])

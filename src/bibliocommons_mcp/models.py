@@ -213,28 +213,6 @@ class BorrowDigitalResult(BaseModel):
     volume: str | None = Field(default=None)
 
 
-class CancelHoldResult(BaseModel):
-    success: bool
-    dry_run: bool = Field(
-        default=False,
-        description=(
-            "If true, nothing was actually cancelled — the tool was called "
-            "with dry_run=True and only describes what would happen."
-        ),
-    )
-    would_cancel: str | None = Field(
-        default=None,
-        description=(
-            "On a dry run, a human-readable summary of the hold that would "
-            "be cancelled (title + queue position). None when dry_run=False."
-        ),
-    )
-    failures: dict[str, str] = Field(
-        default_factory=dict,
-        description="Hold-id-keyed map of failure reasons. Empty on full success.",
-    )
-
-
 class BulkCancelHoldsResult(BaseModel):
     """Result of `cancel_holds(...)`. Per-hold success/failure breakdown."""
 
@@ -267,28 +245,6 @@ class CheckoutRef(BaseModel):
     metadata_id: str = Field(description="From `list_loans().loans[i].metadata_id`.")
 
 
-class CheckInLoanResult(BaseModel):
-    """Result of `check_in_loan(...)` — single-checkout digital return."""
-
-    success: bool
-    metadata_id: str | None = Field(
-        default=None,
-        description="Metadata id echoed by the gateway's minimal response.",
-    )
-    dry_run: bool = Field(default=False)
-    would_check_in: str | None = Field(
-        default=None,
-        description=(
-            "On a dry run, a human-readable summary of the checkout that "
-            "would be checked in (title + format). None otherwise."
-        ),
-    )
-    failures: dict[str, str] = Field(
-        default_factory=dict,
-        description="Checkout-id-keyed failure reasons. Empty on full success.",
-    )
-
-
 class BulkCheckInLoansResult(BaseModel):
     """Result of `check_in_loans(...)`. Per-checkout success/failure breakdown.
 
@@ -315,32 +271,6 @@ class BulkCheckInLoansResult(BaseModel):
     )
 
 
-class RenewLoanResult(BaseModel):
-    """Result of `renew_loan(...)` — single-checkout renewal."""
-
-    success: bool
-    dry_run: bool = Field(default=False)
-    new_due: str | None = Field(
-        default=None,
-        description="New ISO due date after renewal. None on dry run or failure.",
-    )
-    times_renewed: int | None = Field(
-        default=None,
-        description="Renewal count after this call, taken from the gateway response.",
-    )
-    would_renew: str | None = Field(
-        default=None,
-        description=(
-            "On a dry run, a human-readable summary of the checkout that "
-            "would be renewed (title + current due date). None otherwise."
-        ),
-    )
-    failures: dict[str, str] = Field(
-        default_factory=dict,
-        description="Checkout-id-keyed failure reasons. Empty on full success.",
-    )
-
-
 class BulkRenewLoansResult(BaseModel):
     """Result of `renew_loans(...)`. Per-checkout success/failure breakdown."""
 
@@ -361,6 +291,42 @@ class BulkRenewLoansResult(BaseModel):
             "On a dry run, one human-readable summary per checkout that "
             "would be renewed (title + current due date). Empty otherwise."
         ),
+    )
+
+
+class BulkBorrowDigitalResult(BaseModel):
+    """Result of a multi-item `borrow_digital` call.
+
+    No native bulk endpoint exists — the tool issues N sequential
+    `POST /checkouts` calls with a small delay. Each row succeeds or
+    fails independently.
+    """
+
+    borrowed: dict[str, BorrowDigitalResult] = Field(
+        default_factory=dict,
+        description="Map of bib_id → per-item borrow result.",
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Bib-id-keyed map of failure reasons.",
+    )
+
+
+class BulkPlaceDigitalHoldResult(BaseModel):
+    """Result of a multi-item `place_digital_hold` call.
+
+    Same shape pattern as `BulkPlaceHoldResult` but for the Libby
+    waitlist (`POST /holds` with `materialType: DIGITAL`). Sequential
+    calls with inter-call delay; per-bib failures don't stop the run.
+    """
+
+    placed: dict[str, PlaceHoldResult] = Field(
+        default_factory=dict,
+        description="Map of bib_id → per-item hold result.",
+    )
+    failures: dict[str, str] = Field(
+        default_factory=dict,
+        description="Bib-id-keyed map of failure reasons.",
     )
 
 
