@@ -182,6 +182,44 @@ def test_renew_empty_raises(client):
         client.renew_checkouts([])
 
 
+def test_place_digital_hold_body_shape(client):
+    # Body shape captured verbatim from the seattle.bibliocommons.com
+    # web UI on 2026-05-27. Same /holds POST as physical holds but
+    # with materialType=DIGITAL and materialParams.email instead of
+    # branchId. The gateway requires errorMessageLocale inside
+    # materialParams (the /holds family quirk).
+    _mock_response(
+        client,
+        body={
+            "id": "S30C3007805",
+            "entities": {"holds": {"H_DIGITAL": {"holdsPosition": 1}}},
+            "successCount": 1,
+        },
+    )
+    client.place_digital_hold("S30C3007805", "patron@example.com")
+    url, body, headers = _last_post(client)
+
+    assert (
+        url
+        == "https://gateway.bibliocommons.com/v2/libraries/seattle/holds?locale=en-US"
+    )
+    assert body == {
+        "metadataId": "S30C3007805",
+        "materialType": "DIGITAL",
+        "accountId": 1142365318,
+        "enableSingleClickHolds": False,
+        "materialParams": {
+            "email": "patron@example.com",
+            "errorMessageLocale": "en-US",
+        },
+    }
+    # No `format` enum — bibs with `requiresFormatDuringHold: false`
+    # (the common case) don't need it. If we hit a bib that requires
+    # format we'll add it then.
+    assert "format" not in body
+    assert headers["Origin"] == "https://seattle.bibliocommons.com"
+
+
 def test_check_in_loan_per_resource_delete(client):
     # Body shape captured verbatim from the seattle.bibliocommons.com
     # web UI on 2026-05-27. Per-resource DELETE — NOT the bulk PATCH

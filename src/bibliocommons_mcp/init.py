@@ -170,6 +170,7 @@ def _write_config(
     pin: str,
     default_pickup_branch: str | None,
     default_format: str | None,
+    digital_notification_email: str | None = None,
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # Build TOML manually so we control formatting + comments.
@@ -180,6 +181,8 @@ def _write_config(
         lines.append(f'default_pickup_branch = "{default_pickup_branch}"')
     if default_format:
         lines.append(f'default_format = "{default_format}"')
+    if digital_notification_email:
+        lines.append(f'digital_notification_email = "{digital_notification_email}"')
     lines.extend(
         [
             "",
@@ -261,7 +264,14 @@ def run() -> int:
     _say("(Leave blank to search all formats by default.)")
     default_format = _ask("Default format", default="") or None
 
-    # 5. Confirm + write
+    # 5. Digital notification email (optional, required for place_digital_hold)
+    _say()
+    _say("Email for digital hold notifications (used by place_digital_hold).")
+    _say("Use the same address your BiblioCommons account has on file.")
+    _say("(Leave blank to skip — you can add it later.)")
+    digital_email = _ask("Notification email", default="") or None
+
+    # 6. Confirm + write
     _say()
     _say("Saving config:")
     _say(f"  path:    {config_path}")
@@ -270,12 +280,22 @@ def run() -> int:
         _say(f"  pickup:  {default_branch}")
     if default_format:
         _say(f"  format:  {default_format}")
+    if digital_email:
+        _say(f"  email:   {digital_email}")
     _say()
     if not _ask_yes_no("Write it?", default=True):
         _say("Aborted, no changes made.")
         return 1
 
-    _write_config(config_path, library, card, pin, default_branch, default_format)
+    _write_config(
+        config_path,
+        library,
+        card,
+        pin,
+        default_branch,
+        default_format,
+        digital_email,
+    )
     _say(f"  ✓ wrote {config_path} (mode 0600)")
 
     _say()

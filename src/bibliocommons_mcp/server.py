@@ -83,8 +83,8 @@ Important constraints:
   at startup.
 - `place_hold` requires a physical bib (CD, book, DVD, ...). For
   available digital items, use `borrow_digital` (immediate borrow).
-- Joining a Libby waitlist for an unavailable digital item is not
-  supported; tell the user to use Libby directly.
+  For unavailable digital items, use `place_digital_hold` (joins the
+  Libby waitlist).
 - Format codes are BiblioCommons facets like `MUSIC_CD`, `BK`,
   `EBOOK`, `EAUDIOBOOK`, `AUDIOBOOK_CD`, `DVD`.
 - Branch IDs are 3-letter codes (e.g. `LCY` = Lake City). `place_hold`
@@ -414,9 +414,8 @@ def borrow_digital(bib_id: str) -> BorrowDigitalResult:
     """Check out an immediately-available digital item.
 
     Use this when an ebook or e-audiobook is "Available Now" rather
-    than queued. For unavailable digital items (Libby waitlist),
-    direct the user to the Libby app — joining waitlists is not
-    supported here yet.
+    than queued. For unavailable digital items, use
+    `place_digital_hold` to join the waitlist.
 
     Args:
         bib_id: The bib id of the digital item.
@@ -436,6 +435,58 @@ def borrow_digital(bib_id: str) -> BorrowDigitalResult:
         due=co.get("dueDate"),
         call_number=co.get("callNumber"),
         volume=co.get("volume"),
+    )
+
+
+@mcp.tool(
+    title="Place a hold on an unavailable digital item",
+    annotations=MUTATION,
+)
+@_safe
+def place_digital_hold(bib_id: str) -> PlaceHoldResult:
+    """Join the Libby-side waitlist for an ebook or e-audiobook that's
+    not currently available (`availableCopies: 0` on the bib).
+
+    Counts against your digital hold quota — see `library_health`.
+
+    Requires `digital_notification_email` to be set in config (or
+    `BIBLIOCOMMONS_DIGITAL_EMAIL` env var). The gateway emails that
+    address when the hold turns into a checkout, same as the Libby
+    app would.
+
+    For digital items that are immediately available, use
+    `borrow_digital` instead — that checks out the copy directly
+    rather than queueing a hold.
+
+    Args:
+        bib_id: The bib id of the digital item.
+    """
+    if not _cfg or not _cfg.digital_notification_email:
+        raise ToolError(
+            "digital_notification_email is required to place digital holds. "
+            "Set it in ~/.config/bibliocommons-mcp/config.toml or via the "
+            "BIBLIOCOMMONS_DIGITAL_EMAIL env var. Use the same email your "
+            "BiblioCommons account has on file for hold notifications."
+        )
+    client = _ensure_client()
+    data = client.place_digital_hold(bib_id, _cfg.digital_notification_email)
+    holds = data.get("entities", {}).get("holds", {})
+    if not holds:
+        return PlaceHoldResult(success=False)
+    hold_id = next(iter(holds))
+    hold = holds[hold_id]
+    return PlaceHoldResult(
+        success=True,
+        hold_id=hold_id,
+        title=hold.get("bibTitle"),
+        material_type=hold.get("materialType"),
+        # Digital holds don't have a pickup_branch — the email is the
+        # notification target. Leave the field empty rather than
+        # squeezing the email in there.
+        pickup_branch=None,
+        position=hold.get("holdsPosition"),
+        status=hold.get("status"),
+        expiry=hold.get("expiryDate"),
     )
 
 

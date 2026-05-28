@@ -222,6 +222,36 @@ class Client:
         }
         return self._post("/checkouts", body)
 
+    def place_digital_hold(self, bib_id: str, email: str) -> dict:
+        """Place a hold on an unavailable digital item (Libby waitlist).
+
+        Body shape captured 2026-05-27 from the seattle.bibliocommons.com
+        web UI. Same `/holds` endpoint as `place_physical_hold`, just
+        with `materialType: DIGITAL` and `materialParams` carrying the
+        digital notification email instead of a branch id. The gateway
+        emails the user at that address when the hold becomes ready.
+
+        Observed: NO `format` enum field is required for bibs where
+        `policy.materialPolicy.requiresFormatDuringHold` is false (the
+        common case). Bibs with multiple consumption modes may require
+        it; not handled here yet.
+
+        Same `errorMessageLocale` requirement as physical holds — the
+        `/holds` family enforces it, the `/checkouts` family doesn't.
+        `_post` adds it automatically via the materialParams pathway.
+        """
+        body = {
+            "metadataId": bib_id,
+            "materialType": "DIGITAL",
+            "accountId": self.account_id,
+            "enableSingleClickHolds": False,
+            "materialParams": {
+                "email": email,
+                "errorMessageLocale": "en-US",
+            },
+        }
+        return self._post("/holds", body)
+
     def cancel_holds(self, holds: list[tuple[str, str]]) -> dict:
         """Cancel one or more holds. Each `holds` entry is (hold_id, metadata_id)."""
         if not holds:

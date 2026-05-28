@@ -87,6 +87,7 @@ def test_writes_minimum_config(fake_inputs, isolated_config, monkeypatch):
             "1234",  # pin (getpass)
             "",  # default pickup branch — skip
             "",  # default format — skip
+            "",  # digital notification email — skip
             "y",  # confirm write
         ]
     )
@@ -121,6 +122,7 @@ def test_writes_full_config(fake_inputs, isolated_config, monkeypatch):
             "pin",  # pin
             "1",  # default pickup branch — pick #1 (LCY)
             "MUSIC_CD",  # default format
+            "patron@example.com",  # digital notification email
             "y",  # confirm
         ]
     )
@@ -137,6 +139,7 @@ def test_writes_full_config(fake_inputs, isolated_config, monkeypatch):
     data = tomllib.loads(isolated_config.read_text())
     assert data["default_pickup_branch"] == "LCY"
     assert data["default_format"] == "MUSIC_CD"
+    assert data["digital_notification_email"] == "patron@example.com"
 
 
 def test_branch_pick_by_name(fake_inputs, isolated_config, monkeypatch):
@@ -149,6 +152,7 @@ def test_branch_pick_by_name(fake_inputs, isolated_config, monkeypatch):
             "p",
             "lake city",  # name-based pick
             "",  # skip format
+            "",  # skip digital email
             "y",
         ]
     )
@@ -186,6 +190,7 @@ def test_invalid_library_then_retry(fake_inputs, isolated_config, monkeypatch):
             "p",
             "",  # skip branch
             "",  # skip format
+            "",  # skip digital email
             "y",  # confirm
         ]
     )
@@ -234,6 +239,7 @@ def test_login_failure_then_retry(fake_inputs, isolated_config, monkeypatch):
             "right-pin",  # second attempt — succeeds
             "",  # skip branch
             "",  # skip format
+            "",  # skip digital email
             "y",  # confirm
         ]
     )
@@ -274,6 +280,7 @@ def test_user_aborts_at_final_confirm(fake_inputs, isolated_config, monkeypatch)
             "p",
             "",  # skip branch
             "",  # skip format
+            "",  # skip digital email
             "n",  # don't write
         ]
     )

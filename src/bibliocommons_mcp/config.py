@@ -6,6 +6,7 @@ Loads ~/.config/bibliocommons-mcp/config.toml (mode 0600). Env vars override:
   BIBLIOCOMMONS_CARD                override credentials.card
   BIBLIOCOMMONS_PIN                 override credentials.pin
   BIBLIOCOMMONS_PICKUP_BRANCH       override default_pickup_branch
+  BIBLIOCOMMONS_DIGITAL_EMAIL       override digital_notification_email
 """
 
 from __future__ import annotations
@@ -25,6 +26,14 @@ class Config:
     pin: str
     default_pickup_branch: str | None = None
     default_format: str | None = None
+    # Required for `place_digital_hold` — BC's gateway puts the digital
+    # notification address inside `materialParams.email` on the hold
+    # POST. The user already has one configured on the BC account
+    # itself (visible in the gateway's `entities.accounts[...]
+    # .digitalNotificationEmail` field), but we don't probe for it at
+    # startup; let the user mirror it here if they want to place
+    # digital holds, otherwise the tool fails with a clear message.
+    digital_notification_email: str | None = None
 
     @classmethod
     def load(cls, path: Path | None = None) -> Config:
@@ -63,6 +72,10 @@ class Config:
                 or data.get("default_pickup_branch")
             ),
             default_format=data.get("default_format"),
+            digital_notification_email=(
+                os.environ.get("BIBLIOCOMMONS_DIGITAL_EMAIL")
+                or data.get("digital_notification_email")
+            ),
         )
 
 

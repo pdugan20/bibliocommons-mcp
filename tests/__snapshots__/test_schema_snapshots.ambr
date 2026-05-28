@@ -1261,6 +1261,126 @@
       }),
       'title': 'List checkouts with due dates',
     }),
+    'place_digital_hold': dict({
+      'annotations': dict({
+        'destructiveHint': False,
+        'idempotentHint': False,
+        'openWorldHint': True,
+        'readOnlyHint': False,
+        'title': None,
+      }),
+      'inputSchema': dict({
+        'properties': dict({
+          'bib_id': dict({
+            'title': 'Bib Id',
+            'type': 'string',
+          }),
+        }),
+        'required': list([
+          'bib_id',
+        ]),
+        'title': 'place_digital_holdArguments',
+        'type': 'object',
+      }),
+      'outputSchema': dict({
+        'properties': dict({
+          'expiry': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Expiry',
+          }),
+          'hold_id': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Hold Id',
+          }),
+          'material_type': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Material Type',
+          }),
+          'pickup_branch': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Pickup Branch',
+          }),
+          'position': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Position',
+          }),
+          'status': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Status',
+          }),
+          'success': dict({
+            'title': 'Success',
+            'type': 'boolean',
+          }),
+          'title': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Title',
+          }),
+        }),
+        'required': list([
+          'success',
+        ]),
+        'title': 'PlaceHoldResult',
+        'type': 'object',
+      }),
+      'title': 'Place a hold on an unavailable digital item',
+    }),
     'place_hold': dict({
       'annotations': dict({
         'destructiveHint': False,

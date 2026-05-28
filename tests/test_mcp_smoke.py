@@ -28,6 +28,7 @@ EXPECTED_TOOLS = {
     "place_hold",
     "place_holds",
     "borrow_digital",
+    "place_digital_hold",
     "list_holds",
     "ready_for_pickup",
     "cancel_hold",

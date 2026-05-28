@@ -401,6 +401,47 @@ def test_list_loans_shape(mock_client):
     assert by_id["C2"].branch == "LCY"
 
 
+def test_place_digital_hold_success(mock_client, monkeypatch):
+    cfg = MagicMock()
+    cfg.digital_notification_email = "patron@example.com"
+    monkeypatch.setattr(srv, "_cfg", cfg)
+    mock_client.place_digital_hold.return_value = {
+        "id": "S30C3007805",
+        "entities": {
+            "holds": {
+                "H_DIGITAL": {
+                    "bibTitle": "Console Wars",
+                    "materialType": "DIGITAL",
+                    "holdsPosition": 1,
+                    "status": "NOT_YET_AVAILABLE",
+                }
+            }
+        },
+    }
+    out = srv.place_digital_hold("S30C3007805")
+    assert out.success is True
+    assert out.hold_id == "H_DIGITAL"
+    assert out.material_type == "DIGITAL"
+    # Digital holds have no pickup_branch — the email is the
+    # notification target instead.
+    assert out.pickup_branch is None
+    mock_client.place_digital_hold.assert_called_once_with(
+        "S30C3007805", "patron@example.com"
+    )
+
+
+def test_place_digital_hold_requires_email_in_config(mock_client, monkeypatch):
+    """Without a configured digital_notification_email the tool should
+    refuse at the boundary, before any network call."""
+    cfg = MagicMock()
+    cfg.digital_notification_email = None
+    monkeypatch.setattr(srv, "_cfg", cfg)
+    with pytest.raises(ToolError) as exc:
+        srv.place_digital_hold("S30C3007805")
+    assert "digital_notification_email" in str(exc.value)
+    mock_client.place_digital_hold.assert_not_called()
+
+
 def test_renew_loan_success(mock_client):
     mock_client.renew_checkouts.return_value = {
         "failures": [],
