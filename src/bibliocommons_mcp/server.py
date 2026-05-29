@@ -273,45 +273,60 @@ async def healthz(_request: Request) -> JSONResponse:
     )
 
 
-def _favicon_bytes() -> bytes | None:
-    """The packaged favicon, or None if not present.
+def _static_bytes(name: str) -> bytes | None:
+    """Read a packaged static asset (bibliocommons_mcp/static/<name>), or None.
 
-    Served at /favicon.ico so Google's favicon service
-    (google.com/s2/favicons?domain=getbiblio.app) can crawl it and Claude
-    renders a distinct connector icon — see docs/projects/remote-mcp-mobile.md
-    §5. Asset lives at bibliocommons_mcp/static/favicon.ico.
+    Backs the public /favicon.* routes so Google's favicon service
+    (google.com/s2/favicons?domain=getbiblio.app) can crawl an icon and Claude
+    renders a distinct connector icon — see docs/projects/remote-mcp-mobile.md §5.
     """
     try:
         return (
             importlib.resources.files("bibliocommons_mcp")
-            .joinpath("static/favicon.ico")
+            .joinpath(f"static/{name}")
             .read_bytes()
         )
     except (FileNotFoundError, OSError, ModuleNotFoundError):
         return None
 
 
-@mcp.custom_route("/favicon.ico", methods=["GET"])
-async def favicon(_request: Request) -> Response:
-    data = _favicon_bytes()
+def _static_response(name: str, media_type: str) -> Response:
+    data = _static_bytes(name)
     if data is None:
         return Response(status_code=404)
     return Response(
         content=data,
-        media_type="image/x-icon",
+        media_type=media_type,
         headers={"Cache-Control": "public, max-age=86400"},
     )
+
+
+@mcp.custom_route("/favicon.ico", methods=["GET"])
+async def favicon(_request: Request) -> Response:
+    return _static_response("favicon.ico", "image/x-icon")
+
+
+@mcp.custom_route("/favicon.svg", methods=["GET"])
+async def favicon_svg(_request: Request) -> Response:
+    return _static_response("favicon.svg", "image/svg+xml")
+
+
+@mcp.custom_route("/apple-touch-icon.png", methods=["GET"])
+async def apple_touch_icon(_request: Request) -> Response:
+    return _static_response("apple-touch-icon.png", "image/png")
 
 
 @mcp.custom_route("/", methods=["GET"])
 async def index(_request: Request) -> HTMLResponse:
     """Minimal public landing page — gives the apex something human-readable
-    and a `<link rel="icon">` for crawlers. The connector itself lives at /mcp.
+    and the favicon `<link>`s for crawlers. The connector itself lives at /mcp.
     """
     return HTMLResponse(
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         '<link rel="icon" href="/favicon.ico" sizes="any">'
+        '<link rel="icon" type="image/svg+xml" href="/favicon.svg">'
+        '<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
         "<title>getbiblio</title>"
         "<style>body{font-family:system-ui,sans-serif;max-width:32rem;"
         "margin:4rem auto;padding:0 1rem;line-height:1.5}</style></head><body>"
