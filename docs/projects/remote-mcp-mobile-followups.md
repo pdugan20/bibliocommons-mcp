@@ -1,74 +1,51 @@
 # Followups / deferrals: Remote MCP — mobile connector
 
 > Companion to [`remote-mcp-mobile-tracker.md`](remote-mcp-mobile-tracker.md).
-> The working rule is **don't defer unless necessary** — an item lands here
-> only when it genuinely can't be completed by an in-repo agent right now.
-> Each row says _what blocks it_ and _what unblocks it_, so nothing is lost.
->
-> When a deferral clears, do the task, check it off in the tracker, and move
-> its row to **Resolved** (or delete it).
+> Reconciled 2026-05-29 after the live Fly deploy. Scope is **single-user**
+> (the owner, the owner's own card) — multi-user items are parked, not active.
 
-## Owner action items (the short list)
+## Status: live
 
-These need **you** — an account, a secret, DNS, the phone, or a ToS judgment.
-Roughly in order:
+`https://getbiblio.app/mcp` is **deployed and serving** (Fly, always-on,
+bluegreen, TLS via Let's Encrypt) in **authless read-only** mode. The remaining
+work is: ship the favicon, flip on single-user auth so account tools work, and
+do the on-device acceptance test.
 
-1. **WorkOS account** (done). Confirm DCR/CIMD on, plus Resource Indicator
-   `https://getbiblio.app/mcp`. Token validation uses the public JWKS (client
-   id `WORKOS_CLIENT_ID`, issuer `https://api.workos.com`) — no secret needed.
-2. **WorkOS API key for the settings page.** The `/account` browser flow needs
-   the confidential **`sk_…` API key** as a server secret (`WORKOS_API_KEY`) —
-   the only secret this server holds — plus a **web-app redirect URI**
-   registered in WorkOS: `https://getbiblio.app/account/callback`. (Optional
-   `WEB_SESSION_SECRET`; defaults to a value derived from the API key.)
-3. **Deploy to Fly** (decided). `fly.toml` + `docs/deploy-fly.md` are ready:
-   `fly launch` → `fly deploy` (authless read-only first), then `fly certs
-add getbiblio.app`. Always-on machine keeps the per-session cache warm.
-4. **Add registry/CI secrets** so CI can push the image (or push manually).
-5. **Point `getbiblio.app`** at the service via Cloudflare; confirm
-   `https://getbiblio.app/mcp` + `/healthz` resolve over HTTPS.
-6. **ToS check** — read SPL / BiblioCommons terms before onboarding anyone
-   but yourself (hard gate for multi-user). Per-session softens it (no PINs
-   stored) but doesn't remove it.
-7. **On your phone / claude.ai:** add the connector on web, confirm it syncs
-   to iOS, complete the WorkOS login, set up your card at `/account`, and
-   verify `list_holds` returns _your_ holds.
-8. **Seed the apex favicon** (placeholder is fine) so Google's `s2/favicons`
-   serves it; confirm the icon renders, distinct from clickwheel.
+## Outstanding (the only things left)
 
-## Open deferrals (detail)
+| #   | Item                                                                                                                                                                                                                                                                                 | Owner / repo | Notes                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | -------------------------------------------------------------- |
+| F1  | **Favicon** — owner sends the icon asset; repo commits → `fly deploy` → prime `google.com/s2/favicons?domain=getbiblio.app` → verify it renders in Claude                                                                                                                            | owner → repo | route + landing page already built; 404s until the asset lands |
+| F2  | **Single-user activation** — `fly secrets set WORKOS_CLIENT_ID=… BIBLIOCOMMONS_CARD=… BIBLIOCOMMONS_PIN=… BIBLIOCOMMONS_MCP_SINGLE_USER=1` (owner runs it, keeps PIN out of chat) + WorkOS dashboard: enable DCR/CIMD, Resource Indicator `https://getbiblio.app/mcp`, lock sign-ups | owner        | enables checkout/holds/loans for the owner                     |
+| F3  | **Final acceptance** — add `https://getbiblio.app/mcp` as a connector on claude.ai web → confirm on iOS → verify `search` + a checkout work                                                                                                                                          | owner        | the deliberate last step                                       |
 
-| Tracker #  | Item                                                                      | Blocked on (owner action)                            | Unblocks               | Gates                       |
-| ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------- |
-| 0.3        | Create the **WorkOS** account; enable AuthKit + DCR; note issuer/JWKS URL | Account signup (free tier)                           | 2.1–2.3 RS wiring      | Milestone 2                 |
-| 0.5        | **Fly** app: `fly launch` + `fly deploy` (see `docs/deploy-fly.md`)       | Fly account + `flyctl`                               | 1.9 deploy             | Milestone 1 deploy          |
-| 0.7        | **BiblioCommons / SPL ToS check** for a multi-user proxy                  | Legal/ToS reading + judgment                         | Any non-owner user     | **Hard gate, Milestone 2+** |
-| 1.8 (push) | CI pushes the container image to a registry                               | Registry creds / CI secrets                          | 1.9 deploy             | Milestone 1 deploy          |
-| 1.9        | Deploy container to the warm host                                         | Needs 0.5                                            | 1.10, connector attach | Milestone 1                 |
-| 1.10       | Point `getbiblio.app` → service via Cloudflare                            | DNS control (owner has domain)                       | 1.11 attach            | Milestone 1                 |
-| 1.11       | Add connector on claude.ai web                                            | The deployed URL (1.9/1.10) + owner's Claude account | 1.12                   | Milestone 1                 |
-| 1.12       | Confirm sync + `search` on the **iOS app**                                | Physical phone                                       | M1 acceptance          | Milestone 1                 |
-| 1.13–1.14  | Seed apex favicon + confirm Google s2 serves it                           | Needs apex live (1.10)                               | Phase 4 polish         | cosmetic                    |
-| 2.13       | Owner completes WorkOS login; `list_holds` returns owner's holds          | Phone/web + IdP live                                 | M2 acceptance          | Milestone 2                 |
-| 2.14       | Second account connects, sees their own holds (isolation proof)           | A second test account/person                         | M2 acceptance          | Milestone 2                 |
+## Closed
 
-## Resolved
+**Done:**
 
-Decisions made 2026-05-28 (rationale in brief Open questions / tracker Phase 0):
+- Deploy to Fly (always-on, bluegreen, swap, graceful shutdown) — live.
+- Cloudflare DNS + Let's Encrypt cert — `getbiblio.app` resolves over HTTPS.
+- M1 (HTTP transport + read-only catalog), M2 (WorkOS RS + per-user routing +
+  /account page + single-user mode), M3 (TTL cache + audits), Fly hardening +
+  infra linters (hadolint, taplo, `fly config validate`) — all merged.
+- Local/Inspector verify — curl smoke + live `initialize` over the domain.
 
-- **0.2 credential model → per-session + warm instance** (never persist the
-  raw PIN; BC session lasts ~1yr so re-auth is ~per-deploy).
-- **0.3 IdP → WorkOS AuthKit** (the _decision_; account creation is still an
-  owner item above).
-- **0.4 SDK track → stay on official `mcp`**, hand-wire a JWKS TokenVerifier.
-- **0.6 creds store → N/A for v1** (per-session is in-memory).
-- **0.8 IP allowlist → resolved** (`160.79.104.0/21` at the Cloudflare edge;
-  OAuth is the gate).
+**Closed as not needed for single-user scope:**
 
-## Notes
+- WorkOS API key + `/account` browser page — single-user uses the config card.
+- Registry/CI image push — Fly remote-builds on `fly deploy`.
+- Second-account isolation test — multi-user only.
+- Rate limiting / output trimming / Anthropic IP allowlist — optional polish;
+  the IP allowlist is moot while Cloudflare DNS is grey (not proxied).
 
-- **Nothing in Phase 0 blocks Milestone 1.** M1 is authless + read-only, so it
-  deploys before any auth/IdP work.
-- **0.7 (ToS) is the one true blocker for going multi-user beyond the owner** —
-  the code can be fully built and deployed for the owner's own use first; no
-  third party is onboarded until it's resolved.
+**Downgraded:**
+
+- **ToS** — the multi-user "custodian of patrons' PINs" concern doesn't apply
+  to single-user with the owner's own card (same posture as the local stdio
+  tool). Revisit only if going genuinely multi-user.
+
+## If you later go multi-user
+
+Parked, not deleted: set `WORKOS_API_KEY` + the `/account` redirect URI, drop
+`BIBLIOCOMMONS_MCP_SINGLE_USER`, do the BiblioCommons/SPL ToS check, and verify
+two accounts stay isolated. The code already supports it.

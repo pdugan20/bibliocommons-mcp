@@ -1,12 +1,13 @@
 # Project: Remote MCP — run as a mobile custom connector (multi-user)
 
-> **Status: Milestone 1 code landed** (Track A — HTTP transport, read-only
-> catalog mode, `/healthz`, Dockerfile, build CI). Remaining M1 work is
-> owner-side (deploy, domain, connector attach); Milestones 2–3 not started.
-> This brief is the handoff for an in-repo agent. It is intentionally
-> self-contained — the reference servers it draws on (`rewind`,
-> `nextup-backend-mcp`) live in _other repos_ you can't see, so their
-> relevant patterns are extracted inline below.
+> **Status: LIVE (2026-05-29).** Deployed to Fly at `https://getbiblio.app/mcp`
+> (always-on, bluegreen, TLS) in authless read-only mode. M1–M3 code merged;
+> single-user mode built. The 3 remaining items (favicon, single-user auth
+> activation, on-device acceptance) are tracked in
+> [`remote-mcp-mobile-followups.md`](remote-mcp-mobile-followups.md). This brief
+> is the architecture record; it is intentionally self-contained — the
+> reference servers it draws on (`rewind`, `nextup-backend-mcp`) live in
+> _other repos_ you can't see, so their relevant patterns are extracted inline.
 >
 > **Validated 2026-05-28** against the live Claude connector docs, the MCP
 > authorization spec (2025-06-18 + 2025-11-25 revisions), and the installed
