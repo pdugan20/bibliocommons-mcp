@@ -13,21 +13,27 @@
 These need **you** — an account, a secret, DNS, the phone, or a ToS judgment.
 Roughly in order:
 
-1. **Create a WorkOS account**, enable AuthKit, turn on DCR, and note the
-   issuer URL + JWKS URL. (IdP is decided; this is the setup.)
-2. **Pick a warm host** (Cloud Run `min-instances=1`, or Fly always-on) and
+1. **WorkOS account** (done). Confirm DCR/CIMD on, plus Resource Indicator
+   `https://getbiblio.app/mcp`. Token validation uses the public JWKS (client
+   id `WORKOS_CLIENT_ID`, issuer `https://api.workos.com`) — no secret needed.
+2. **WorkOS API key for the settings page.** The `/account` browser flow needs
+   the confidential **`sk_…` API key** as a server secret (`WORKOS_API_KEY`) —
+   the only secret this server holds — plus a **web-app redirect URI**
+   registered in WorkOS: `https://getbiblio.app/account/callback`. (Optional
+   `WEB_SESSION_SECRET`; defaults to a value derived from the API key.)
+3. **Pick a warm host** (Cloud Run `min-instances=1`, or Fly always-on) and
    create the project. Warm is required so the per-session cookie cache
    survives — see tracker 0.2/0.5.
-3. **Add registry/CI secrets** so CI can push the image (or push manually).
-4. **Point `getbiblio.app`** at the service via Cloudflare; confirm
+4. **Add registry/CI secrets** so CI can push the image (or push manually).
+5. **Point `getbiblio.app`** at the service via Cloudflare; confirm
    `https://getbiblio.app/mcp` + `/healthz` resolve over HTTPS.
-5. **ToS check** — read SPL / BiblioCommons terms before onboarding anyone
+6. **ToS check** — read SPL / BiblioCommons terms before onboarding anyone
    but yourself (hard gate for multi-user). Per-session softens it (no PINs
    stored) but doesn't remove it.
-6. **On your phone / claude.ai:** add the connector on web, confirm it syncs
-   to iOS, complete the WorkOS login, and verify `list_holds` returns _your_
-   holds.
-7. **Seed the apex favicon** (placeholder is fine) so Google's `s2/favicons`
+7. **On your phone / claude.ai:** add the connector on web, confirm it syncs
+   to iOS, complete the WorkOS login, set up your card at `/account`, and
+   verify `list_holds` returns _your_ holds.
+8. **Seed the apex favicon** (placeholder is fine) so Google's `s2/favicons`
    serves it; confirm the icon renders, distinct from clickwheel.
 
 ## Open deferrals (detail)
