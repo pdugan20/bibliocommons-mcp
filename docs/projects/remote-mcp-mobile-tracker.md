@@ -129,15 +129,15 @@ forwarded to the BiblioCommons gateway.
 
 Acceptance: production-safe for the intended user set (gated by ToS 0.7).
 
-| #   | Task                                                                                                             | Owner      | Status |
-| --- | ---------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
-| 3.1 | Session-cache TTL + eviction tuning; respect 300s tool timeout                                                   | repo       | [ ]    |
-| 3.2 | Per-user rate limiting (protect the BiblioCommons gateway + your store)                                          | repo       | [ ]    |
-| 3.3 | Trim/paginate large tool outputs under the ~150k-char result cap (esp. `search`, `list_holds`)                   | repo       | [ ]    |
-| 3.4 | Encryption-at-rest review of the credential store; verify deletion path actually deletes                         | repo+owner | [ ]    |
-| 3.5 | Structured stderr logging (CLAUDE.md rule #8), `BIBLIOCOMMONS_MCP_LOG_LEVEL` honored; confirm no secrets in logs | repo       | [ ]    |
-| 3.6 | Apply Anthropic IP allowlist if 0.8 found one required                                                           | owner      | [ ]    |
-| 3.7 | Error mapping: gateway 4xx/5xx → clean MCP tool errors (don't leak internals)                                    | repo       | [ ]    |
+| #   | Task                                                                                                                                                                                      | Owner      | Status |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
+| 3.1 | Per-user client cache bounded by idle-TTL + LRU (`cache.TTLCache`; `BIBLIOCOMMONS_MCP_SESSION_TTL` / `BIBLIOCOMMONS_MCP_MAX_SESSIONS`). Eviction re-auths from stored creds, no re-prompt | repo       | [x]    |
+| 3.2 | Per-user rate limiting — **recommend at the Cloudflare edge** (you already have the zone) rather than in-process; light in-process guard optional. Open                                   | repo+owner | [ ]    |
+| 3.3 | Trim/paginate large tool outputs under the ~150k-char result cap (esp. `search`, `list_holds`)                                                                                            | repo       | [ ]    |
+| 3.4 | **N/A for v1** — credential store is in-memory (nothing at rest). Deletion = process restart / `_cred_store.delete`. Revisit if the session-cookie-persistence upgrade is taken           | repo       | [x]    |
+| 3.5 | Structured stderr logging + `BIBLIOCOMMONS_MCP_LOG_LEVEL` honored; audited — no card/PIN/API-key/token in logs (auth + web_settings log failures without secret content)                  | repo       | [x]    |
+| 3.6 | Apply Anthropic IP allowlist if 0.8 found one required                                                                                                                                    | owner      | [ ]    |
+| 3.7 | Gateway 4xx/5xx → clean ToolError via `_safe` (BCError/BranchNotFound/ValueError/NotAuthenticatedError); internals not leaked                                                             | repo       | [x]    |
 
 ---
 
