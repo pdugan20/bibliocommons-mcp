@@ -96,32 +96,32 @@ forwarded to the BiblioCommons gateway.
 
 ### 2a. Resource Server wiring
 
-| #   | Task                                                                                                                                                                          | Owner | Status |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| 2.1 | Configure IdP app: redirect URI `https://claude.ai/api/mcp/auth_callback`, PKCE/S256, public client. Note client_id (+secret if non-DCR)                                      | owner | [ ]    |
-| 2.2 | Wire `FastMCP(token_verifier=..., auth=AuthSettings(issuer_url=<IdP>, resource_server_url="https://getbiblio.app/mcp", required_scopes=[...]))`; omit `auth_server_provider`  | repo  | [ ]    |
-| 2.3 | Implement `verify_token()` (JWT verify or RFC 7662 introspection against the IdP); **validate audience / RFC 8707 `resource`**                                                | repo  | [ ]    |
-| 2.4 | Confirm SDK auto-serves `/.well-known/oauth-protected-resource/mcp` and its `authorization_servers` points at the IdP (issue #1264: full `/mcp` URL in `resource_server_url`) | repo  | [ ]    |
-| 2.5 | Do **not** import `RemoteAuthProvider` if on official `mcp` SDK (fastmcp-only symbol)                                                                                         | repo  | [ ]    |
+| #   | Task                                                                                                                                                       | Owner | Status |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| 2.1 | WorkOS app: enable DCR/CIMD (Claude auto-registers, no manual redirect/secret). Resource Indicator = `https://getbiblio.app/mcp`. **Owner — deploy-time**  | owner | [ ]    |
+| 2.2 | `_build_mcp()` wires `FastMCP(token_verifier=WorkOSTokenVerifier, auth=AuthSettings(...))` when `WORKOS_*` env present; omits `auth_server_provider`       | repo  | [x]    |
+| 2.3 | `WorkOSTokenVerifier.verify_token()` — JWKS/JWT: signature + iss (trailing-slash tolerant) + aud (RFC 8707) + expiry                                       | repo  | [x]    |
+| 2.4 | Verified live: SDK serves `/.well-known/oauth-protected-resource/mcp` → `authorization_servers: api.workos.com`; un-authed `/mcp` → 401 + WWW-Authenticate | repo  | [x]    |
+| 2.5 | Confirmed: no `RemoteAuthProvider` (fastmcp-only); hand-wired `TokenVerifier` on official `mcp`                                                            | repo  | [x]    |
 
 ### 2b. Per-user credentials + client cache
 
-| #    | Task                                                                                                                                                                                                             | Owner      | Status |
-| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
-| 2.6  | In tools, read identity via `get_access_token().subject`/`.claims`                                                                                                                                               | repo       | [ ]    |
-| 2.7  | Refactor `server.py:_ensure_client()` (~`:148`) from module-global singleton → per-subject resolution                                                                                                            | repo       | [ ]    |
-| 2.8  | Per-user `Client` cache keyed by subject, TTL'd (avoid re-`authenticate()` per call); evict on expiry                                                                                                            | repo       | [ ]    |
-| 2.9  | Implement the chosen credential model (0.2): consent/settings page to capture `{library, card, pin}` (custodian, encrypted-at-rest, per-record key + deletion path) **or** per-session capture (never persisted) | repo+owner | [ ]    |
-| 2.10 | Audit: card/PIN never logged, never in error messages, never in tool output (CLAUDE.md rule #1)                                                                                                                  | repo       | [ ]    |
+| #    | Task                                                                                                                                   | Owner      | Status |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
+| 2.6  | `_current_subject()` reads identity via `get_access_token().subject`                                                                   | repo       | [x]    |
+| 2.7  | `_ensure_client()` refactored to identity-aware: single-tenant path (stdio/M1) vs per-subject path                                     | repo       | [x]    |
+| 2.8  | Per-subject `Client` cache (`_user_clients`) keyed by subject; authenticates once. TTL/eviction deferred to 3.1                        | repo       | [x]    |
+| 2.9  | **PR-B (next):** card/PIN capture settings page (WorkOS browser login → `_cred_store`). Per-session in-memory, raw PIN never persisted | repo+owner | [ ]    |
+| 2.10 | Audit: card/PIN never logged / in errors / in tool output. Store is in-memory only (no PIN at rest). Spot-checked; full pass with PR-B | repo       | [~]    |
 
 ### 2c. Authenticated tools live
 
-| #    | Task                                                                                                                                                                                                        | Owner | Status |
-| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| 2.11 | Enable authenticated tools end-to-end: `place_hold`, `place_digital_hold`, `borrow_digital`, `list_holds`, `ready_for_pickup`, `cancel_hold`, `list_loans`, `renew_loan`, `check_in_loan`, `library_health` | repo  | [ ]    |
-| 2.12 | Per-user library selection (multi-library): the configured/connected library drives the gateway base URL                                                                                                    | repo  | [ ]    |
-| 2.13 | Owner verify: complete OAuth flow from claude.ai web; `list_holds` returns the owner's holds                                                                                                                | owner | [ ]    |
-| 2.14 | Owner verify: a **second** account connects with their own card and sees their own holds (proves per-user isolation, not a shared session)                                                                  | owner | [ ]    |
+| #    | Task                                                                                                                                       | Owner | Status |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----- | ------ |
+| 2.11 | Authenticated tools route per-user via `_ensure_client()`; account ops need a provisioned record. (End-to-end live = 2.13)                 | repo  | [x]    |
+| 2.12 | Per-user library selection: each subject's `UserCredentials.library` drives the gateway base URL                                           | repo  | [x]    |
+| 2.13 | Owner verify: complete OAuth flow from claude.ai web; `list_holds` returns the owner's holds                                               | owner | [ ]    |
+| 2.14 | Owner verify: a **second** account connects with their own card and sees their own holds (proves per-user isolation, not a shared session) | owner | [ ]    |
 
 ---
 
