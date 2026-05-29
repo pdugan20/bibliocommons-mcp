@@ -24,6 +24,7 @@ from starlette.responses import JSONResponse
 
 from .auth import workos_auth_from_env
 from .branches import BranchNotFound
+from .cache import TTLCache
 from .client import BCError, Client, NotAuthenticatedError
 from .config import Config, ConfigError
 from .credentials import CredentialStore, InMemoryCredentialStore, UserCredentials
@@ -179,10 +180,18 @@ _client: Client | None = None
 # Multi-user (WorkOS auth on): per-subject credentials + an authenticated-client
 # cache keyed on the token `subject`. In single-tenant / stdio mode these stay
 # empty and the globals above are used. The cache holds each user's cookie jar
-# in memory only (per-session model, brief §2); a plain dict for now — TTL +
-# eviction is Phase-3 hardening (tracker 3.1).
+# in memory only (per-session model, brief §2), bounded by idle-TTL + LRU size
+# so a long-lived process doesn't grow without limit and sessions refresh
+# periodically. Evicting a client just re-authenticates from the stored creds
+# on next use — the user isn't re-prompted. Tunable via env:
+#   BIBLIOCOMMONS_MCP_SESSION_TTL    idle seconds before a cached client drops
+#                                    (default 86400 = 24h)
+#   BIBLIOCOMMONS_MCP_MAX_SESSIONS   LRU cap on cached clients (default 1000)
 _cred_store: CredentialStore = InMemoryCredentialStore()
-_user_clients: dict[str, Client] = {}
+_user_clients: TTLCache[Client] = TTLCache(
+    ttl=float(os.environ.get("BIBLIOCOMMONS_MCP_SESSION_TTL") or 86400),
+    maxsize=int(os.environ.get("BIBLIOCOMMONS_MCP_MAX_SESSIONS") or 1000),
+)
 
 # Account settings page (/account): browser flow for capturing each user's
 # library credentials into _cred_store. Enabled only when WorkOS is configured
@@ -278,7 +287,7 @@ def _ensure_user_client(subject: str) -> Client:
     client = Client(creds.library)
     if creds.has_credentials:
         client.authenticate(creds.card, creds.pin)
-    _user_clients[subject] = client
+    _user_clients.put(subject, client)
     return client
 
 

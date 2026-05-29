@@ -15,6 +15,7 @@ import pytest
 from mcp.server.fastmcp.exceptions import ToolError
 
 import bibliocommons_mcp.server as srv
+from bibliocommons_mcp.cache import TTLCache
 from bibliocommons_mcp.credentials import InMemoryCredentialStore, UserCredentials
 
 
@@ -34,7 +35,7 @@ def multiuser(monkeypatch):
     """Fresh per-user state + a fake Client; no global single-tenant client."""
     monkeypatch.setattr(srv, "Client", _FakeClient)
     monkeypatch.setattr(srv, "_cred_store", InMemoryCredentialStore())
-    monkeypatch.setattr(srv, "_user_clients", {})
+    monkeypatch.setattr(srv, "_user_clients", TTLCache(ttl=3600, maxsize=100))
     monkeypatch.setattr(srv, "_client", None)
     monkeypatch.setattr(srv, "_cfg", None)
 
