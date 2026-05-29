@@ -58,6 +58,8 @@ path = "src/bibliocommons_mcp/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bibliocommons_mcp"]
+# Ship the favicon (and any future static assets) served at /favicon.ico.
+artifacts = ["src/bibliocommons_mcp/static/*"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=bibliocommons_mcp --cov-report=term-missing --cov-fail-under=80"

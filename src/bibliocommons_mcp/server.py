@@ -9,6 +9,7 @@ discoveries it encodes.
 from __future__ import annotations
 
 import functools
+import importlib.resources
 import logging
 import os
 import sys
@@ -22,7 +23,7 @@ from mcp.server.fastmcp.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import HTMLResponse, JSONResponse, Response
 
 from .auth import workos_auth_from_env
 from .branches import BranchNotFound
@@ -272,6 +273,56 @@ async def healthz(_request: Request) -> JSONResponse:
     )
 
 
+def _favicon_bytes() -> bytes | None:
+    """The packaged favicon, or None if not present.
+
+    Served at /favicon.ico so Google's favicon service
+    (google.com/s2/favicons?domain=getbiblio.app) can crawl it and Claude
+    renders a distinct connector icon — see docs/projects/remote-mcp-mobile.md
+    §5. Asset lives at bibliocommons_mcp/static/favicon.ico.
+    """
+    try:
+        return (
+            importlib.resources.files("bibliocommons_mcp")
+            .joinpath("static/favicon.ico")
+            .read_bytes()
+        )
+    except (FileNotFoundError, OSError, ModuleNotFoundError):
+        return None
+
+
+@mcp.custom_route("/favicon.ico", methods=["GET"])
+async def favicon(_request: Request) -> Response:
+    data = _favicon_bytes()
+    if data is None:
+        return Response(status_code=404)
+    return Response(
+        content=data,
+        media_type="image/x-icon",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@mcp.custom_route("/", methods=["GET"])
+async def index(_request: Request) -> HTMLResponse:
+    """Minimal public landing page — gives the apex something human-readable
+    and a `<link rel="icon">` for crawlers. The connector itself lives at /mcp.
+    """
+    return HTMLResponse(
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<link rel="icon" href="/favicon.ico" sizes="any">'
+        "<title>getbiblio</title>"
+        "<style>body{font-family:system-ui,sans-serif;max-width:32rem;"
+        "margin:4rem auto;padding:0 1rem;line-height:1.5}</style></head><body>"
+        "<h1>getbiblio</h1>"
+        "<p>An MCP connector for BiblioCommons public libraries — search the "
+        "catalog, place holds, manage checkouts from an MCP client.</p>"
+        "<p>This is the server endpoint; add <code>/mcp</code> as a custom "
+        "connector in Claude.</p></body></html>"
+    )
+
+
 def _current_subject() -> str | None:
     """The authenticated user id (JWT `sub`) for this request, or None.
 
@@ -310,19 +361,37 @@ def _setup_required_message() -> str:
     return f"{base} at {url} to use this tool." if url else f"{base} to use this tool."
 
 
+def _single_user_mode() -> bool:
+    """Single-user deployment: authenticated requests use the server's own
+    configured card/PIN instead of a per-user record (no /account flow).
+
+    Safe ONLY when WorkOS sign-ups are locked to the owner — otherwise any
+    authenticated user would act on the owner's account. Off by default.
+    """
+    return os.environ.get("BIBLIOCOMMONS_MCP_SINGLE_USER", "").lower() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
 def _ensure_user_client(subject: str) -> Client:
     """Multi-tenant path: resolve (and cache) this user's authenticated client.
 
     Looks up the subject's UserCredentials, mints a Client for their library,
-    and authenticates if card/PIN are present. No record → a clean
-    NotAuthenticatedError pointing at the setup page (PR-B). The cookie jar is
-    cached in memory per the per-session model.
+    and authenticates if card/PIN are present. No record → either the
+    single-user fallback (the server's own config creds) when
+    BIBLIOCOMMONS_MCP_SINGLE_USER is set, or a clean NotAuthenticatedError
+    pointing at the setup page. The cookie jar is cached per the per-session
+    model.
     """
     client = _user_clients.get(subject)
     if client is not None:
         return client
     creds = _cred_store.get(subject)
     if creds is None:
+        if _single_user_mode():
+            return _ensure_single_client()
         raise NotAuthenticatedError(_setup_required_message())
     client = Client(creds.library)
     if creds.has_credentials:
