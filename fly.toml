@@ -28,7 +28,9 @@ primary_region = "sjc" # San Jose (US-west; Fly deprecated 'sea'/Seattle)
   # machine must not stop/scale-to-zero (that would force PIN re-entry). This
   # is the whole reason Fly was chosen over scale-to-zero hosts.
   auto_stop_machines = "off"
-  auto_start_machines = false
+  # true so the proxy wakes a stopped machine (e.g. after a deploy/crash)
+  # instead of returning 503; combined with auto_stop=off it stays warm.
+  auto_start_machines = true
   min_machines_running = 1
 
   [[http_service.checks]]
