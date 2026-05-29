@@ -1,0 +1,19 @@
+# Keep the build context lean — only pyproject, README, and src/ are needed.
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.ruff_cache
+dist
+build
+*.egg-info
+src/*.egg-info
+tests
+docs
+web
+.mypy_cache
+.coverage
+htmlcov

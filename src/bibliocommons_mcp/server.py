@@ -18,9 +18,11 @@ from typing import TYPE_CHECKING
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from .branches import BranchNotFound
-from .client import BCError, Client
+from .client import BCError, Client, NotAuthenticatedError
 from .config import Config, ConfigError
 from .models import (
     Availability,
@@ -145,13 +147,48 @@ _cfg: Config | None = None
 _client: Client | None = None
 
 
+@mcp.custom_route("/healthz", methods=["GET"])
+async def healthz(_request: Request) -> JSONResponse:
+    """Liveness probe for the HTTP transport (Cloud Run / Fly health checks).
+
+    Deliberately credential-free and side-effect-free: it reports the
+    configured library and whether the server has credentials (i.e. whether
+    account tools are live vs read-only catalog mode), without logging in or
+    touching the gateway. Served at the root regardless of the MCP path.
+    """
+    library = None
+    has_creds = False
+    try:
+        cfg = Config.load(require_credentials=False)
+        library = cfg.library
+        has_creds = cfg.has_credentials
+    except ConfigError:
+        return JSONResponse({"status": "misconfigured"}, status_code=503)
+    return JSONResponse(
+        {
+            "status": "ok",
+            "library": library,
+            "mode": "authenticated" if has_creds else "read-only",
+        }
+    )
+
+
 def _ensure_client() -> Client:
-    """Lazy-init client. Called by every tool to avoid logging in until needed."""
+    """Lazy-init client. Called by every tool to avoid logging in until needed.
+
+    Loads config without forcing credentials so the server can run in
+    read-only catalog mode (authless HTTP deployment). When card/PIN are
+    present we authenticate; otherwise the client stays unauthenticated and
+    account-side tools raise NotAuthenticatedError (→ a clean ToolError) when they
+    reach `client.account_id`. Read-only tools (search, availability,
+    list_branches) work either way.
+    """
     global _cfg, _client
     if _client is None:
-        _cfg = Config.load()
+        _cfg = Config.load(require_credentials=False)
         _client = Client(_cfg.library)
-        _client.authenticate(_cfg.card, _cfg.pin)
+        if _cfg.has_credentials:
+            _client.authenticate(_cfg.card, _cfg.pin)
     return _client
 
 
@@ -169,16 +206,17 @@ def _resolve_branch(name_or_code: str | None) -> str:
 def _safe(fn: Callable) -> Callable:
     """Wrap a tool so known exceptions surface as ToolError with a clean message.
 
-    BCError (gateway errors), BranchNotFound (resolver), and ValueError
-    (caller mistakes) become ToolError. Anything else propagates and
-    FastMCP renders the class + message.
+    BCError (gateway errors), BranchNotFound (resolver), ValueError
+    (caller mistakes), and NotAuthenticatedError (account op in read-only mode)
+    become ToolError. Anything else propagates and FastMCP renders the
+    class + message.
     """
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
-        except (BCError, BranchNotFound, ValueError) as e:
+        except (BCError, BranchNotFound, ValueError, NotAuthenticatedError) as e:
             raise ToolError(str(e)) from e
 
     return wrapper
@@ -902,14 +940,73 @@ def _setup_logging() -> None:
     )
 
 
+def _http_requested(argv: list[str]) -> bool:
+    """Whether to serve Streamable HTTP instead of stdio.
+
+    Triggered by `serve --http` or `BIBLIOCOMMONS_MCP_TRANSPORT=http`. stdio
+    stays the default so local Claude Code / Claude Desktop are unaffected.
+    """
+    if os.environ.get("BIBLIOCOMMONS_MCP_TRANSPORT", "").lower() in {
+        "http",
+        "streamable-http",
+    }:
+        return True
+    return argv[:1] == ["serve"] and "--http" in argv
+
+
+def _run_http() -> None:
+    """Serve over Streamable HTTP (remote/mobile connector transport).
+
+    Credentials are optional here — a missing card/PIN boots read-only
+    "catalog mode" (search/availability/list_branches), which is Milestone 1
+    of the remote-connector plan. `stateless_http=True` because a multi-tenant
+    remote service shouldn't pin sticky sessions; `$PORT` is honored for
+    Cloud Run / Fly. See docs/projects/remote-mcp-mobile.md.
+    """
+    try:
+        cfg = Config.load(require_credentials=False)
+    except ConfigError as e:
+        print(f"bibliocommons-mcp config error: {e}", file=sys.stderr)
+        print(
+            "Run 'bibliocommons-mcp init' to set up your config "
+            "(or set BIBLIOCOMMONS_LIBRARY for read-only catalog mode).",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    mcp.settings.host = os.environ.get("FASTMCP_HOST", "0.0.0.0")
+    mcp.settings.port = int(
+        os.environ.get("PORT") or os.environ.get("FASTMCP_PORT") or 8000
+    )
+    mcp.settings.stateless_http = True
+    mode = "authenticated" if cfg.has_credentials else "read-only (authless)"
+    logger.info(
+        "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, library=%s]",
+        mcp.settings.host,
+        mcp.settings.port,
+        mode,
+        cfg.library,
+    )
+    try:
+        mcp.run(transport="streamable-http")
+    except (BCError, BranchNotFound) as exc:
+        logger.error("Server error: %s", exc)
+        sys.exit(1)
+
+
 def main() -> None:
     """Console-script entry point.
 
     Subcommands:
-      (no args)   start the MCP server over stdio (default)
-      init        run the interactive setup wizard
-      --version   print the package version
-      --help      print this message
+      (no args)      start the MCP server over stdio (default)
+      serve --http   start the server over Streamable HTTP (remote connector)
+      init           run the interactive setup wizard
+      --version      print the package version
+      --help         print this message
+
+    HTTP can also be selected with BIBLIOCOMMONS_MCP_TRANSPORT=http. In HTTP
+    mode, credentials are optional: without them the server runs read-only
+    "catalog mode". See docs/projects/remote-mcp-mobile.md.
     """
     argv = sys.argv[1:]
     if argv and argv[0] in {"-h", "--help"}:
@@ -926,6 +1023,11 @@ def main() -> None:
         sys.exit(init_run())
 
     _setup_logging()
+
+    if _http_requested(argv):
+        _run_http()
+        return
+
     try:
         Config.load()  # fail-fast at startup
     except ConfigError as e:

@@ -22,8 +22,12 @@ DEFAULT_CONFIG_PATH = Path.home() / ".config" / "bibliocommons-mcp" / "config.to
 @dataclass(frozen=True)
 class Config:
     library: str
-    card: str
-    pin: str
+    # Optional so the server can run in read-only "catalog mode" with no
+    # credentials (e.g. the authless remote/HTTP deployment — see
+    # docs/projects/remote-mcp-mobile.md). `load()` still requires them by
+    # default; pass `require_credentials=False` to allow library-only.
+    card: str | None = None
+    pin: str | None = None
     default_pickup_branch: str | None = None
     default_format: str | None = None
     # Required for `place_digital_hold` — BC's gateway puts the digital
@@ -35,8 +39,15 @@ class Config:
     # digital holds, otherwise the tool fails with a clear message.
     digital_notification_email: str | None = None
 
+    @property
+    def has_credentials(self) -> bool:
+        """True when both card and pin are present (account ops are possible)."""
+        return bool(self.card and self.pin)
+
     @classmethod
-    def load(cls, path: Path | None = None) -> Config:
+    def load(
+        cls, path: Path | None = None, *, require_credentials: bool = True
+    ) -> Config:
         path = Path(
             os.environ.get("BIBLIOCOMMONS_MCP_CONFIG", path or DEFAULT_CONFIG_PATH)
         )
@@ -57,7 +68,7 @@ class Config:
             raise ConfigError(
                 f"missing 'library' (set in {path} or BIBLIOCOMMONS_LIBRARY)"
             )
-        if not card or not pin:
+        if require_credentials and (not card or not pin):
             raise ConfigError(
                 f"missing credentials (set [credentials] card+pin in {path} "
                 "or BIBLIOCOMMONS_CARD / BIBLIOCOMMONS_PIN env vars)"
@@ -65,8 +76,8 @@ class Config:
 
         return cls(
             library=library,
-            card=str(card),
-            pin=str(pin),
+            card=str(card) if card else None,
+            pin=str(pin) if pin else None,
             default_pickup_branch=(
                 os.environ.get("BIBLIOCOMMONS_PICKUP_BRANCH")
                 or data.get("default_pickup_branch")
