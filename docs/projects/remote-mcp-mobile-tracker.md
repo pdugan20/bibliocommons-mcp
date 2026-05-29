@@ -7,6 +7,10 @@
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked.
 > **Owner column:** `repo` = an in-repo agent can do it · `owner` = needs the
 > human (accounts, payments, phone, ToS, secrets).
+>
+> **Deferrals** (owner-blocked items) are tracked in
+> [`remote-mcp-mobile-followups.md`](remote-mcp-mobile-followups.md) so they're
+> not lost. Working rule: don't defer unless necessary.
 
 ---
 
