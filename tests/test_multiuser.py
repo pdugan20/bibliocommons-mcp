@@ -106,18 +106,39 @@ def test_single_tenant_path_when_no_subject(multiuser):
     assert srv._ensure_client() is sentinel
 
 
-def test_single_user_mode_uses_config_creds(multiuser, monkeypatch, tmp_path):
-    """With BIBLIOCOMMONS_MCP_SINGLE_USER set, an authenticated user with no
-    per-user record falls back to the server's own configured card/PIN."""
+@pytest.fixture
+def single_user_env(monkeypatch, tmp_path):
+    """Single-user mode + a config card, no per-user records."""
     monkeypatch.setenv("BIBLIOCOMMONS_MCP_SINGLE_USER", "1")
     monkeypatch.setenv("BIBLIOCOMMONS_MCP_CONFIG", str(tmp_path / "none.toml"))
     monkeypatch.setenv("BIBLIOCOMMONS_LIBRARY", "seattle")
     monkeypatch.setenv("BIBLIOCOMMONS_CARD", "owner-card")
     monkeypatch.setenv("BIBLIOCOMMONS_PIN", "owner-pin")
-    multiuser("any_authenticated_user")  # authenticated, but no per-user record
+    return monkeypatch
+
+
+def test_single_user_owner_gets_config_creds(multiuser, single_user_env):
+    """An allow-listed owner subject → the server's configured card/PIN."""
+    single_user_env.setenv("BIBLIOCOMMONS_MCP_OWNER_SUBJECTS", "user_OWNER, user_x")
+    multiuser("user_OWNER")
     client = srv._ensure_client()
     assert client.library == "seattle"
     assert client._authed and client.auth_calls == [("owner-card", "owner-pin")]
+
+
+def test_single_user_non_owner_rejected(multiuser, single_user_env):
+    single_user_env.setenv("BIBLIOCOMMONS_MCP_OWNER_SUBJECTS", "user_OWNER")
+    multiuser("user_STRANGER")
+    with pytest.raises(ToolError, match="not the owner"):
+        srv.list_holds()
+
+
+def test_single_user_failsafe_when_no_owner_listed(multiuser, single_user_env):
+    """Owners unset → fail-safe: nobody gets the card; error names the sub."""
+    single_user_env.delenv("BIBLIOCOMMONS_MCP_OWNER_SUBJECTS", raising=False)
+    multiuser("user_NEW")
+    with pytest.raises(ToolError, match="user_NEW"):
+        srv.list_holds()
 
 
 def test_single_user_mode_off_errors_without_record(multiuser, monkeypatch):

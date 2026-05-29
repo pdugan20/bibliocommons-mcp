@@ -377,11 +377,12 @@ def _setup_required_message() -> str:
 
 
 def _single_user_mode() -> bool:
-    """Single-user deployment: authenticated requests use the server's own
-    configured card/PIN instead of a per-user record (no /account flow).
+    """Single-user deployment: the configured owner uses the server's own
+    card/PIN instead of a per-user record (no /account flow).
 
-    Safe ONLY when WorkOS sign-ups are locked to the owner — otherwise any
-    authenticated user would act on the owner's account. Off by default.
+    Gated to specific WorkOS account ids via BIBLIOCOMMONS_MCP_OWNER_SUBJECTS
+    (see `_owner_subjects`), so it is safe even if WorkOS sign-ups are open —
+    only the owner's `sub` ever reaches the card. Off by default.
     """
     return os.environ.get("BIBLIOCOMMONS_MCP_SINGLE_USER", "").lower() in {
         "1",
@@ -390,15 +391,26 @@ def _single_user_mode() -> bool:
     }
 
 
+def _owner_subjects() -> set[str]:
+    """WorkOS account ids allowed to use the single-user card/PIN.
+
+    Comma-separated BIBLIOCOMMONS_MCP_OWNER_SUBJECTS. Empty = locked (fail-safe:
+    nobody gets the owner's card until their id is allow-listed), so an open
+    WorkOS sign-up can't reach the owner's account.
+    """
+    raw = os.environ.get("BIBLIOCOMMONS_MCP_OWNER_SUBJECTS", "")
+    return {s.strip() for s in raw.split(",") if s.strip()}
+
+
 def _ensure_user_client(subject: str) -> Client:
     """Multi-tenant path: resolve (and cache) this user's authenticated client.
 
     Looks up the subject's UserCredentials, mints a Client for their library,
-    and authenticates if card/PIN are present. No record → either the
-    single-user fallback (the server's own config creds) when
-    BIBLIOCOMMONS_MCP_SINGLE_USER is set, or a clean NotAuthenticatedError
-    pointing at the setup page. The cookie jar is cached per the per-session
-    model.
+    and authenticates if card/PIN are present. No record → in single-user mode,
+    the server's own card/PIN *iff* `subject` is allow-listed in
+    BIBLIOCOMMONS_MCP_OWNER_SUBJECTS; otherwise a clean NotAuthenticatedError
+    (which, in single-user mode, tells the owner their `sub` so they can
+    allow-list it). The cookie jar is cached per the per-session model.
     """
     client = _user_clients.get(subject)
     if client is not None:
@@ -406,6 +418,18 @@ def _ensure_user_client(subject: str) -> Client:
     creds = _cred_store.get(subject)
     if creds is None:
         if _single_user_mode():
+            owners = _owner_subjects()
+            if not owners:
+                raise NotAuthenticatedError(
+                    "This connector runs in single-user mode but no owner is "
+                    "allow-listed yet. The operator must add this account id to "
+                    f"BIBLIOCOMMONS_MCP_OWNER_SUBJECTS: {subject}"
+                )
+            if subject not in owners:
+                raise NotAuthenticatedError(
+                    "This is a single-user connector; your account "
+                    f"({subject}) is not the owner."
+                )
             return _ensure_single_client()
         raise NotAuthenticatedError(_setup_required_message())
     client = Client(creds.library)

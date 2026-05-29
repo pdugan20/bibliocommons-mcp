@@ -48,30 +48,44 @@ fly certs add getbiblio.app
   allowlist (`160.79.104.0/21`) as an edge WAF rule (defense-in-depth; OAuth is
   the real gate).
 
-## 4. Turn on auth — multi-user (Milestone 2)
+## 4. Turn on auth — single-user (the owner)
 
-Once read-only works end-to-end, enable WorkOS:
+This server runs **single-user**: WorkOS gates the endpoint (so it's not
+public), and the configured owner uses the server's own card/PIN. No
+`/account` page, no WorkOS API key.
 
 ```bash
-fly secrets set WORKOS_CLIENT_ID=client_01... WORKOS_API_KEY=sk_live_...
-fly deploy
+# auth on + the owner's card (no API key needed for single-user)
+fly secrets set WORKOS_CLIENT_ID=client_01... \
+  BIBLIOCOMMONS_MCP_SINGLE_USER=1 \
+  BIBLIOCOMMONS_CARD=... BIBLIOCOMMONS_PIN=...
 ```
 
-In the WorkOS dashboard (Staging or Production to match the keys):
+In the WorkOS dashboard, **Connect → Configuration**:
 
-- **Resource Indicator** = `https://getbiblio.app/mcp`
-- **Redirect URI** (web app, for the settings page) = `https://getbiblio.app/account/callback`
 - Enable **DCR + CIMD** so Claude's connector auto-registers.
+- Add **Resource Indicator** `https://getbiblio.app/mcp` (tokens are
+  audience-bound to this; the verifier checks it).
 
-Now `/mcp` requires a WorkOS login, and each user sets their library card at
-`https://getbiblio.app/account`.
+**Lock it to you** (code-enforced, no fuzzy WorkOS toggle): log in once via the
+connector; the 401 message (or WorkOS → Users) shows your account id, then:
+
+```bash
+fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=user_01YOURID
+```
+
+Until that's set, single-user mode is fail-safe — nobody gets the card. After
+it, only your WorkOS id reaches it. (For genuine multi-user instead, drop
+`BIBLIOCOMMONS_MCP_SINGLE_USER`, set `WORKOS_API_KEY` + the
+`https://getbiblio.app/account/callback` redirect URI, and users self-serve at
+`/account`.)
 
 ## 5. Add the connector in Claude
 
 On **claude.ai web** (not the phone): Settings → Connectors → Add custom
 connector → `https://getbiblio.app/mcp`. It then syncs to the iOS app. Complete
-the WorkOS login, set your card at `/account`, and confirm `list_holds` returns
-your holds.
+the WorkOS login, then confirm `list_holds` returns your holds (single-user
+mode uses the configured card automatically — no `/account` step).
 
 ## Operations
 
