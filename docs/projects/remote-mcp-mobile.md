@@ -2,7 +2,7 @@
 
 > **Status: not started.** This brief is the handoff for an in-repo agent.
 > It is intentionally self-contained — the reference servers it draws on
-> (`rewind`, `nextup-backend-mcp`) live in *other repos* you can't see, so
+> (`rewind`, `nextup-backend-mcp`) live in _other repos_ you can't see, so
 > their relevant patterns are extracted inline below.
 >
 > **Validated 2026-05-28** against the live Claude connector docs, the MCP
@@ -13,7 +13,7 @@
 >
 > **Execution checklist:** [`remote-mcp-mobile-tracker.md`](remote-mcp-mobile-tracker.md)
 > — phased tasks with owners + acceptance criteria. This doc is the
-> *why/architecture*; the tracker is the *what/checklist*.
+> _why/architecture_; the tracker is the _what/checklist_.
 
 ## Goal
 
@@ -28,7 +28,7 @@ Today the only transport is stdio (`server.py:main()`, `mcp.run(transport="stdio
 so the server can only run as a local subprocess of a desktop MCP client
 (Claude Code / Claude Desktop). The mobile app cannot launch local processes
 — it can only attach to a **remote MCP server reachable over the public
-internet** speaking Streamable HTTP. bibliocommons is the *ideal* candidate to
+internet** speaking Streamable HTTP. bibliocommons is the _ideal_ candidate to
 port because it has **zero local-machine dependencies**: every tool hits the
 public `https://gateway.bibliocommons.com/v2/...` REST API, the only persisted
 state is the in-memory branch cache, and credentials are already env-injectable
@@ -37,7 +37,7 @@ the textbook remote-MCP case.
 
 This intersects two items already on [`../roadmap.md`](../roadmap.md):
 **"Multi-library mode"** (v2.x) and **"Search-only / no-credentials mode"**
-(v2.x). This project subsumes both — multi-user *requires* per-request library
+(v2.x). This project subsumes both — multi-user _requires_ per-request library
 selection, and the no-credentials catalog mode is the natural low-risk first
 milestone.
 
@@ -54,7 +54,7 @@ language. The two sibling servers that already work on mobile both:
 We replicate that shell around the existing FastMCP tool definitions. The
 tools themselves barely change. **Note:** rewind ran its own OAuth provider
 (`@cloudflare/workers-oauth-provider`) because it predates the spec change
-below — we should *not* copy that; see the auth section.
+below — we should _not_ copy that; see the auth section.
 
 ## Approach
 
@@ -98,7 +98,7 @@ concrete chokepoint is `server.py:_ensure_client()` (~`:148`) — a Config-drive
 **module-global singleton** `Client`. A multi-user remote service inverts this:
 **credentials must be per-user**, supplied via the auth flow, never baked into
 server config. `_ensure_client()` becomes "resolve (and cache) the `Client`
-for the *authenticated identity* of this request."
+for the _authenticated identity_ of this request."
 
 The good news from the code audit: `client.py` is **already fully
 instance-per-library**. `Client(library)` → `authenticate(card, pin)` →
@@ -113,7 +113,7 @@ for any `library` with no logged-in session. That's the "no-credentials
 catalog mode" and it's milestone 1.
 
 **The identity-vs-library-credentials split (important):** the OAuth flow
-below authenticates *who the user is*. It does **not** convey their library
+below authenticates _who the user is_. It does **not** convey their library
 card/PIN. So you still need a step that maps `authenticated subject →
 {library, card, pin}`. Two storage models — pick one in the open questions:
 
@@ -166,7 +166,7 @@ populated when `token_verifier` is configured.)
 
 - `RemoteAuthProvider` is **only in the standalone `fastmcp` v2 package, NOT
   in the official `mcp` SDK we pin.** Don't import it. (Real fork in the road:
-  stay on official `mcp` as a hand-wired RS, *or* adopt standalone `fastmcp`
+  stay on official `mcp` as a hand-wired RS, _or_ adopt standalone `fastmcp`
   v2 for its first-class IdP-provider integrations — a dependency swap, see
   open questions.)
 - **Spec MUSTs to satisfy:** clients send RFC 8707 `resource` on every auth +
@@ -192,7 +192,7 @@ The "well-known mounting gotcha" from earlier drafts is largely solved:
   points clients at the external IdP.
 - `/.well-known/oauth-authorization-server` is the **IdP's** responsibility in
   RS mode — your server does not serve it (it's only auto-served when you pass
-  `auth_server_provider`, i.e. when *you* are the AS, which we're not).
+  `auth_server_provider`, i.e. when _you_ are the AS, which we're not).
 - Only if you target a non-spec-compliant client that probes bare-root
   well-known do you need to add a manual root route on the parent Starlette
   app. Spec-compliant Claude follows the `WWW-Authenticate` /
@@ -233,7 +233,7 @@ why rewind/clickwheel show real icons.
 apex-keyed, hosting at `getbiblio.app` (apex) — or any `*.getbiblio.app`
 subdomain — yields the `getbiblio.app` icon, **distinct from clickwheel's**.
 What we must do: ensure `https://www.google.com/s2/favicons?domain=getbiblio.app&sz=32`
-returns *our* icon, which means **the apex `getbiblio.app` must serve a
+returns _our_ icon, which means **the apex `getbiblio.app` must serve a
 favicon that Google's crawler can find** (a `/favicon.ico` and/or
 `<link rel="icon">` on the apex root, publicly fetchable — Google's crawler is
 unauthenticated, so this route stays open even though `/mcp` + OAuth are
@@ -255,8 +255,8 @@ See tracker Phase 4 for the task breakdown.
 ## Milestones
 
 1. **HTTP transport + read-only catalog, single hardcoded library, fully
-   authless.** Claude supports authless connectors, so this needs *no auth at
-   all* — not even a connector token. Prove the mobile connector attaches
+   authless.** Claude supports authless connectors, so this needs _no auth at
+   all_ — not even a connector token. Prove the mobile connector attaches
    (added on web, synced to phone) and `search`/`availability`/`list_branches`
    work end-to-end. De-risks the whole transport+hosting story before any
    auth.
@@ -292,7 +292,7 @@ See tracker Phase 4 for the task breakdown.
   pinned stack.
 - **Grant/credential store backend:** Firestore? Cloud SQL? Redis w/
   encryption? Must support TTL + encryption-at-rest.
-- **BiblioCommons / library Terms of Service.** Hosting a *multi-user* proxy
+- **BiblioCommons / library Terms of Service.** Hosting a _multi-user_ proxy
   that stores patrons' card numbers + PINs and drives holds on their behalf is
   a materially different posture than a single-user local tool. **Check SPL /
   BiblioCommons ToS before going multi-user beyond yourself.** Real blocker,
@@ -324,7 +324,7 @@ streamable-http endpoint" and "container deploys + `/healthz` is green." It
 3. **Add the connector on claude.ai web** (`https://getbiblio.app/mcp`),
    complete the OAuth flow, then **confirm on the phone** that it synced and
    tools appear + a `search` returns. (You cannot add by URL from the phone.)
-4. Confirm an authenticated `list_holds` returns *your* holds (per-user creds
+4. Confirm an authenticated `list_holds` returns _your_ holds (per-user creds
    wired correctly via `get_access_token().subject` → your store, not a shared
    session).
 5. Confirm the connector icon renders as the `getbiblio.app` favicon — i.e.
