@@ -26,3 +26,4 @@ Briefs graduate to actual issues when someone's ready to work on them.
 | [Bulk hold operations](bulk-operations.md)            | v1.2       | Cancel is already bulk on the wire; placement is N×1.                         |
 | [Preview cards (inline UI bundles)](preview-cards.md) | v2.x       | Big one. Standing up a `web/` workbench like clickwheel and rewind.           |
 | [Public-readiness CI](public-readiness-ci.md)         | continuous | Triage of CI/tooling items through "would this help an OSS contributor" lens. |
+| [Remote MCP — mobile connector](remote-mcp-mobile.md) ([tracker](remote-mcp-mobile-tracker.md)) | v2.x       | Streamable HTTP, multi-user, hosted at `getbiblio.app`. Resource-Server + managed IdP (not own OAuth server); authless read-only M1. Subsumes roadmap's multi-library + no-credentials modes. |
