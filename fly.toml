@@ -3,7 +3,7 @@
 # app name + region; the service/env/check blocks below are the important bits.
 
 app = "getbiblio-mcp"
-primary_region = "sea" # Seattle — near SPL; change to your nearest region
+primary_region = "sjc" # San Jose (US-west; Fly deprecated 'sea'/Seattle)
 
 [build]
   dockerfile = "Dockerfile"
