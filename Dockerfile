@@ -16,10 +16,9 @@ WORKDIR /app
 # (declared as the project readme) + the package source.
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install .
-
-# Drop root.
-RUN useradd --create-home --uid 10001 app
+# Install the package and create the non-root user in one layer.
+RUN pip install . \
+  && useradd --create-home --uid 10001 app
 USER app
 
 # Cloud Run / Fly inject $PORT; _run_http() honors it (default 8000).

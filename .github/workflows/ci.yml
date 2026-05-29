@@ -109,3 +109,25 @@ jobs:
         with:
           files: coverage.xml
           fail_ci_if_error: false
+
+  infra-lint:
+    name: Infra Lint (Docker + Fly)
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Lint Dockerfile (hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+      - name: Check fly.toml formatting (taplo)
+        run: npx --yes @taplo/cli@latest fmt --check fly.toml
+      # Semantic fly.toml validation needs platform auth; runs only when the
+      # FLY_API_TOKEN secret is configured, otherwise skipped (not failed).
+      - name: Set up flyctl
+        if: env.FLY_API_TOKEN != ''
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Validate fly.toml (flyctl)
+        if: env.FLY_API_TOKEN != ''
+        run: flyctl config validate
