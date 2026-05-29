@@ -14,10 +14,12 @@ import os
 import sys
 import time
 from typing import TYPE_CHECKING
+from urllib.parse import urlparse
 
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -141,6 +143,41 @@ DESTRUCTIVE = ToolAnnotations(
 # ─────────────────────────────── runtime ───────────────────────────────
 
 
+def _transport_security() -> TransportSecuritySettings | None:
+    """Allowed Host/Origin for the Streamable HTTP endpoint (DNS-rebinding
+    protection), or None to keep the SDK's localhost-only default.
+
+    The SDK rejects any Host it doesn't trust with `421 Invalid Host header`,
+    so a remote deployment must list its real hostnames. Derived from
+    `BIBLIOCOMMONS_MCP_PUBLIC_URL` + the Fly app host (`$FLY_APP_NAME.fly.dev`),
+    with localhost kept for local testing, plus any extra comma-separated
+    `BIBLIOCOMMONS_MCP_ALLOWED_HOSTS`. Returns None when no public host is
+    configured (stdio / local dev) so the secure default stands.
+    """
+    hosts: list[str] = ["localhost", "127.0.0.1"]
+    origins: list[str] = []
+
+    public = os.environ.get("BIBLIOCOMMONS_MCP_PUBLIC_URL")
+    if public:
+        netloc = urlparse(public).netloc
+        if netloc:
+            hosts.append(netloc)
+            origins.append(public.rstrip("/"))
+
+    fly_app = os.environ.get("FLY_APP_NAME")
+    if fly_app:
+        hosts.append(f"{fly_app}.fly.dev")
+        origins.append(f"https://{fly_app}.fly.dev")
+
+    for extra in os.environ.get("BIBLIOCOMMONS_MCP_ALLOWED_HOSTS", "").split(","):
+        if extra.strip():
+            hosts.append(extra.strip())
+
+    if not public and not fly_app:
+        return None  # local/dev: keep the SDK's localhost-only default
+    return TransportSecuritySettings(allowed_hosts=hosts, allowed_origins=origins)
+
+
 def _build_mcp() -> FastMCP:
     """Construct the FastMCP server, enabling OAuth Resource-Server auth iff
     WorkOS is configured in the environment.
@@ -160,6 +197,9 @@ def _build_mcp() -> FastMCP:
             "WorkOS Resource-Server auth enabled (resource=%s)",
             settings.resource_server_url,
         )
+    transport_security = _transport_security()
+    if transport_security is not None:
+        kwargs["transport_security"] = transport_security
     return FastMCP("bibliocommons-mcp", **kwargs)
 
 
