@@ -118,7 +118,7 @@ catalog mode" and it's milestone 1.
 **The identity-vs-library-credentials split (important):** the OAuth flow
 below authenticates _who the user is_. It does **not** convey their library
 card/PIN. So you still need a step that maps `authenticated subject →
-{library, card, pin}`. Two storage models — pick one in the open questions:
+{library, card, pin}`. **Decided 2026-05-28: per-session + warm instance** (rationale + the empirical BC-session finding are under Open questions). The two models that were weighed:
 
 - **Custodian (persist):** the user enters library subdomain + card + PIN once
   (on a server-hosted consent/settings page), you encrypt and store keyed to
@@ -212,6 +212,10 @@ DNS/TLS/edge sit in one place:
 - Custom domain: `getbiblio.app` (apex) → the service.
 - Containerize (Dockerfile), `$PORT` from the platform, secrets via the
   platform's secret manager (Cloud Run + Secret Manager, or Fly secrets).
+- **Run a warm instance** (Cloud Run `min-instances=1`, or Fly always-on).
+  The per-session credential model keeps each user's authenticated BC cookie
+  jar in memory; a scale-to-zero cold start would wipe it and force PIN
+  re-entry every session. Warm → re-auth is ~per-deploy instead. (~$10-15/mo.)
 - **Must be reachable from Anthropic's cloud over the public internet** — no
   VPN/private network (connector traffic comes from Anthropic's cloud, not the
   user's device). Anthropic publishes a stable outbound range to allowlist,
@@ -293,25 +297,38 @@ See tracker Phase 4 for the task breakdown.
 
 ## Open questions
 
-- **Credential-storage model:** custodian (persist encrypted) vs per-session
-  (never persist)? Security + UX call for the owner before milestone 2.
-  Default recommendation: per-session for v1, custodian only if reconnect
-  friction proves unacceptable.
-- **Which managed IdP** (WorkOS / Auth0 / Clerk / Stytch / Descope / other),
-  and **official `mcp` SDK as hand-wired RS vs standalone `fastmcp` v2** for
-  its first-class IdP integrations? The latter is a dependency swap away from
-  the pinned official SDK — weigh integration convenience vs staying on the
-  pinned stack.
-- **Grant/credential store backend:** Firestore? Cloud SQL? Redis w/
-  encryption? Must support TTL + encryption-at-rest.
-- **BiblioCommons / library Terms of Service.** Hosting a _multi-user_ proxy
-  that stores patrons' card numbers + PINs and drives holds on their behalf is
-  a materially different posture than a single-user local tool. **Check SPL /
-  BiblioCommons ToS before going multi-user beyond yourself.** Real blocker,
-  not a footnote.
+**Resolved 2026-05-28** (rationale kept here; statuses in tracker Phase 0):
+
+- **Credential model → per-session + warm instance.** Hold each user's
+  authenticated BC cookie jar in memory only; **never persist the raw PIN**.
+  Empirical finding (from the login cassettes): BC issues a ~1-year session
+  cookie (`session_id`, `max-age=31536000`) plus a 15-min access token that
+  auto-refreshes from it — so on a warm instance the PIN is re-entered only
+  ~per deploy. Documented upgrade if that friction bites: persist the
+  _encrypted session cookie_ (PIN ~yearly), still never the raw PIN. Full
+  PIN-custodian is strictly dominated by that and is not used.
+- **IdP → WorkOS AuthKit.** 1M-MAU free tier; DCR + CIMD on free (Claude's
+  connector auto-registers, no manual client ID/secret); native RFC 8707
+  audience binding; RFC 9728 PRM; standard JWKS/JWT.
+- **SDK track → stay on official `mcp`.** Hand-wire a JWKS `TokenVerifier`
+  (fetch WorkOS JWKS; validate signature + `aud` + expiry) instead of adopting
+  `fastmcp` v2 for its turnkey provider — no dependency swap, IdP-agnostic, no
+  migration risk to the tested codebase. The ~80 lines are a one-time cost.
+- **Grant/credential store backend → none for v1.** Per-session is in-memory
+  (the TTL'd client cache), so no Firestore/Cloud SQL/Redis until/unless the
+  session-cookie-persistence upgrade is taken (then: a small encrypted,
+  TTL-capable store).
+- **Anthropic IP allowlist → resolved (§4):** allowlist `160.79.104.0/21` at
+  the Cloudflare edge as defense-in-depth; OAuth is the gate.
+
+Still open:
+
+- **BiblioCommons / library Terms of Service.** Even per-session, you drive
+  holds on patrons' behalf — a different posture than a single-user local
+  tool. Per-session _not storing PINs_ softens it (you hold only a transient
+  session, never the reusable secret), but **check SPL / BiblioCommons ToS
+  before going multi-user beyond yourself.** Real blocker, not a footnote.
 - **Favicon on iOS** — reconfirm per §5 before doing any icon work.
-- **Anthropic inbound IP allowlist** — does the current connector setup
-  require it for Cloud Run / Fly? Capture the live CIDR list if so.
 
 ## Dependencies / blockers
 
