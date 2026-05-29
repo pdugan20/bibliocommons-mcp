@@ -1,5 +1,13 @@
 # Tracker: Remote MCP — mobile custom connector
 
+> **Reconciled 2026-05-29 — LIVE.** Deployed to Fly at `https://getbiblio.app/mcp`
+> (read-only). M1–M3 + single-user mode + Fly hardening all merged. The phase
+> checkboxes below are the historical execution record; for **what's actually
+> left** (3 items: favicon, single-user activation, on-device acceptance) and
+> what's been closed, see
+> [`remote-mcp-mobile-followups.md`](remote-mcp-mobile-followups.md) — that's
+> now the source of truth.
+>
 > Execution tracker for [`remote-mcp-mobile.md`](remote-mcp-mobile.md). The
 > brief is the _why/architecture_; this is the _what/checklist_. Keep them in
 > sync — if a decision here contradicts the brief, fix the brief too.
