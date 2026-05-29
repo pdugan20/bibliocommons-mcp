@@ -21,6 +21,7 @@ from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from .auth import workos_auth_from_env
 from .branches import BranchNotFound
 from .client import BCError, Client, NotAuthenticatedError
 from .config import Config, ConfigError
@@ -132,7 +133,29 @@ DESTRUCTIVE = ToolAnnotations(
 # ─────────────────────────────── runtime ───────────────────────────────
 
 
-mcp = FastMCP("bibliocommons-mcp", instructions=INSTRUCTIONS.strip())
+def _build_mcp() -> FastMCP:
+    """Construct the FastMCP server, enabling OAuth Resource-Server auth iff
+    WorkOS is configured in the environment.
+
+    Auth is opt-in (see auth.workos_auth_from_env): with `WORKOS_*` env set,
+    the HTTP transport validates WorkOS bearer tokens and advertises
+    protected-resource metadata; without it, the server is authless
+    (Milestone-1 read-only catalog mode). stdio never enforces auth.
+    """
+    kwargs: dict = {"instructions": INSTRUCTIONS.strip()}
+    auth = workos_auth_from_env()
+    if auth is not None:
+        verifier, settings = auth
+        kwargs["token_verifier"] = verifier
+        kwargs["auth"] = settings
+        logger.info(
+            "WorkOS Resource-Server auth enabled (resource=%s)",
+            settings.resource_server_url,
+        )
+    return FastMCP("bibliocommons-mcp", **kwargs)
+
+
+mcp = _build_mcp()
 
 # Register the prebuilt React bundles as MCP Apps UI resources. The
 # mapping is used below by tools that want to render a card; passing
@@ -979,12 +1002,16 @@ def _run_http() -> None:
         os.environ.get("PORT") or os.environ.get("FASTMCP_PORT") or 8000
     )
     mcp.settings.stateless_http = True
-    mode = "authenticated" if cfg.has_credentials else "read-only (authless)"
+    # Two independent axes: WorkOS OAuth (server-level access) and library
+    # credentials (account tools). Report both so the operator isn't misled.
+    auth_mode = "WorkOS OAuth" if workos_auth_from_env() else "authless"
+    creds_mode = "library creds set" if cfg.has_credentials else "read-only catalog"
     logger.info(
-        "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, library=%s]",
+        "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, %s, library=%s]",
         mcp.settings.host,
         mcp.settings.port,
-        mode,
+        auth_mode,
+        creds_mode,
         cfg.library,
     )
     try:

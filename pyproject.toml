@@ -26,6 +26,9 @@ dependencies = [
     # mcp>=1.27 = MCP spec 2025-11-25 (tool annotations, structured output,
     # elicitation, ToolError). Anything older lacks features we depend on.
     "mcp>=1.27",
+    # JWKS/JWT validation for the remote OAuth Resource-Server transport
+    # (auth.py). The `crypto` extra pulls in `cryptography` for RS256.
+    "pyjwt[crypto]>=2.9",
 ]
 
 [project.scripts]
