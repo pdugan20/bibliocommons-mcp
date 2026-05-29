@@ -104,3 +104,24 @@ def test_single_tenant_path_when_no_subject(multiuser):
     sentinel = _FakeClient("seattle")
     srv._client = sentinel  # pretend the single client is already initialized
     assert srv._ensure_client() is sentinel
+
+
+def test_single_user_mode_uses_config_creds(multiuser, monkeypatch, tmp_path):
+    """With BIBLIOCOMMONS_MCP_SINGLE_USER set, an authenticated user with no
+    per-user record falls back to the server's own configured card/PIN."""
+    monkeypatch.setenv("BIBLIOCOMMONS_MCP_SINGLE_USER", "1")
+    monkeypatch.setenv("BIBLIOCOMMONS_MCP_CONFIG", str(tmp_path / "none.toml"))
+    monkeypatch.setenv("BIBLIOCOMMONS_LIBRARY", "seattle")
+    monkeypatch.setenv("BIBLIOCOMMONS_CARD", "owner-card")
+    monkeypatch.setenv("BIBLIOCOMMONS_PIN", "owner-pin")
+    multiuser("any_authenticated_user")  # authenticated, but no per-user record
+    client = srv._ensure_client()
+    assert client.library == "seattle"
+    assert client._authed and client.auth_calls == [("owner-card", "owner-pin")]
+
+
+def test_single_user_mode_off_errors_without_record(multiuser, monkeypatch):
+    monkeypatch.delenv("BIBLIOCOMMONS_MCP_SINGLE_USER", raising=False)
+    multiuser("any_authenticated_user")
+    with pytest.raises(ToolError, match="No library account is configured"):
+        srv.list_holds()
