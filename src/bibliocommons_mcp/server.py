@@ -15,15 +15,18 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
+from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from .auth import workos_auth_from_env
 from .branches import BranchNotFound
 from .client import BCError, Client, NotAuthenticatedError
 from .config import Config, ConfigError
+from .credentials import CredentialStore, InMemoryCredentialStore, UserCredentials
 from .models import (
     Availability,
     AvailabilityCopy,
@@ -132,7 +135,29 @@ DESTRUCTIVE = ToolAnnotations(
 # ─────────────────────────────── runtime ───────────────────────────────
 
 
-mcp = FastMCP("bibliocommons-mcp", instructions=INSTRUCTIONS.strip())
+def _build_mcp() -> FastMCP:
+    """Construct the FastMCP server, enabling OAuth Resource-Server auth iff
+    WorkOS is configured in the environment.
+
+    Auth is opt-in (see auth.workos_auth_from_env): with `WORKOS_*` env set,
+    the HTTP transport validates WorkOS bearer tokens and advertises
+    protected-resource metadata; without it, the server is authless
+    (Milestone-1 read-only catalog mode). stdio never enforces auth.
+    """
+    kwargs: dict = {"instructions": INSTRUCTIONS.strip()}
+    auth = workos_auth_from_env()
+    if auth is not None:
+        verifier, settings = auth
+        kwargs["token_verifier"] = verifier
+        kwargs["auth"] = settings
+        logger.info(
+            "WorkOS Resource-Server auth enabled (resource=%s)",
+            settings.resource_server_url,
+        )
+    return FastMCP("bibliocommons-mcp", **kwargs)
+
+
+mcp = _build_mcp()
 
 # Register the prebuilt React bundles as MCP Apps UI resources. The
 # mapping is used below by tools that want to render a card; passing
@@ -145,6 +170,14 @@ UI_RESOURCES = ui_resources.register_all(mcp)
 
 _cfg: Config | None = None
 _client: Client | None = None
+
+# Multi-user (WorkOS auth on): per-subject credentials + an authenticated-client
+# cache keyed on the token `subject`. In single-tenant / stdio mode these stay
+# empty and the globals above are used. The cache holds each user's cookie jar
+# in memory only (per-session model, brief §2); a plain dict for now — TTL +
+# eviction is Phase-3 hardening (tracker 3.1).
+_cred_store: CredentialStore = InMemoryCredentialStore()
+_user_clients: dict[str, Client] = {}
 
 
 @mcp.custom_route("/healthz", methods=["GET"])
@@ -173,15 +206,25 @@ async def healthz(_request: Request) -> JSONResponse:
     )
 
 
-def _ensure_client() -> Client:
-    """Lazy-init client. Called by every tool to avoid logging in until needed.
+def _current_subject() -> str | None:
+    """The authenticated user id (JWT `sub`) for this request, or None.
 
-    Loads config without forcing credentials so the server can run in
-    read-only catalog mode (authless HTTP deployment). When card/PIN are
-    present we authenticate; otherwise the client stays unauthenticated and
-    account-side tools raise NotAuthenticatedError (→ a clean ToolError) when they
-    reach `client.account_id`. Read-only tools (search, availability,
-    list_branches) work either way.
+    None means no auth context — stdio, or the authless M1 HTTP deployment —
+    in which case the single-server Config path is used.
+    """
+    try:
+        token = get_access_token()
+    except Exception:
+        return None
+    return getattr(token, "subject", None) if token else None
+
+
+def _ensure_single_client() -> Client:
+    """Single-tenant path: one Config-driven client for the whole server.
+
+    Used by stdio and the authless read-only M1 deployment. Loads config
+    without forcing credentials so catalog mode works; authenticates only when
+    card/PIN are present.
     """
     global _cfg, _client
     if _client is None:
@@ -192,13 +235,71 @@ def _ensure_client() -> Client:
     return _client
 
 
+def _setup_required_message() -> str:
+    base = (
+        "No library account is configured for your connector yet. Add your "
+        "library, card number, and PIN"
+    )
+    url = os.environ.get("BIBLIOCOMMONS_MCP_SETTINGS_URL")
+    return f"{base} at {url} to use this tool." if url else f"{base} to use this tool."
+
+
+def _ensure_user_client(subject: str) -> Client:
+    """Multi-tenant path: resolve (and cache) this user's authenticated client.
+
+    Looks up the subject's UserCredentials, mints a Client for their library,
+    and authenticates if card/PIN are present. No record → a clean
+    NotAuthenticatedError pointing at the setup page (PR-B). The cookie jar is
+    cached in memory per the per-session model.
+    """
+    client = _user_clients.get(subject)
+    if client is not None:
+        return client
+    creds = _cred_store.get(subject)
+    if creds is None:
+        raise NotAuthenticatedError(_setup_required_message())
+    client = Client(creds.library)
+    if creds.has_credentials:
+        client.authenticate(creds.card, creds.pin)
+    _user_clients[subject] = client
+    return client
+
+
+def _ensure_client() -> Client:
+    """Resolve the gateway Client for this request.
+
+    Identity-aware: with an authenticated subject (multi-user / WorkOS mode)
+    each user gets their own client; otherwise the single-server config client.
+    Account tools that need credentials surface NotAuthenticatedError (→ a
+    clean ToolError) when they reach `client.account_id`.
+    """
+    subject = _current_subject()
+    if subject is None:
+        return _ensure_single_client()
+    return _ensure_user_client(subject)
+
+
+def _effective_cfg() -> Config | UserCredentials | None:
+    """Config-ish record for this request: the per-user record in multi-user
+    mode, else the single-server Config. Both expose library/card/pin/
+    default_pickup_branch/default_format/digital_notification_email/
+    has_credentials, so tools read defaults uniformly. Call after
+    `_ensure_client()` so the single-server `_cfg` is populated.
+    """
+    subject = _current_subject()
+    if subject is None:
+        return _cfg
+    return _cred_store.get(subject)
+
+
 def _resolve_branch(name_or_code: str | None) -> str:
-    """Resolve a branch name/code to a code, falling back to the config default."""
+    """Resolve a branch name/code to a code, falling back to the user's default."""
     client = _ensure_client()
-    target = name_or_code or (_cfg.default_pickup_branch if _cfg else None)
+    cfg = _effective_cfg()
+    target = name_or_code or (cfg.default_pickup_branch if cfg else None)
     if not target:
         raise ToolError(
-            "pickup_branch is required (or set default_pickup_branch in config)"
+            "pickup_branch is required (or set a default pickup branch in config)"
         )
     return client.branches.resolve(target).code
 
@@ -309,7 +410,8 @@ def search(
             `title`, `author`, `published_date`, `ugc_rating`.
     """
     client = _ensure_client()
-    fmt = format or (_cfg.default_format if _cfg else None)
+    cfg = _effective_cfg()
+    fmt = format or (cfg.default_format if cfg else None)
     data = client.search(query, format=fmt, page=page, sort_by=sort_by)
     bibs = data.get("entities", {}).get("bibs", {})
     pag = data.get("catalogSearch", {}).get("pagination", {})
@@ -543,16 +645,17 @@ def place_digital_hold(
     """
     if not bib_ids:
         raise ToolError("bib_ids list is empty — nothing to place")
-    if not _cfg or not _cfg.digital_notification_email:
-        raise ToolError(
-            "digital_notification_email is required to place digital holds. "
-            "Set it in ~/.config/bibliocommons-mcp/config.toml or via the "
-            "BIBLIOCOMMONS_DIGITAL_EMAIL env var. Use the same email your "
-            "BiblioCommons account has on file for hold notifications."
-        )
 
     client = _ensure_client()
-    email = _cfg.digital_notification_email
+    cfg = _effective_cfg()
+    if not cfg or not cfg.digital_notification_email:
+        raise ToolError(
+            "digital_notification_email is required to place digital holds. "
+            "Set it in your config (BIBLIOCOMMONS_DIGITAL_EMAIL / config.toml), "
+            "or in your connector account settings on a hosted server. Use the "
+            "same email your BiblioCommons account has on file for notifications."
+        )
+    email = cfg.digital_notification_email
     placed: dict[str, PlaceHoldResult] = {}
     failures: dict[str, str] = {}
 
@@ -902,6 +1005,7 @@ def library_health() -> LibraryHealth:
     current hold quotas.
     """
     client = _ensure_client()
+    cfg = _effective_cfg()
     q = client.hold_quotas()
     holds_data = client.list_holds()
     holds = holds_data.get("entities", {}).get("holds", {}).values()
@@ -916,7 +1020,7 @@ def library_health() -> LibraryHealth:
         library=client.library,
         account_id=client.account_id,
         logged_in=True,
-        default_pickup_branch=_cfg.default_pickup_branch if _cfg else None,
+        default_pickup_branch=cfg.default_pickup_branch if cfg else None,
         physical_holds=physical_cap,
         digital_holds=f"{digital}/{q.overdrive_total}"
         if q.overdrive_total > 0
@@ -979,12 +1083,16 @@ def _run_http() -> None:
         os.environ.get("PORT") or os.environ.get("FASTMCP_PORT") or 8000
     )
     mcp.settings.stateless_http = True
-    mode = "authenticated" if cfg.has_credentials else "read-only (authless)"
+    # Two independent axes: WorkOS OAuth (server-level access) and library
+    # credentials (account tools). Report both so the operator isn't misled.
+    auth_mode = "WorkOS OAuth" if workos_auth_from_env() else "authless"
+    creds_mode = "library creds set" if cfg.has_credentials else "read-only catalog"
     logger.info(
-        "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, library=%s]",
+        "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, %s, library=%s]",
         mcp.settings.host,
         mcp.settings.port,
-        mode,
+        auth_mode,
+        creds_mode,
         cfg.library,
     )
     try:
