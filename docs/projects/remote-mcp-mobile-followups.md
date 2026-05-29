@@ -21,9 +21,9 @@ Roughly in order:
    the only secret this server holds — plus a **web-app redirect URI**
    registered in WorkOS: `https://getbiblio.app/account/callback`. (Optional
    `WEB_SESSION_SECRET`; defaults to a value derived from the API key.)
-3. **Pick a warm host** (Cloud Run `min-instances=1`, or Fly always-on) and
-   create the project. Warm is required so the per-session cookie cache
-   survives — see tracker 0.2/0.5.
+3. **Deploy to Fly** (decided). `fly.toml` + `docs/deploy-fly.md` are ready:
+   `fly launch` → `fly deploy` (authless read-only first), then `fly certs
+add getbiblio.app`. Always-on machine keeps the per-session cache warm.
 4. **Add registry/CI secrets** so CI can push the image (or push manually).
 5. **Point `getbiblio.app`** at the service via Cloudflare; confirm
    `https://getbiblio.app/mcp` + `/healthz` resolve over HTTPS.
@@ -41,7 +41,7 @@ Roughly in order:
 | Tracker #  | Item                                                                      | Blocked on (owner action)                            | Unblocks               | Gates                       |
 | ---------- | ------------------------------------------------------------------------- | ---------------------------------------------------- | ---------------------- | --------------------------- |
 | 0.3        | Create the **WorkOS** account; enable AuthKit + DCR; note issuer/JWKS URL | Account signup (free tier)                           | 2.1–2.3 RS wiring      | Milestone 2                 |
-| 0.5        | Create a **warm** host project (Cloud Run min-instances=1 / Fly)          | Account signup, billing                              | 1.9 deploy             | Milestone 1 deploy          |
+| 0.5        | **Fly** app: `fly launch` + `fly deploy` (see `docs/deploy-fly.md`)       | Fly account + `flyctl`                               | 1.9 deploy             | Milestone 1 deploy          |
 | 0.7        | **BiblioCommons / SPL ToS check** for a multi-user proxy                  | Legal/ToS reading + judgment                         | Any non-owner user     | **Hard gate, Milestone 2+** |
 | 1.8 (push) | CI pushes the container image to a registry                               | Registry creds / CI secrets                          | 1.9 deploy             | Milestone 1 deploy          |
 | 1.9        | Deploy container to the warm host                                         | Needs 0.5                                            | 1.10, connector attach | Milestone 1                 |

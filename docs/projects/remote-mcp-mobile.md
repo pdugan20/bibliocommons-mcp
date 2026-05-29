@@ -205,17 +205,21 @@ The "well-known mounting gotcha" from earlier drafts is largely solved:
 
 ### 4. Hosting
 
-Python rules out Cloudflare Workers (Node-first). Target **Cloud Run** (matches
-nextup) or **Fly/Railway**, behind a **Cloudflare-proxied** custom domain so
-DNS/TLS/edge sit in one place:
+**Decided 2026-05-29: Fly.io** — an always-on single machine is the natural
+home for the warm in-memory per-session cache (cheapest, simplest deploy);
+Cloud Run's scale-to-zero/autoscale model is the opposite of "keep one warm
+stateful box." Config committed as [`fly.toml`](../../fly.toml); step-by-step
+in [`docs/deploy-fly.md`](../deploy-fly.md). Python rules out Cloudflare Workers
+(Node-first), so Cloudflare stays the DNS/edge front, not the host:
 
-- Custom domain: `getbiblio.app` (apex) → the service.
-- Containerize (Dockerfile), `$PORT` from the platform, secrets via the
-  platform's secret manager (Cloud Run + Secret Manager, or Fly secrets).
-- **Run a warm instance** (Cloud Run `min-instances=1`, or Fly always-on).
-  The per-session credential model keeps each user's authenticated BC cookie
-  jar in memory; a scale-to-zero cold start would wipe it and force PIN
-  re-entry every session. Warm → re-auth is ~per-deploy instead. (~$10-15/mo.)
+- Custom domain: `getbiblio.app` (apex) → the Fly app, via Cloudflare.
+- Containerize (Dockerfile), `internal_port` 8000, WorkOS API key via
+  `fly secrets set`.
+- **Always-on machine** (`auto_stop_machines = "off"`,
+  `min_machines_running = 1`). The per-session model keeps each user's
+  authenticated BC cookie jar in memory; a scale-to-zero cold start would wipe
+  it and force PIN re-entry. Always-on → re-auth is ~per-deploy instead.
+  (~$3–5/mo on shared-cpu-1x.)
 - **Must be reachable from Anthropic's cloud over the public internet** — no
   VPN/private network (connector traffic comes from Anthropic's cloud, not the
   user's device). Anthropic publishes a stable outbound range to allowlist,

@@ -1,0 +1,43 @@
+# Fly.io deployment for the remote / Streamable-HTTP transport.
+# See docs/deploy-fly.md for the step-by-step. `fly launch` may rewrite the
+# app name + region; the service/env/check blocks below are the important bits.
+
+app = "getbiblio-mcp"
+primary_region = "sea" # Seattle — near SPL; change to your nearest region
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  BIBLIOCOMMONS_MCP_TRANSPORT = "http"
+  PORT = "8000"
+  # Public origin — makes the OAuth protected-resource metadata and the
+  # /account redirect URI correct. Update if you use a different domain.
+  BIBLIOCOMMONS_MCP_PUBLIC_URL = "https://getbiblio.app"
+  BIBLIOCOMMONS_MCP_RESOURCE = "https://getbiblio.app/mcp"
+  # Library for read-only catalog mode (and the single-tenant fallback).
+  BIBLIOCOMMONS_LIBRARY = "seattle"
+  # NOTE: WorkOS values are secrets, set via `fly secrets set` (see deploy doc):
+  #   WORKOS_CLIENT_ID, WORKOS_API_KEY
+  # Leave them unset for a first authless, read-only deploy.
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # WARM, ALWAYS-ON: the per-session cookie-jar cache lives in memory, so the
+  # machine must not stop/scale-to-zero (that would force PIN re-entry). This
+  # is the whole reason Fly was chosen over scale-to-zero hosts.
+  auto_stop_machines = "off"
+  auto_start_machines = false
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
