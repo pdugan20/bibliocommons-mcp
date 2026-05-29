@@ -55,6 +55,33 @@ def test_missing_credentials_raises(tmp_path, monkeypatch):
         Config.load()
 
 
+def test_readonly_load_allows_library_only(tmp_path, monkeypatch):
+    """require_credentials=False boots catalog mode with no card/pin."""
+    cfg_path = tmp_path / "no-creds.toml"
+    cfg_path.write_text('library = "seattle"\n')
+    monkeypatch.setenv("BIBLIOCOMMONS_MCP_CONFIG", str(cfg_path))
+    monkeypatch.delenv("BIBLIOCOMMONS_CARD", raising=False)
+    monkeypatch.delenv("BIBLIOCOMMONS_PIN", raising=False)
+    cfg = Config.load(require_credentials=False)
+    assert cfg.library == "seattle"
+    assert cfg.card is None
+    assert cfg.pin is None
+    assert cfg.has_credentials is False
+
+
+def test_has_credentials_true_with_card_and_pin(sample_config):
+    assert Config.load().has_credentials is True
+
+
+def test_readonly_load_still_requires_library(tmp_path, monkeypatch):
+    cfg_path = tmp_path / "empty.toml"
+    cfg_path.write_text("")
+    monkeypatch.setenv("BIBLIOCOMMONS_MCP_CONFIG", str(cfg_path))
+    monkeypatch.delenv("BIBLIOCOMMONS_LIBRARY", raising=False)
+    with pytest.raises(ConfigError, match="library"):
+        Config.load(require_credentials=False)
+
+
 def test_env_works_without_file(tmp_path, monkeypatch):
     """All values from env, no config file at all."""
     monkeypatch.setenv(

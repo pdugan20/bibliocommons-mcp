@@ -34,6 +34,15 @@ class BCError(RuntimeError):
         self.classification = classification
 
 
+class NotAuthenticatedError(RuntimeError):
+    """Raised when an account-side operation is attempted without credentials.
+
+    Lets read-only "catalog mode" (no card/PIN configured) surface a clean,
+    user-facing message from account tools instead of a bare AttributeError —
+    see ``server.py``'s ``_safe`` wrapper, which maps this to a ToolError.
+    """
+
+
 @dataclass
 class HoldQuotas:
     ils_used: int
@@ -88,7 +97,11 @@ class Client:
     @property
     def account_id(self) -> int:
         if not self._authed:
-            raise RuntimeError("must authenticate() first")
+            raise NotAuthenticatedError(
+                "This server is running in read-only catalog mode (no library "
+                "card/PIN configured), so account operations like holds and "
+                "loans are unavailable. Configure credentials to enable them."
+            )
         return self._bc.account_id
 
     def _base(self) -> str:

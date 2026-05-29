@@ -1,0 +1,67 @@
+name: Docker Build
+
+# Builds the remote/HTTP container image and smoke-tests its /healthz route
+# in read-only (authless) mode. Does NOT push — pushing to a registry needs
+# credentials the owner supplies later (see
+# docs/projects/remote-mcp-mobile-followups.md, task 1.8).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/docker-build.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/docker-build.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build image + healthz smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: bibliocommons-mcp:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test /healthz (read-only mode, no credentials)
+        run: |
+          docker run -d --name bib \
+            -e BIBLIOCOMMONS_LIBRARY=seattle \
+            -e PORT=8000 \
+            -p 8000:8000 \
+            bibliocommons-mcp:ci
+          ok=0
+          for _ in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8000/healthz | grep -q '"status":"ok"'; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+          echo "--- container logs ---"
+          docker logs bib
+          docker rm -f bib >/dev/null 2>&1 || true
+          if [ "$ok" != "1" ]; then
+            echo "::error::/healthz did not return status ok"
+            exit 1
+          fi
