@@ -5,41 +5,68 @@
 app = "getbiblio-mcp"
 primary_region = "sjc" # San Jose (US-west; Fly deprecated 'sea'/Seattle)
 
+# Graceful shutdown: Fly sends this signal, then SIGKILL after kill_timeout.
+# SIGTERM lets uvicorn drain cleanly (the default SIGINT surfaces a
+# KeyboardInterrupt traceback under anyio); 30s gives in-flight SSE/streaming
+# connections time to finish before the machine goes away.
+kill_signal = "SIGTERM"
+kill_timeout = "30s"
+
+# OOM insurance on a 512MB machine: turns a hard OOM kill (dropped sessions)
+# into degraded-but-alive. Swap is slow — not a substitute for real memory.
+swap_size_mb = 512
+
 [build]
-  dockerfile = "Dockerfile"
+dockerfile = "Dockerfile"
 
 [env]
-  BIBLIOCOMMONS_MCP_TRANSPORT = "http"
-  PORT = "8000"
-  # Public origin — makes the OAuth protected-resource metadata and the
-  # /account redirect URI correct. Update if you use a different domain.
-  BIBLIOCOMMONS_MCP_PUBLIC_URL = "https://getbiblio.app"
-  BIBLIOCOMMONS_MCP_RESOURCE = "https://getbiblio.app/mcp"
-  # Library for read-only catalog mode (and the single-tenant fallback).
-  BIBLIOCOMMONS_LIBRARY = "seattle"
-  # NOTE: WorkOS values are secrets, set via `fly secrets set` (see deploy doc):
-  #   WORKOS_CLIENT_ID, WORKOS_API_KEY
-  # Leave them unset for a first authless, read-only deploy.
+BIBLIOCOMMONS_MCP_TRANSPORT = "http"
+PORT = "8000"
+# Public origin — makes the OAuth protected-resource metadata and the
+# /account redirect URI correct. Update if you use a different domain.
+BIBLIOCOMMONS_MCP_PUBLIC_URL = "https://getbiblio.app"
+BIBLIOCOMMONS_MCP_RESOURCE = "https://getbiblio.app/mcp"
+# Library for read-only catalog mode (and the single-tenant fallback).
+BIBLIOCOMMONS_LIBRARY = "seattle"
+# NOTE: secrets (WORKOS_CLIENT_ID, WORKOS_API_KEY, BIBLIOCOMMONS_CARD/PIN)
+# go via `fly secrets set`, never here. See docs/deploy-fly.md.
 
+# Zero-downtime deploys even on a single machine: boot the new machine, wait
+# for health checks, cut traffic over, then remove the old one. (Requires no
+# attached volumes — we have none.) A deploy still empties the in-memory
+# per-session cache; bluegreen just avoids 503s during the swap.
+[deploy]
+strategy = "bluegreen"
+
+# Always-on: the warm in-memory per-session cookie cache must survive, so the
+# machine never scales to zero — but the proxy may wake it if it ever stops.
 [http_service]
-  internal_port = 8000
-  force_https = true
-  # WARM, ALWAYS-ON: the per-session cookie-jar cache lives in memory, so the
-  # machine must not stop/scale-to-zero (that would force PIN re-entry). This
-  # is the whole reason Fly was chosen over scale-to-zero hosts.
-  auto_stop_machines = "off"
-  # true so the proxy wakes a stopped machine (e.g. after a deploy/crash)
-  # instead of returning 503; combined with auto_stop=off it stays warm.
-  auto_start_machines = true
-  min_machines_running = 1
+internal_port = 8000
+force_https = true
+auto_stop_machines = "off"
+auto_start_machines = true
+min_machines_running = 1
 
-  [[http_service.checks]]
-    method = "GET"
-    path = "/healthz"
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
+# Long-lived SSE/streaming connections → count connections, not requests.
+# Generous limits so a handful of persistent sessions don't trip an
+# admission cap (the implicit default soft_limit is only 20).
+[http_service.concurrency]
+type = "connections"
+soft_limit = 200
+hard_limit = 250
+
+[[http_service.checks]]
+method = "GET"
+path = "/healthz"
+interval = "30s"
+timeout = "5s"
+grace_period = "10s"
+
+# Recover from crashes, but don't loop a genuinely broken build forever.
+[[restart]]
+policy = "on-failure"
+max_retries = 10
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "512mb"
+size = "shared-cpu-1x"
+memory = "512mb"

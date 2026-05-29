@@ -82,3 +82,24 @@ your holds.
   cached client drops, default 86400), `BIBLIOCOMMONS_MCP_MAX_SESSIONS`
   (default 1000), `WEB_SESSION_SECRET` (defaults to a value derived from the
   API key).
+
+## Config validation & linting
+
+- `fly config validate --strict` — semantic check of `fly.toml` (needs Fly
+  auth; run before deploying). CI runs it too when an `FLY_API_TOKEN` repo
+  secret is set (the `Infra Lint` job); without the secret that step is
+  skipped, not failed.
+- `taplo fmt fly.toml` — TOML formatter (also a pre-commit hook, scoped to
+  `fly.toml`).
+- `hadolint Dockerfile` — Dockerfile linter (CI `Infra Lint` job).
+
+## Hardening baked into `fly.toml`
+
+- **Zero-downtime deploys:** `[deploy] strategy = "bluegreen"` boots+health-checks
+  a new machine before cutting over (verified). A deploy still empties the
+  in-memory session cache; bluegreen just avoids 503s during the swap.
+- **Graceful shutdown:** `kill_signal = "SIGTERM"` + `kill_timeout = "30s"` so
+  uvicorn drains SSE/streaming connections cleanly on stop.
+- **OOM insurance:** `swap_size_mb = 512` on the 512MB machine.
+- **Crash recovery:** `[[restart]] policy = "on-failure"` (max 10).
+- **Concurrency:** `connections` type, soft 200 / hard 250 (long-lived SSE).

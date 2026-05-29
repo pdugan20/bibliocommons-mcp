@@ -1232,6 +1232,8 @@ def _run_http() -> None:
     )
     try:
         mcp.run(transport="streamable-http")
+    except KeyboardInterrupt:
+        logger.info("shutting down (interrupt)")
     except (BCError, BranchNotFound) as exc:
         logger.error("Server error: %s", exc)
         sys.exit(1)
@@ -1283,6 +1285,8 @@ def main() -> None:
     logger.info("Starting bibliocommons-mcp (stdio)")
     try:
         mcp.run(transport="stdio")
+    except KeyboardInterrupt:
+        logger.info("shutting down (interrupt)")
     except (BCError, BranchNotFound) as exc:
         logger.error("Server error: %s", exc)
         sys.exit(1)

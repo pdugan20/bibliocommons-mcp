@@ -19,6 +19,18 @@ repos:
         args: ["--fix"]
       - id: ruff-format
 
+  # Format/lint fly.toml. Scoped to fly.toml (not pyproject) and --no-schema
+  # because the bundled Fly schema lags the platform; `fly config validate`
+  # is the semantic check (run in CI + before deploy).
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+        files: ^fly\.toml$
+      - id: taplo-lint
+        files: ^fly\.toml$
+        args: ["--no-schema"]
+
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.0.0
     hooks:
