@@ -106,13 +106,13 @@ forwarded to the BiblioCommons gateway.
 
 ### 2b. Per-user credentials + client cache
 
-| #    | Task                                                                                                                                   | Owner      | Status |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
-| 2.6  | `_current_subject()` reads identity via `get_access_token().subject`                                                                   | repo       | [x]    |
-| 2.7  | `_ensure_client()` refactored to identity-aware: single-tenant path (stdio/M1) vs per-subject path                                     | repo       | [x]    |
-| 2.8  | Per-subject `Client` cache (`_user_clients`) keyed by subject; authenticates once. TTL/eviction deferred to 3.1                        | repo       | [x]    |
-| 2.9  | **PR-B (next):** card/PIN capture settings page (WorkOS browser login → `_cred_store`). Per-session in-memory, raw PIN never persisted | repo+owner | [ ]    |
-| 2.10 | Audit: card/PIN never logged / in errors / in tool output. Store is in-memory only (no PIN at rest). Spot-checked; full pass with PR-B | repo       | [~]    |
+| #    | Task                                                                                                                                                                                         | Owner | Status |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| 2.6  | `_current_subject()` reads identity via `get_access_token().subject`                                                                                                                         | repo  | [x]    |
+| 2.7  | `_ensure_client()` refactored to identity-aware: single-tenant path (stdio/M1) vs per-subject path                                                                                           | repo  | [x]    |
+| 2.8  | Per-subject `Client` cache (`_user_clients`) keyed by subject; authenticates once. TTL/eviction deferred to 3.1                                                                              | repo  | [x]    |
+| 2.9  | `/account` settings page (`web_settings.py`): WorkOS browser login → enter library/card/PIN → validated against BC → stored in `_cred_store`. Per-session in-memory; raw PIN never persisted | repo  | [x]    |
+| 2.10 | Audit: card/PIN never logged / in errors / in tool output; PIN not echoed in the form; store is in-memory only (no PIN at rest); session/state cookies signed + HttpOnly/Secure              | repo  | [x]    |
 
 ### 2c. Authenticated tools live
 

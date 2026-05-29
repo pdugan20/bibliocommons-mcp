@@ -52,6 +52,11 @@ from .models import (
     SearchResult,
 )
 from .models import Branch as BranchModel
+from .web_settings import (
+    WebSettingsConfigError,
+    register_account_routes,
+    web_settings_from_env,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -178,6 +183,18 @@ _client: Client | None = None
 # eviction is Phase-3 hardening (tracker 3.1).
 _cred_store: CredentialStore = InMemoryCredentialStore()
 _user_clients: dict[str, Client] = {}
+
+# Account settings page (/account): browser flow for capturing each user's
+# library credentials into _cred_store. Enabled only when WorkOS is configured
+# with an API key (the browser code exchange needs the confidential secret).
+try:
+    _web_settings_cfg = web_settings_from_env()
+except WebSettingsConfigError as _exc:
+    logger.warning("account settings page disabled: %s", _exc)
+    _web_settings_cfg = None
+if _web_settings_cfg is not None:
+    register_account_routes(mcp, _web_settings_cfg, _cred_store)
+    logger.info("account settings page enabled at /account")
 
 
 @mcp.custom_route("/healthz", methods=["GET"])
