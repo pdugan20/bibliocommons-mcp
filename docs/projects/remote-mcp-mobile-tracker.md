@@ -19,16 +19,16 @@
 Acceptance: every open question in the brief is answered and written down;
 accounts exist; DNS resolves.
 
-| #   | Task                                                                                                                                                                   | Owner      | Status |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
-| 0.1 | Confirm `getbiblio.app` registered and nameservers pointed at Cloudflare                                                                                               | owner      | [ ]    |
-| 0.2 | Decide **credential-storage model**: per-session (default) vs custodian-persist. Record rationale in brief §2                                                          | owner      | [ ]    |
-| 0.3 | Decide **IdP**: WorkOS / Auth0 / Clerk / Stytch / Descope / other. Create the account, note the issuer URL                                                             | owner      | [ ]    |
-| 0.4 | Decide **SDK track**: stay on official `mcp` (hand-wired Resource Server) vs adopt standalone `fastmcp` v2 (first-class IdP providers). Record in brief open questions | owner+repo | [ ]    |
-| 0.5 | Decide **hosting**: Cloud Run vs Fly vs Railway. Create the account/project                                                                                            | owner      | [ ]    |
-| 0.6 | Choose **credential/grant store backend** (Firestore / Cloud SQL / Redis-with-encryption) supporting TTL + encryption-at-rest                                          | owner+repo | [ ]    |
-| 0.7 | **ToS check** — SPL / BiblioCommons terms on hosting a multi-user proxy that stores card+PIN and acts on patrons' behalf. Hard gate before any non-owner user          | owner      | [!]    |
-| 0.8 | Confirm whether Anthropic requires an inbound-IP allowlist for connectors; capture the live CIDR list if so                                                            | repo       | [ ]    |
+| #   | Task                                                                                                                                                                                                                                                                                                                                 | Owner      | Status |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | ------ |
+| 0.1 | Confirm `getbiblio.app` registered and nameservers pointed at Cloudflare                                                                                                                                                                                                                                                             | owner      | [ ]    |
+| 0.2 | Decide **credential-storage model**: per-session (default) vs custodian-persist. Record rationale in brief §2                                                                                                                                                                                                                        | owner      | [ ]    |
+| 0.3 | Decide **IdP**: WorkOS / Auth0 / Clerk / Stytch / Descope / other. Create the account, note the issuer URL                                                                                                                                                                                                                           | owner      | [ ]    |
+| 0.4 | Decide **SDK track**: stay on official `mcp` (hand-wired Resource Server) vs adopt standalone `fastmcp` v2 (first-class IdP providers). Record in brief open questions                                                                                                                                                               | owner+repo | [ ]    |
+| 0.5 | Decide **hosting**: Cloud Run vs Fly vs Railway. Create the account/project                                                                                                                                                                                                                                                          | owner      | [ ]    |
+| 0.6 | Choose **credential/grant store backend** (Firestore / Cloud SQL / Redis-with-encryption) supporting TTL + encryption-at-rest                                                                                                                                                                                                        | owner+repo | [ ]    |
+| 0.7 | **ToS check** — SPL / BiblioCommons terms on hosting a multi-user proxy that stores card+PIN and acts on patrons' behalf. Hard gate before any non-owner user                                                                                                                                                                        | owner      | [!]    |
+| 0.8 | Anthropic publishes a stable outbound range `160.79.104.0/21` ([ip-addresses doc](https://platform.claude.com/docs/en/api/ip-addresses), "won't change without notice"). Behind Cloudflare the **origin sees CF IPs**, so apply the allowlist at the Cloudflare **edge** as defense-in-depth — OAuth is the real gate (see brief §4) | repo       | [x]    |
 
 ---
 
@@ -54,12 +54,12 @@ Acceptance: connector added on claude.ai web shows up on the iOS app;
 
 ### 1b. Containerize & deploy
 
-| #    | Task                                                                                                                                                                                         | Owner      | Status |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
-| 1.7  | Dockerfile (python 3.12-slim, installs package, non-root, `HEALTHCHECK` on `/healthz`, entrypoint `serve --http`, honors `$PORT`) + `.dockerignore`. Build exercised by CI (no local Docker) | repo       | [x]    |
-| 1.8  | CI **build** + container `/healthz` smoke added (`.github/workflows/docker-build.yml`). **Push** to a registry deferred → followups 1.8 (needs creds)                                        | repo       | [~]    |
-| 1.9  | Deploy to chosen host; confirm `/healthz` green over public HTTPS                                                                                                                            | owner+repo | [ ]    |
-| 1.10 | Map `getbiblio.app` → service via Cloudflare proxy; TLS valid; `https://getbiblio.app/mcp` reachable                                                                                         | owner      | [ ]    |
+| #    | Task                                                                                                                                                                                                      | Owner      | Status |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------ |
+| 1.7  | Dockerfile (python 3.12-slim, installs package, non-root, `HEALTHCHECK` on `/healthz`, entrypoint `serve --http`, honors `$PORT`) + `.dockerignore`. Build + /healthz container smoke green on CI (PR #5) | repo       | [x]    |
+| 1.8  | CI **build** + container `/healthz` smoke added (`.github/workflows/docker-build.yml`). **Push** to a registry deferred → followups 1.8 (needs creds)                                                     | repo       | [~]    |
+| 1.9  | Deploy to chosen host; confirm `/healthz` green over public HTTPS                                                                                                                                         | owner+repo | [ ]    |
+| 1.10 | Map `getbiblio.app` → service via Cloudflare proxy; TLS valid; `https://getbiblio.app/mcp` reachable                                                                                                      | owner      | [ ]    |
 
 ### 1c. Connector attach (owner-only — can't be done in-repo)
 

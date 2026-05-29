@@ -179,8 +179,10 @@ populated when `token_verifier` is configured.)
   to the BiblioCommons gateway — the gateway auth is the separate card/PIN
   session.
 - **Claude's fixed redirect URI** (if you skip DCR and pre-register): hosted
-  surfaces (web/desktop/mobile) use `https://claude.ai/api/mcp/auth_callback`;
-  OAuth client name is `Claude`. Claude Code uses a loopback redirect.
+  surfaces (web/desktop/mobile) use `https://claude.ai/api/mcp/auth_callback`
+  (docs note this may move to `https://claude.com/...` — register both if your
+  IdP allows); OAuth client name is `Claude`. Claude Code uses a loopback
+  redirect.
 
 ### 3a. Discovery metadata — mostly handled by the SDK now
 
@@ -210,9 +212,16 @@ DNS/TLS/edge sit in one place:
 - Custom domain: `getbiblio.app` (apex) → the service.
 - Containerize (Dockerfile), `$PORT` from the platform, secrets via the
   platform's secret manager (Cloud Run + Secret Manager, or Fly secrets).
-- **Must be reachable from Anthropic's IP ranges over the public internet** —
-  no VPN/private network. Verify whether the current connector docs require
-  allowlisting specific Anthropic inbound CIDRs and capture the live list.
+- **Must be reachable from Anthropic's cloud over the public internet** — no
+  VPN/private network (connector traffic comes from Anthropic's cloud, not the
+  user's device). Anthropic publishes a stable outbound range to allowlist,
+  `160.79.104.0/21` ([ip-addresses doc](https://platform.claude.com/docs/en/api/ip-addresses),
+  "won't change without notice"). **Behind a Cloudflare proxy the Cloud Run/Fly
+  origin only sees Cloudflare IPs**, so enforce the Anthropic allowlist at the
+  Cloudflare **edge** (WAF/IP rule) as defense-in-depth, never on the origin.
+  OAuth (§3) is the actual access gate; the allowlist just rejects non-Claude
+  MCP clients. (Anthropic also offers outbound-only "MCP tunnels" to avoid
+  inbound exposure entirely.)
 
 ### 5. Favicon / connector icon — CONFIRMED mechanism
 
