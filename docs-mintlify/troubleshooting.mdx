@@ -1,0 +1,53 @@
+---
+title: Troubleshooting
+description: Common errors and how to fix them.
+---
+
+## "Run `bibliocommons-mcp init`" / config error on startup
+
+The server couldn't find a library + card. Either run `bibliocommons-mcp init`,
+or set `BIBLIOCOMMONS_LIBRARY` / `BIBLIOCOMMONS_CARD` / `BIBLIOCOMMONS_PIN`. In
+HTTP mode, a library alone boots **read-only catalog mode** (no account tools).
+See [Configuration](/reference/configuration).
+
+## An account tool says "read-only catalog mode"
+
+The server has a library but no card/PIN, so holds/loans are unavailable while
+search/availability/branches still work. Add credentials to enable account
+actions.
+
+## The client connects but tools fail / no library card configured (remote)
+
+In single-user remote mode you must allow-list your WorkOS account id. The error
+prints it — add it: `fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=user_…`.
+See [Self-host the remote connector](/guides/self-host-remote).
+
+## `401` / login won't complete (remote)
+
+The OAuth discovery chain must resolve. Check that
+`/.well-known/oauth-protected-resource/mcp` lists your **AuthKit** domain as the
+authorization server, that the domain serves
+`/.well-known/oauth-authorization-server`, and that the WorkOS **Resource
+Indicator** matches your `…/mcp` URL exactly (otherwise tokens fail the audience
+check).
+
+## `421 Invalid Host header` (remote)
+
+The SDK's DNS-rebinding protection trusts only the configured hosts. Set
+`BIBLIOCOMMONS_MCP_PUBLIC_URL` (and, if needed,
+`BIBLIOCOMMONS_MCP_ALLOWED_HOSTS`) to your real domain.
+
+## "Branch not found"
+
+Branch names match case-insensitive substrings; try the 3-letter code (e.g.
+`LCY`) or run `list_branches`. Locker variants use `LOCK…` codes — see
+[Branches](/guides/branches).
+
+## A search ignores my page size
+
+Page size is fixed at **25**; use `page=N` and the response's `pages` count.
+
+## Seeing more detail
+
+Set `BIBLIOCOMMONS_MCP_LOG_LEVEL=DEBUG` (or `INFO`). Logs go to **stderr** —
+credentials are never logged. On Fly: `fly logs`.

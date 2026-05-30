@@ -1,0 +1,41 @@
+---
+title: Local vs remote
+description: The same server runs two ways — local stdio for desktop clients, or Streamable HTTP as a remote connector.
+---
+
+bibliocommons-mcp has one codebase and two transports.
+
+## Local (stdio) — the default
+
+`bibliocommons-mcp` with no arguments speaks **stdio**, run as a subprocess of a
+desktop client (Claude Desktop, Claude Code, Cursor). Your card/PIN live in the
+local config file and never leave your machine. This is the simplest setup — see
+[Install](/install).
+
+## Remote (Streamable HTTP)
+
+`bibliocommons-mcp serve --http` speaks **Streamable HTTP** for a host on the
+public internet, so the **mobile app** can attach. Selected by `--http` or
+`BIBLIOCOMMONS_MCP_TRANSPORT=http`. See
+[Self-host the remote connector](/guides/self-host-remote).
+
+Two things differ in remote mode:
+
+- **Auth.** The server becomes an OAuth 2.1 Resource Server (delegating login to
+  WorkOS) the moment `WORKOS_*` env is present; without it, it runs authless
+  read-only. See [Security & credentials](/concepts/security).
+- **The per-session model.** Per authenticated user, the server mints an
+  authenticated gateway session and caches it **in memory** (TTL'd, LRU-bounded).
+  The raw PIN is never persisted to disk. Because the cache is in memory, the
+  host should be **always-on** — a scale-to-zero cold start would drop the
+  session and force re-auth. BiblioCommons sessions last ~a year, so on a warm
+  host you re-authenticate rarely (roughly per deploy).
+
+## Which should I use?
+
+| | Local (stdio) | Remote (HTTP) |
+| --- | --- | --- |
+| Best for | Desktop use, yourself | Phone use; sharing your own instance |
+| Auth | none (local creds) | WorkOS OAuth |
+| Hosting | your machine | an always-on host (e.g. Fly) |
+| Setup | minutes | a short deploy |

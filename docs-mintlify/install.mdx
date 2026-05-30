@@ -1,0 +1,75 @@
+---
+title: Install
+description: Add bibliocommons-mcp to Claude Desktop, Claude Code, the Claude mobile app, Cursor, or VS Code.
+---
+
+Install the package once (see [Quickstart](/quickstart)), configure your library
+with `bibliocommons-mcp init`, then wire it into your client below.
+
+```bash
+uvx bibliocommons-mcp --version   # or: pipx install bibliocommons-mcp
+```
+
+## Claude Desktop
+
+Edit `claude_desktop_config.json` (macOS:
+`~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "bibliocommons": { "command": "bibliocommons-mcp", "args": [] }
+  }
+}
+```
+
+If the command isn't on your `PATH`, use an absolute path, or
+`"command": "uvx", "args": ["bibliocommons-mcp"]`. Restart Claude Desktop.
+
+## Claude Code
+
+```bash
+# stdio (local)
+claude mcp add bibliocommons -- bibliocommons-mcp
+
+# or via uvx, with a log level
+claude mcp add --env BIBLIOCOMMONS_MCP_LOG_LEVEL=INFO bibliocommons -- uvx bibliocommons-mcp
+```
+
+Use `--scope project` to write a shared `.mcp.json` into the repo instead of
+your user config.
+
+## Claude mobile app / claude.ai (remote connector)
+
+The mobile app can't launch a local process — it connects to a **remote** MCP
+server over HTTPS. Self-host one (see
+[Self-host the remote connector](/guides/self-host-remote)), then on
+**claude.ai web** → Settings → Connectors → **Add custom connector** →
+`https://your-domain/mcp`. It then syncs to the iOS/Android app.
+
+## Cursor
+
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=bibliocommons&config=eyJjb21tYW5kIjoiYmlibGlvY29tbW9ucy1tY3AiLCJhcmdzIjpbXX0=)
+
+Or **Settings → MCP → Add new global MCP server** and paste:
+
+```json
+{ "bibliocommons": { "command": "bibliocommons-mcp", "args": [] } }
+```
+
+## VS Code
+
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?logo=visualstudiocode&logoColor=white)](vscode:mcp/install?%7B%22name%22%3A%22bibliocommons%22%2C%22command%22%3A%22bibliocommons-mcp%22%7D)
+
+Or from a terminal:
+
+```bash
+code --add-mcp '{"name":"bibliocommons","command":"bibliocommons-mcp"}'
+```
+
+<Note>
+  Whichever client you use, the server reads your library + card from
+  `~/.config/bibliocommons-mcp/config.toml` (or env vars). Run
+  `bibliocommons-mcp init` first if you haven't. See
+  [Configuration](/reference/configuration).
+</Note>

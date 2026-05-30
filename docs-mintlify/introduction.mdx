@@ -1,0 +1,52 @@
+---
+title: bibliocommons-mcp
+description: An MCP server for BiblioCommons public libraries — search the catalog, place holds, and manage checkouts from Claude or any MCP client.
+---
+
+**bibliocommons-mcp** connects an MCP client (Claude Desktop, Claude Code, the
+Claude mobile app, Cursor, …) to a **BiblioCommons-powered public library** so
+you can search the catalog, place and cancel holds, borrow and return digital
+titles, and manage your loans — in plain language.
+
+It works against **any BiblioCommons library** (tested with `seattle` and
+`sfpl`); you pick yours by subdomain. Run it two ways:
+
+<CardGroup cols={2}>
+  <Card title="Locally (stdio)" icon="laptop" href="/quickstart">
+    Install it and point Claude Desktop / Claude Code at it. Your card and PIN
+    stay on your machine.
+  </Card>
+  <Card title="As a remote connector" icon="globe" href="/guides/self-host-remote">
+    Self-host it over HTTPS and add it as a custom connector — usable from the
+    Claude mobile app. OAuth-gated; single-user.
+  </Card>
+</CardGroup>
+
+## What you can do
+
+<CardGroup cols={2}>
+  <Card title="Search & browse" icon="magnifying-glass" href="/guides/search">
+    Keyword search with format and sort facets; per-branch availability.
+  </Card>
+  <Card title="Holds" icon="bookmark" href="/guides/holds">
+    Place physical holds at your pickup branch; see what's ready; cancel.
+  </Card>
+  <Card title="Digital" icon="tablet" href="/guides/digital">
+    Borrow available e-books/audiobooks or join the Libby waitlist; return early.
+  </Card>
+  <Card title="Loans" icon="clock-rotate-left" href="/guides/loans">
+    See what's checked out, renew, and check digital items back in.
+  </Card>
+</CardGroup>
+
+## How it works
+
+bibliocommons-mcp is a thin, stateless proxy over the public BiblioCommons
+gateway (`gateway.bibliocommons.com`). One server instance talks to one library,
+configured by subdomain. See [Architecture](/concepts/architecture) for the
+design and [Configuration](/reference/configuration) for every setting.
+
+<Note>
+  Open source: [github.com/pdugan20/bibliocommons-mcp](https://github.com/pdugan20/bibliocommons-mcp).
+  New here? Start with the [Quickstart](/quickstart).
+</Note>

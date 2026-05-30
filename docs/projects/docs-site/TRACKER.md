@@ -7,8 +7,10 @@ Phased task list. See [README.md](README.md) for the plan/decisions and
 Owner: 🤖 in-repo (code/docs) · 🧑 owner-owned (Mintlify account / DNS).
 **Discipline:** every not-started task names its blocker; no silent deferrals.
 
-**Where we are:** Phase 0 done. Executing Phases 1–2 in-repo; Phase 3 (Mintlify
-account + `docs.getbiblio.app`) is owner-owned; Phase 4 is cutover + listing.
+**Where we are:** Phases 0–2 done — the full Mintlify site is scaffolded in
+`docs-mintlify/` (all narrative pages) and the CLI + MCP reference is generated
+from source with anti-drift + broken-link CI. Remaining is owner-owned: stand
+up the Mintlify project + `docs.getbiblio.app` (Phase 3), then cutover (Phase 4).
 
 ---
 
@@ -22,34 +24,34 @@ account + `docs.getbiblio.app`) is owner-owned; Phase 4 is cutover + listing.
 
 ---
 
-## Phase 1 — Scaffold + narrative content ⬜
+## Phase 1 — Scaffold + narrative content ✅
 
 | ✓   | Owner | Task                                                                                      |
 | --- | ----- | ----------------------------------------------------------------------------------------- |
-| ⬜  | 🤖    | `docs.json` — nav (Guides + Reference tabs, Diátaxis), theme, contextual menu, domain     |
-| ⬜  | 🤖    | `favicon.svg` + `logo/` (reuse the getbiblio book mark)                                   |
-| ⬜  | 🤖    | `introduction.mdx` — overview / landing                                                   |
-| ⬜  | 🤖    | `quickstart.mdx` — TUTORIAL                                                               |
-| ⬜  | 🤖    | `install.mdx` — Claude Desktop / Claude Code / remote connector / Cursor + VS Code badges |
-| ⬜  | 🤖    | `guides/` — search, holds, digital, loans, branches, recipes, self-host-remote            |
-| ⬜  | 🤖    | `concepts/` — architecture, local-vs-remote, security                                     |
-| ⬜  | 🤖    | `troubleshooting.mdx`                                                                     |
-| ⬜  | 🤖    | `reference/configuration.mdx`                                                             |
-| ⬜  | 🤖    | `changelog.mdx`                                                                           |
+| ✅  | 🤖    | `docs.json` — nav (Guides + Reference tabs, Diátaxis), theme, contextual menu, domain     |
+| ✅  | 🤖    | `favicon.svg` + `logo/` (reuse the getbiblio book mark)                                   |
+| ✅  | 🤖    | `introduction.mdx` — overview / landing                                                   |
+| ✅  | 🤖    | `quickstart.mdx` — TUTORIAL                                                               |
+| ✅  | 🤖    | `install.mdx` — Claude Desktop / Claude Code / remote connector / Cursor + VS Code badges |
+| ✅  | 🤖    | `guides/` — search, holds, digital, loans, branches, recipes, self-host-remote            |
+| ✅  | 🤖    | `concepts/` — architecture, local-vs-remote, security                                     |
+| ✅  | 🤖    | `troubleshooting.mdx`                                                                     |
+| ✅  | 🤖    | `reference/configuration.mdx`                                                             |
+| ✅  | 🤖    | `changelog.mdx`                                                                           |
 
 **Acceptance:** `mint broken-links` passes; nav resolves all pages.
 
 ---
 
-## Phase 2 — Generated reference + anti-rot CI ⬜
+## Phase 2 — Generated reference + anti-rot CI ✅
 
 | ✓   | Owner | Task                                                                                      |
 | --- | ----- | ----------------------------------------------------------------------------------------- |
-| ⬜  | 🤖    | `scripts/gen_mcp_reference.py` → `reference/mcp-tools.mdx` (13 tools + annotation badges) |
-| ⬜  | 🤖    | `scripts/gen_cli_reference.py` → `reference/cli.mdx`                                      |
-| ⬜  | 🤖    | CI **"Docs Reference Freshness"** — regenerate + fail on drift                            |
-| ⬜  | 🤖    | CI **"Docs Links"** — `mint broken-links`                                                 |
-| ⬜  | 🤖    | `make docs-reference` / `docs` / `docs-links` + CONTRIBUTING note                         |
+| ✅  | 🤖    | `scripts/gen_mcp_reference.py` → `reference/mcp-tools.mdx` (13 tools + annotation badges) |
+| ✅  | 🤖    | `scripts/gen_cli_reference.py` → `reference/cli.mdx`                                      |
+| ✅  | 🤖    | CI **"Docs Reference Freshness"** — regenerate + fail on drift                            |
+| ✅  | 🤖    | CI **"Docs Links"** — `mint broken-links`                                                 |
+| ✅  | 🤖    | `make docs-reference` / `docs` / `docs-links` + CONTRIBUTING note                         |
 
 **Acceptance:** generators idempotent; editing a tool without regenerating fails CI; links pass.
 

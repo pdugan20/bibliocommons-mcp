@@ -1,0 +1,39 @@
+---
+title: Place & manage holds
+description: Place physical holds at your pickup branch, see what's ready, and cancel.
+---
+
+For **physical** items (books, CDs, DVDs). For digital titles see
+[Borrow & return digital](/guides/digital).
+
+## Place a hold
+
+> Place a hold on _Plastic Eternity_ at Central.
+
+[`place_hold`](/reference/mcp-tools) takes `bib_ids` (a list — pass one for the
+common case) and an optional `pickup_branch` (name or 3-letter code; falls back
+to your `default_pickup_branch`). There's no batch endpoint, so multiple holds
+are placed sequentially with a small `delay_seconds` between each; per-item
+failures don't stop the run, and the result splits `placed` vs `failures`.
+
+Common failure causes: you already have the item on hold (409), it isn't
+holdable (reference-only), or a transient gateway error.
+
+## See your holds
+
+- [`list_holds`](/reference/mcp-tools) — everything you're waiting on, with queue
+  position (1 = front of the line).
+- [`ready_for_pickup`](/reference/mcp-tools) — just the ones waiting for you.
+
+## Cancel a hold
+
+<Warning>
+  Cancelling is **irreversible** — you lose your queue position. Confirm before
+  running it.
+</Warning>
+
+[`cancel_hold`](/reference/mcp-tools) takes a list of `{hold_id, bib_id}` refs
+(get them from `list_holds`) and a `dry_run` flag to preview without cancelling.
+It's marked **destructive**, so well-behaved clients prompt before calling.
+
+> What am I waiting on? … okay, cancel the hold on the DVD.

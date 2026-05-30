@@ -1,0 +1,45 @@
+---
+title: Architecture
+description: How bibliocommons-mcp is put together — a thin, stateless proxy over the BiblioCommons gateway.
+---
+
+bibliocommons-mcp is a small MCP server wrapping the public BiblioCommons
+gateway. There's no database and almost no state.
+
+```text
+MCP client (Claude, Cursor, …)
+        │  MCP (stdio or Streamable HTTP)
+        ▼
+bibliocommons-mcp  ──►  gateway.bibliocommons.com/v2/...   (catalog, holds, checkouts)
+        │
+        └─ in-memory branch cache (per library)
+```
+
+## Single library per server
+
+One server instance talks to **one** library, set by subdomain
+(`library` in config). Different library? Run another instance with a different
+config. This keeps the model simple and matches how BiblioCommons scopes its
+gateway.
+
+The same endpoints work for any BiblioCommons-powered library — tested against
+`seattle` and `sfpl`.
+
+## Stateless by design
+
+- The only persisted thing locally is the config file (your library + card).
+- The branch list is cached **in memory** per server, nothing on disk.
+- Every tool maps to a public gateway REST call; the server adds the correct
+  request shapes, locale handling, and result-shaping the gateway needs.
+
+## Tool layer
+
+Tools are grouped by what they touch: **catalog** (read-only — `search`,
+`availability`, `list_branches`), **holds/checkouts** (`place_hold`,
+`borrow_digital`, `place_digital_hold`, `cancel_hold`, …), and **account**
+(`list_holds`, `list_loans`, `library_health`). Each tool declares MCP
+annotations (read-only / writes / destructive) so clients can gate confirmations
+— see the [tool reference](/reference/mcp-tools).
+
+For how the same server runs locally vs. remotely, see
+[Local vs remote](/concepts/local-vs-remote).

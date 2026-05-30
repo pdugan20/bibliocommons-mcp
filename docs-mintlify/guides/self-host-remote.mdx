@@ -1,0 +1,83 @@
+---
+title: Self-host the remote connector
+description: Run bibliocommons-mcp over HTTPS so you can use it from the Claude mobile app — single-user, OAuth-gated.
+---
+
+The Claude mobile app can only attach to a **remote** MCP server reachable over
+the public internet. This guide stands one up for **yourself** (single-user):
+auth-gated so only you can use it, with your card wired in.
+
+<Note>
+  This is the OSS tool's self-host path. The maintainer's own instance lives at
+  `getbiblio.app`; substitute your own domain throughout.
+</Note>
+
+## Shape
+
+- **Transport:** Streamable HTTP (`bibliocommons-mcp serve --http`).
+- **Host:** any always-on container host. We use **Fly.io** (an always-on
+  machine keeps the in-memory session warm — see [Local vs remote](/concepts/local-vs-remote)).
+- **Auth:** the server is an OAuth 2.1 **Resource Server**; login is delegated to
+  **WorkOS AuthKit**. The server holds no auth secret — it validates tokens
+  against WorkOS's public keys.
+
+## Steps
+
+1. **Deploy** the container (the repo ships a `Dockerfile` + `fly.toml`):
+
+   ```bash
+   fly launch --no-deploy --copy-config
+   fly deploy
+   fly open /healthz        # {"status":"ok", ... ,"mode":"read-only"}
+   ```
+
+   With no WorkOS env set, it comes up **authless read-only** — a good first
+   check before adding auth.
+
+2. **Custom domain + TLS:**
+
+   ```bash
+   fly certs add your-domain
+   ```
+
+   Add the DNS records it prints. Confirm `https://your-domain/healthz`.
+
+3. **Turn on single-user auth** — point the server at your WorkOS environment and
+   wire your card (run it yourself so the PIN stays out of any logs):
+
+   ```bash
+   fly secrets set \
+     WORKOS_CLIENT_ID=client_… \
+     WORKOS_ISSUER=https://<slug>.authkit.app \
+     WORKOS_JWKS_URL=https://<slug>.authkit.app/oauth2/jwks \
+     BIBLIOCOMMONS_MCP_SINGLE_USER=1 \
+     BIBLIOCOMMONS_CARD=… BIBLIOCOMMONS_PIN=…
+   ```
+
+   In WorkOS → **Connect → Configuration**: enable **DCR + CIMD** and add a
+   **Resource Indicator** of `https://your-domain/mcp`.
+
+4. **Lock it to you.** Single-user mode serves your card only to allow-listed
+   WorkOS account ids. Log in once; the first call prints your id; then:
+
+   ```bash
+   fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=user_01YOURID
+   ```
+
+   Until that's set, it's fail-safe — nobody gets the card.
+
+5. **Add the connector** on claude.ai web → Connectors →
+   `https://your-domain/mcp`. It syncs to the mobile app.
+
+## Multi-user (advanced)
+
+The code also supports genuine multi-user: drop `BIBLIOCOMMONS_MCP_SINGLE_USER`,
+set a `WORKOS_API_KEY` + an `https://your-domain/account/callback` redirect URI,
+and each user logs in and stores their own card at a hosted `/account` page.
+
+<Warning>
+  Hosting a multi-user proxy means storing other patrons' card numbers + PINs
+  and acting on their behalf — a materially different posture. **Check your
+  library's / BiblioCommons' Terms of Service before onboarding anyone but
+  yourself.**
+</Warning>

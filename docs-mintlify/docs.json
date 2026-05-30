@@ -1,0 +1,70 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "theme": "almond",
+  "name": "bibliocommons-mcp",
+  "description": "An MCP server for BiblioCommons public libraries — search the catalog, place holds, and manage checkouts from Claude.",
+  "logo": { "light": "/logo/light.svg", "dark": "/logo/dark.svg" },
+  "favicon": "/favicon.svg",
+  "appearance": { "default": "system" },
+  "colors": { "primary": "#6366f1", "light": "#8b94f0", "dark": "#7c3aed" },
+  "contextual": {
+    "options": ["copy", "view", "claude", "chatgpt", "cursor", "vscode", "mcp"]
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "GitHub",
+      "href": "https://github.com/pdugan20/bibliocommons-mcp"
+    }
+  },
+  "footer": {
+    "socials": { "github": "https://github.com/pdugan20/bibliocommons-mcp" }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": ["introduction", "quickstart", "install"]
+          },
+          {
+            "group": "How-to guides",
+            "pages": [
+              "guides/search",
+              "guides/holds",
+              "guides/digital",
+              "guides/loans",
+              "guides/branches",
+              "guides/recipes",
+              "guides/self-host-remote"
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/local-vs-remote",
+              "concepts/security"
+            ]
+          },
+          { "group": "Help", "pages": ["troubleshooting", "changelog"] }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/cli",
+              "reference/mcp-tools",
+              "reference/configuration"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,39 @@
+---
+title: Borrow & return digital
+description: Check out available e-books and audiobooks, join the Libby waitlist, and return early.
+---
+
+Digital titles (e-books, downloadable audio) flow through Libby/OverDrive. Three
+tools, depending on availability.
+
+## Borrow an available title
+
+> Borrow the ebook of _The Fifth Season_.
+
+[`borrow_digital`](/reference/mcp-tools) checks out an **available-now** digital
+item immediately (it's a checkout, not a hold). Takes `bib_ids` (a list).
+Confirm availability first with [`availability`](/guides/branches) if unsure.
+
+## Join the waitlist (unavailable titles)
+
+> Get in line for the audiobook of _The Stone Sky_.
+
+[`place_digital_hold`](/reference/mcp-tools) joins the Libby waitlist for a title
+with no copies available. It needs a **notification email** —
+`digital_notification_email` in your [config](/reference/configuration) (the
+same address your BiblioCommons account uses) — and counts against your digital
+hold quota (see `library_health`).
+
+## Return early
+
+> Return the ebook I just borrowed.
+
+[`check_in_loan`](/reference/mcp-tools) returns a digital checkout before its due
+date (the "Return now" button). Takes a list of `{checkout_id, metadata_id}`
+refs (from [`list_loans`](/guides/loans)) and a `dry_run` flag. Only digital
+items can be checked in this way — physical items return at the branch.
+
+<Note>
+  Physical vs digital use different endpoints under the hood, but you don't have
+  to think about it — ask for what you want and the right tool runs.
+</Note>

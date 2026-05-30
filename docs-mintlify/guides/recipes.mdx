@@ -1,0 +1,37 @@
+---
+title: Recipes — what to ask
+description: Example prompts for searching, holds, digital, and loans.
+---
+
+The interface is conversation, so the best "API" is a good prompt. Here are
+starting points — Claude picks the right tool and fills in the parameters.
+
+## Discover
+
+- "Find the new Mudhoney album on CD."
+- "Search for ebooks about urban beekeeping, newest first."
+- "Is _The Fifth Season_ available at Lake City right now?"
+
+## Holds
+
+- "Place a hold on _Plastic Eternity_ at Central."
+- "What am I waiting on, and what's my place in line?"
+- "What's ready for me to pick up?"
+- "Cancel the hold on the DVD." _(it'll confirm — cancelling loses your spot)_
+
+## Digital
+
+- "Borrow the ebook of _The Fifth Season_."
+- "Get me on the waitlist for the _Stone Sky_ audiobook."
+- "Return the ebook I just finished."
+
+## Loans & account
+
+- "What do I have checked out and when is it due?"
+- "Renew everything due this week."
+- "Is the catalog working? Check my hold quotas." _(runs `library_health`)_
+
+<Tip>
+  Combine steps: "Find the new Sally Rooney novel, and if Central has a copy,
+  place a hold there." Claude chains `search` → `availability` → `place_hold`.
+</Tip>

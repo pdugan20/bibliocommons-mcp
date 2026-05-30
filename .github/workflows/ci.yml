@@ -131,3 +131,30 @@ jobs:
       - name: Validate fly.toml (flyctl)
         if: env.FLY_API_TOKEN != ''
         run: flyctl config validate
+
+  docs-reference:
+    name: Docs Reference Freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install package
+        run: pip install -e .
+      - name: Regenerate the CLI + MCP reference from source
+        run: |
+          python scripts/gen_cli_reference.py
+          python scripts/gen_mcp_reference.py
+      - name: Fail if the generated reference drifted from the code
+        run: |
+          git diff --exit-code docs-mintlify/reference/cli.mdx docs-mintlify/reference/mcp-tools.mdx \
+            || { echo "::error::Docs reference is stale. Run 'make docs-reference' and commit."; exit 1; }
+
+  docs-links:
+    name: Docs Links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Validate docs links (mint broken-links)
+        run: cd docs-mintlify && npx --yes mint@latest broken-links
