@@ -1,0 +1,31 @@
+---
+title: Manage loans
+description: See what's checked out, renew, and return digital items early.
+---
+
+## What's checked out
+
+> What do I have out, and what's due soon?
+
+[`list_loans`](/reference/mcp-tools) returns your current checkouts with due
+dates, renewal counts, and the actions each item supports.
+
+## Renew
+
+> Renew everything that's due this week.
+
+[`renew_loan`](/reference/mcp-tools) renews one or more checkouts in a single
+call — pass `checkout_ids` (from `list_loans`) and an optional `dry_run` to
+preview. The result mirrors the loans view with the new due dates and
+incremented renewal counts; a `failures` map captures anything that couldn't
+renew (e.g. another patron has it on hold).
+
+## Return a digital item early
+
+See [Borrow & return digital](/guides/digital) — `check_in_loan` returns a
+digital checkout before its due date. Physical items return at the branch.
+
+<Card title="Is something off?" icon="stethoscope" href="/reference/mcp-tools">
+  Run <code>library_health</code> — it confirms login, the account id the gateway
+  recognizes, and your hold quotas.
+</Card>

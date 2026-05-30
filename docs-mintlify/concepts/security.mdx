@@ -1,0 +1,39 @@
+---
+title: Security & credentials
+description: Where your card and PIN live, what's never logged, and how the remote connector is gated.
+---
+
+## Credentials at rest
+
+- **Local:** your library + card + PIN live in
+  `~/.config/bibliocommons-mcp/config.toml` (created mode `0600`), or in env
+  vars. Nothing else is stored.
+- **Remote:** secrets live in your host's secret store (e.g. `fly secrets`), not
+  in any committed config. In the per-session model the **raw PIN is never
+  persisted to disk** — the authenticated session is held in memory only.
+
+## Never logged, never on the wire protocol
+
+The card, PIN, tokens, and any auth secret are kept out of logs, stdout, and the
+MCP wire protocol. stdout is reserved for the MCP framing; logs go to **stderr**
+only, with verbosity set by `BIBLIOCOMMONS_MCP_LOG_LEVEL`.
+
+## Remote access control
+
+When run as a remote connector, the server is an OAuth 2.1 **Resource Server**:
+
+- It holds **no** WorkOS secret for token validation — it verifies each request's
+  bearer token against WorkOS's **public** JWKS (signature, issuer, audience,
+  expiry).
+- `/healthz` and the favicon stay public; the MCP endpoint requires a valid
+  token (`401` otherwise).
+- **Single-user gate:** the server's card is served only to WorkOS account ids
+  listed in `BIBLIOCOMMONS_MCP_OWNER_SUBJECTS`. Empty = locked (fail-safe — no
+  one gets the card), so an open sign-up can't reach your account.
+
+## Trust & scope
+
+The tools act on a real library account. Destructive actions (e.g.
+`cancel_hold`) are annotated so clients prompt first, and `cancel_hold` /
+`renew_loan` / `check_in_loan` support `dry_run` to preview. As with any tool an
+assistant can call, review actions before confirming.

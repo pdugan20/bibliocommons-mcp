@@ -1,0 +1,49 @@
+---
+title: Search the catalog
+description: Keyword search with format and sort facets, plus per-branch availability.
+---
+
+Two read-only tools cover discovery: [`search`](/reference/mcp-tools) and
+[`availability`](/reference/mcp-tools). Just ask in plain language — Claude
+fills in the parameters.
+
+## Search
+
+> Find audiobooks by N. K. Jemisin, newest first.
+
+`search` takes:
+
+| Parameter  | What it does                                                              |
+| ---------- | ------------------------------------------------------------------------ |
+| `query`    | Keyword string.                                                          |
+| `format`   | Format facet (see below). Omit for any format.                           |
+| `page`     | 1-indexed. The gateway returns **25 results per page**; page further with the `pages` count in the response. |
+| `sort_by`  | `relevancy`, `newly_acquired`, `title`, `author`, `published_date`, `ugc_rating`. |
+
+### Format codes
+
+| Code           | Meaning            |
+| -------------- | ------------------ |
+| `BK`           | Book               |
+| `EBOOK`        | E-book             |
+| `EAUDIOBOOK`   | Downloadable audio |
+| `AUDIOBOOK_CD` | Audiobook on CD    |
+| `MUSIC_CD`     | Music CD           |
+| `DVD`          | DVD                |
+
+You can set a `default_format` in [config](/reference/configuration) so searches
+filter to it unless you say otherwise.
+
+## Availability
+
+> Is _The Fifth Season_ available at Lake City?
+
+`availability(bib_id)` returns per-branch copy status, hold counts, and (for
+digital titles) the available formats. Get a `bib_id` from `search` results.
+Branch names and 3-letter codes both work elsewhere — see
+[Branches & availability](/guides/branches).
+
+<Note>
+  Search and availability are read-only and need no card/PIN — they work in
+  read-only "catalog mode" too. Account actions (holds, loans) need credentials.
+</Note>

@@ -1,0 +1,32 @@
+---
+title: Branches & availability
+description: List branches, resolve branch names/codes, and check per-branch copy status.
+---
+
+## List branches
+
+> What branches does my library have?
+
+[`list_branches`](/reference/mcp-tools) returns the library's branches with their
+names and **3-letter codes** (e.g. `LCY` = Lake City, `CEN` = Central). The list
+is cached in memory for the life of the server.
+
+## Branch names vs codes
+
+Anywhere a branch is accepted (e.g. `place_hold`'s `pickup_branch`), you can pass
+a **name or a code** — the resolver matches case-insensitive substrings.
+
+Some branches have **locker variants** — names like "Lake City Branch: SPL
+Lockers" with codes starting `LOCK…`. When a name is ambiguous, the resolver
+**prefers the regular branch** over the locker variant.
+
+Set a `default_pickup_branch` in [config](/reference/configuration) so you don't
+have to name it every time.
+
+## Per-branch availability
+
+> Which branches have a copy of this on the shelf right now?
+
+[`availability(bib_id)`](/reference/mcp-tools) returns each branch's copy count,
+status (available / in-transit / on-hold), call number, and collection — plus
+digital format info for e-titles.

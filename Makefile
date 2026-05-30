@@ -1,4 +1,4 @@
-.PHONY: dev lint format test build clean check-all dev-web build-web lint-web format-web
+.PHONY: dev lint format test build clean check-all dev-web build-web lint-web format-web docs-reference docs docs-links
 
 dev:
 	pip install -e '.[dev]'
@@ -44,3 +44,19 @@ lint-web:
 
 format-web:
 	cd web && npm run format
+
+# ---- docs site (Mintlify, docs-mintlify/) ----
+
+# Regenerate the CLI + MCP tool reference from source. Run + commit after
+# changing the CLI or any MCP tool, or CI ("Docs Reference Freshness") fails.
+docs-reference:
+	python scripts/gen_cli_reference.py
+	python scripts/gen_mcp_reference.py
+
+# Local docs preview at http://localhost:3000
+docs:
+	cd docs-mintlify && npx mint@latest dev
+
+# Validate internal links + nav
+docs-links:
+	cd docs-mintlify && npx mint@latest broken-links

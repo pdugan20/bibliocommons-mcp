@@ -1,0 +1,74 @@
+---
+title: Configuration
+description: The config file and every environment variable, for local and remote use.
+---
+
+bibliocommons-mcp reads `~/.config/bibliocommons-mcp/config.toml` (override the
+path with `BIBLIOCOMMONS_MCP_CONFIG`). Every value can also be set via an
+environment variable, which takes precedence. Run `bibliocommons-mcp init` to
+generate the file interactively.
+
+## config.toml
+
+```toml
+library = "seattle"               # your BiblioCommons subdomain (required)
+
+[credentials]
+card = "1000000000000"            # library card / barcode
+pin = "0000"                      # PIN
+
+default_pickup_branch = "Lake City"   # optional; name or 3-letter code
+default_format = "MUSIC_CD"           # optional; default search format facet
+digital_notification_email = "you@example.com"  # required for place_digital_hold
+```
+
+The file is created mode `0600`. In **read-only catalog mode** only `library` is
+required (no card/PIN) — search/availability/branches work, account tools don't.
+
+## Core environment variables
+
+| Variable                      | Overrides / purpose                              |
+| ----------------------------- | ------------------------------------------------ |
+| `BIBLIOCOMMONS_LIBRARY`       | Library subdomain                                |
+| `BIBLIOCOMMONS_CARD`          | Card number                                      |
+| `BIBLIOCOMMONS_PIN`           | PIN                                              |
+| `BIBLIOCOMMONS_PICKUP_BRANCH` | Default pickup branch                            |
+| `BIBLIOCOMMONS_DIGITAL_EMAIL` | Digital notification email                       |
+| `BIBLIOCOMMONS_MCP_CONFIG`    | Path to the config file                          |
+| `BIBLIOCOMMONS_MCP_LOG_LEVEL` | `DEBUG`/`INFO`/`WARNING` (stderr; default WARNING) |
+
+## Remote / HTTP transport
+
+Only relevant when running `serve --http`. See
+[Self-host the remote connector](/guides/self-host-remote).
+
+| Variable                          | Purpose                                                          |
+| --------------------------------- | --------------------------------------------------------------- |
+| `BIBLIOCOMMONS_MCP_TRANSPORT`     | Set `http` to serve Streamable HTTP (or use `serve --http`)     |
+| `PORT` / `FASTMCP_PORT`           | Listen port (default 8000)                                      |
+| `FASTMCP_HOST`                    | Bind host (default `0.0.0.0` in HTTP mode)                      |
+| `BIBLIOCOMMONS_MCP_PUBLIC_URL`    | Public origin, e.g. `https://your-domain` (Host allowlist, OAuth) |
+| `BIBLIOCOMMONS_MCP_RESOURCE`      | Canonical resource URL, e.g. `https://your-domain/mcp`          |
+| `BIBLIOCOMMONS_MCP_ALLOWED_HOSTS` | Extra comma-separated Host values to allow                      |
+
+## Auth (WorkOS) & single-user
+
+Auth turns on when `WORKOS_CLIENT_ID` (or `WORKOS_JWKS_URL`) is present.
+
+| Variable                          | Purpose                                                          |
+| --------------------------------- | --------------------------------------------------------------- |
+| `WORKOS_CLIENT_ID`                | WorkOS client id (derives the JWKS URL if the next is unset)    |
+| `WORKOS_ISSUER`                   | AuthKit domain, e.g. `https://<slug>.authkit.app`               |
+| `WORKOS_JWKS_URL`                 | `https://<slug>.authkit.app/oauth2/jwks`                        |
+| `BIBLIOCOMMONS_MCP_SINGLE_USER`   | `1` to use the server's own card for the owner                  |
+| `BIBLIOCOMMONS_MCP_OWNER_SUBJECTS`| Comma-separated WorkOS account ids allowed in single-user mode  |
+| `WORKOS_API_KEY`                  | Only for multi-user `/account` (browser code exchange)          |
+| `WEB_SESSION_SECRET`              | Multi-user `/account` cookie signing (defaults from the API key) |
+| `BIBLIOCOMMONS_MCP_SETTINGS_URL`  | URL shown when a user needs to set up their card                |
+
+## Tuning
+
+| Variable                        | Default | Purpose                                  |
+| ------------------------------- | ------- | ---------------------------------------- |
+| `BIBLIOCOMMONS_MCP_SESSION_TTL` | `86400` | Idle seconds before a cached client drops |
+| `BIBLIOCOMMONS_MCP_MAX_SESSIONS`| `1000`  | LRU cap on cached per-user clients        |
