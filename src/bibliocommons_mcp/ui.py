@@ -42,13 +42,18 @@ UI_MIME_TYPE = "text/html;profile=mcp-app"
 # Per-bundle `_meta`/`meta` use the short `ui` key (+ a legacy `ui/resourceUri`
 # fallback), matching ext-apps 1.7 / rewind — NOT the full extension-id key.
 
-# Image hosts our bundles load jacket art from (Syndetics is BiblioCommons's
-# jacket provider; the CDN host serves BC's own fallback covers). Passed to the
-# host as the resource's CSP `resourceDomains`.
+# Image hosts our bundles load jacket art from. The host iframe enforces these
+# as the resource's CSP `resourceDomains` and silently drops any cover whose
+# host isn't listed — so every jacket provider a library can return must be here:
+#   - Syndetics: BiblioCommons's primary jacket provider (physical items).
+#   - cor-cdn-static.bibliocommons.com: BC's own fallback covers.
+#   - *.od-cdn.com: OverDrive's CDN — where Libby/digital (eBook, eAudiobook)
+#     covers come from; sharded across img1/img2/… hosts.
 IMAGE_DOMAINS = [
     "https://secure.syndetics.com",
     "https://*.syndetics.com",
     "https://cor-cdn-static.bibliocommons.com",
+    "https://*.od-cdn.com",
 ]
 
 
