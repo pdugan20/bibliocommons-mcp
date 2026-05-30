@@ -1,10 +1,25 @@
 # Project: Preview cards (inline UI bundles)
 
-> **Status: milestones 1–3 shipped in v0.3.0.** Milestone 4 (polish +
-> mobile responsive) deferred. See `web/` for the React bundles
-> (`HoldCard`, `LoanCard`, `BibCard`), `web/workbench/` for the local
-> design environment, `src/bibliocommons_mcp/ui.py` +
-> `ui_resources.py` for the MCP Apps wiring.
+> **Status: milestones 1–3 shipped in v0.3.0; rendering fixed
+> 2026-05-29.** Milestone 4 (polish + mobile responsive) is the active
+> next step. See `web/` for the React bundles (`HoldCard`, `LoanCard`,
+> `BibCard`), `web/workbench/` for the local design environment,
+> `src/bibliocommons_mcp/ui.py` + `ui_resources.py` for the MCP Apps
+> wiring.
+>
+> **Rendering fix (PR #21, 2026-05-29).** The v0.3.0 cards never
+> actually rendered in-product. The React side was correct, but the
+> server-side wiring targeted a draft-spec convention instead of what
+> the shipping `@modelcontextprotocol/ext-apps` 1.7 SDK (and Claude
+> Desktop/mobile) negotiate — verified against the working `rewind`
+> server. Three fixes in `ui.py`: (1) advertise the
+> `io.modelcontextprotocol/ui` extension in `initialize` capabilities
+> (load-bearing — without it the host silently skips rendering); (2)
+> tool `_meta` uses `ui.resourceUri` (+ legacy `ui/resourceUri`), not
+> the namespaced extension-id key; (3) resources use mime
+> `text/html;profile=mcp-app` with CSP as `_meta.ui.csp.resourceDomains`
+> (object). Capabilities negotiate at connect time, so a connected
+> client must reconnect to pick this up.
 >
 > Notes vs. the original plan:
 >
@@ -17,7 +32,7 @@
 >   the weight. Acceptable for now; deferred optimization.
 > - **CSP:** allow-listed `secure.syndetics.com`, `*.syndetics.com`,
 >   and `cor-cdn-static.bibliocommons.com` for jacket images. Defined
->   in `ui.py::DEFAULT_IMG_SRC`.
+>   in `ui.py::IMAGE_DOMAINS`, emitted as `_meta.ui.csp.resourceDomains`.
 > - **Bundle freshness CI:** the `web-bundles` job in
 >   `.github/workflows/ci.yml` runs `make build-web` on Node 22
 >   (pinned via `.nvmrc`) and diffs `_ui_bundles.py`. Bundles are
@@ -91,11 +106,20 @@ This is the **workbench** — a self-contained dev environment for iterating on 
 
 - Test in Claude Desktop (the client with the best MCP Apps support today).
 
-### Milestone 4 — polish + responsive (optional, ~1–2h)
+### Milestone 4 — polish + responsive (ACTIVE, ~1–2h)
 
+Now that cards render (PR #21), this is the active next step. Items,
+roughly in priority order:
+
+- iOS white-flash kill + border-radius override (rewind does both; the
+  host iframe flashes white on first paint and clips our corners).
+- Light/dark theming via `useHostStyles` so cards match the host.
+- Status-aware visual treatment: pickup-ready holds get a green ring,
+  expired holds get strikethrough, overdue loans read as urgent.
 - Tap-to-expand: click a card to see full bib metadata.
-- Status-aware visual treatment: pickup-ready holds get a green ring, expired holds get strikethrough.
-- Mobile-friendly layout (Claude Desktop on iOS).
+- Lazy-load covers past the first 3 rows (a 20-hold view shouldn't
+  eagerly fetch 20 Syndetics images).
+- Bundle-size trim (currently ~520 KB/bundle).
 
 ## Effort
 
