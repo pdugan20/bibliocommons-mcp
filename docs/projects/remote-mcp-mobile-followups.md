@@ -1,25 +1,31 @@
 # Followups / deferrals: Remote MCP — mobile connector
 
 > Companion to [`remote-mcp-mobile-tracker.md`](remote-mcp-mobile-tracker.md).
-> Reconciled 2026-05-29 after the live Fly deploy. Scope is **single-user**
-> (the owner, the owner's own card) — multi-user items are parked, not active.
+> **Reconciled 2026-05-29 — SHIPPED.** Scope is **single-user** (the owner, the
+> owner's own card) — multi-user items are parked, not active.
 
-## Status: live
+## Status: shipped ✅
 
-`https://getbiblio.app/mcp` is **deployed and serving** (Fly, always-on,
-bluegreen, TLS via Let's Encrypt) in **authless read-only** mode. The remaining
-work is: ship the favicon, flip on single-user auth so account tools work, and
-do the on-device acceptance test.
+The connector is **live, authed, and in use**: deployed to Fly (always-on,
+bluegreen, TLS), WorkOS single-user auth on with the owner allow-list enforced,
+added as a connector in Claude, **working on iOS**, pulling real holds/loans,
+and rendering inline UI cards (see [`preview-cards.md`](preview-cards.md)).
+There is **nothing outstanding** for this project — remaining UI polish lives in
+the preview-cards brief, not here.
 
-## Outstanding (the only things left)
+## Outstanding
 
-| #   | Item                                                                                                                                                                                                                                  | Owner / repo          | Notes                                                         |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------- |
-| F1  | **Favicon** — _done & deployed_ (book icon serving at the apex); awaiting Google's crawl, then verify it renders in Claude (re-check `google.com/s2/favicons?domain=getbiblio.app`)                                                   | repo ✓ / owner verify | currently still Google's globe fallback (~1 day lag)          |
-| F2a | **Secrets** — `WORKOS_CLIENT_ID`, `BIBLIOCOMMONS_CARD/PIN`, `BIBLIOCOMMONS_MCP_SINGLE_USER=1` — _done_ (set from config, `/mcp` now 401)                                                                                              | done ✓                | auth live; card protected                                     |
-| F2b | **WorkOS dashboard** — Connect → Configuration: enable **DCR + CIMD** and add **Resource Indicator** `https://getbiblio.app/mcp`                                                                                                      | owner                 | 2 toggles; lets Claude register + makes tokens audience-bound |
-| F2c | **Owner allow-list** — after first login, set `fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=<your WorkOS user_id>` (the 401 message / WorkOS → Users shows the id). Code-enforced lockdown — only the owner's id reaches the card | owner → repo          | replaces a fuzzy WorkOS sign-up toggle; fail-safe until set   |
-| F3  | **Final acceptance** — add `https://getbiblio.app/mcp` as a connector on claude.ai web → confirm on iOS → verify `search` + a checkout work                                                                                           | owner                 | the deliberate last step                                      |
+None — all of F1–F3 are done.
+
+## Done (former "outstanding")
+
+| #   | Item                                                                                          | Result                                                           |
+| --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| F1  | **Favicon** — book icon at the apex + `/favicon.svg` / apple-touch routes                     | done ✅ (Google's s2 crawl is cosmetic, not blocking)            |
+| F2a | **Secrets** — `WORKOS_CLIENT_ID`, `BIBLIOCOMMONS_CARD/PIN`, `BIBLIOCOMMONS_MCP_SINGLE_USER=1` | done ✅ — auth live, `/mcp` 401s without a token                 |
+| F2b | **WorkOS dashboard** — DCR + CIMD + Resource Indicator                                        | done ✅ — Claude registered + connected, so this is confirmed    |
+| F2c | **Owner allow-list** — `BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=<owner WorkOS user_id>`              | done ✅ — set to the owner's id; only the owner reaches the card |
+| F3  | **Final acceptance** — connector on claude.ai, confirmed on iOS, `search` + holds/loans work  | done ✅ — verified in-product (5 holds pulled, cards render)     |
 
 ## Closed
 
