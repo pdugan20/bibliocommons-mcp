@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.5.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.4.0...v0.5.0) (2026-05-30)
+
+
+### Features
+
+* **auth:** account settings page for per-user library credentials ([#9](https://github.com/pdugan20/bibliocommons-mcp/issues/9)) ([d528a9c](https://github.com/pdugan20/bibliocommons-mcp/commit/d528a9c8c5dd7bad8cfe07633aa1ddc52a285754))
+* **auth:** gate single-user mode to allow-listed owner subjects ([#18](https://github.com/pdugan20/bibliocommons-mcp/issues/18)) ([4ef064c](https://github.com/pdugan20/bibliocommons-mcp/commit/4ef064c692ea134fe205d512712c6803cdc1a732))
+* **auth:** multi-user WorkOS OAuth Resource Server + per-user routing ([#8](https://github.com/pdugan20/bibliocommons-mcp/issues/8)) ([dd9eb6a](https://github.com/pdugan20/bibliocommons-mcp/commit/dd9eb6abf45463ce4572bdd461efe8ff3b1d8230))
+* **http:** add getbiblio favicon assets + svg/apple-touch routes ([#17](https://github.com/pdugan20/bibliocommons-mcp/issues/17)) ([3b58341](https://github.com/pdugan20/bibliocommons-mcp/commit/3b58341a51a014d29bc98b910c9f400fdb7a367b))
+* **http:** remote-MCP Milestone 1 — Streamable HTTP + read-only catalog mode ([#5](https://github.com/pdugan20/bibliocommons-mcp/issues/5)) ([5c6ef93](https://github.com/pdugan20/bibliocommons-mcp/commit/5c6ef930b718413b241ef9f9b098489b062ffcfd))
+* **http:** single-user mode + /favicon.ico and landing routes ([#14](https://github.com/pdugan20/bibliocommons-mcp/issues/14)) ([9214783](https://github.com/pdugan20/bibliocommons-mcp/commit/9214783b9c329bc34a3e43afdf010fc248d7947a))
+
+
+### Bug Fixes
+
+* **deploy:** auto_start_machines = true so a stopped Fly machine self-heals ([#13](https://github.com/pdugan20/bibliocommons-mcp/issues/13)) ([188e531](https://github.com/pdugan20/bibliocommons-mcp/commit/188e531a0e741e585903dba80423743796b55af3))
+* **http:** allow the deployed Host for Streamable HTTP; Fly region sjc ([#12](https://github.com/pdugan20/bibliocommons-mcp/issues/12)) ([93ef1f0](https://github.com/pdugan20/bibliocommons-mcp/commit/93ef1f09def12e07ee7ac12c05115028f09df18f))
+* **ui:** allow OverDrive CDN so Libby/digital covers render ([#23](https://github.com/pdugan20/bibliocommons-mcp/issues/23)) ([4447a1e](https://github.com/pdugan20/bibliocommons-mcp/commit/4447a1e127226b62779d2eb7e9209d830f508cde))
+* **ui:** match the shipping MCP Apps wire format so cards actually render ([#21](https://github.com/pdugan20/bibliocommons-mcp/issues/21)) ([186dcba](https://github.com/pdugan20/bibliocommons-mcp/commit/186dcbaa81f9e6ca05bf1b150c54abe22a1476a9))
+
+
+### Performance Improvements
+
+* **auth:** bound per-user client cache with idle-TTL + LRU, plus M3 audit ([#10](https://github.com/pdugan20/bibliocommons-mcp/issues/10)) ([fad7e2a](https://github.com/pdugan20/bibliocommons-mcp/commit/fad7e2a3f27be2b550df696f3cb979f6a5cd4285))
+
+
+### Documentation
+
+* **docs-site:** add Mintlify docs site with generated reference and anti-drift CI ([#19](https://github.com/pdugan20/bibliocommons-mcp/issues/19)) ([8ba173e](https://github.com/pdugan20/bibliocommons-mcp/commit/8ba173eb0ecda01545721e6797af0bb65f02a091))
+* **docs-site:** pause Phase 3 (Mintlify 1-site-per-account); document setup steps ([#20](https://github.com/pdugan20/bibliocommons-mcp/issues/20)) ([d5f274a](https://github.com/pdugan20/bibliocommons-mcp/commit/d5f274aa87bcb44cf34cf5cec03a31df3182e8f1))
+* **preview-cards:** record the rendering fix; reopen milestone 4 as active ([#22](https://github.com/pdugan20/bibliocommons-mcp/issues/22)) ([e3ea18b](https://github.com/pdugan20/bibliocommons-mcp/commit/e3ea18b9832846dd9ae8233202a5517d0cdbfdba))
+* **projects:** reconcile follow-ups to live state; close out shipped/N-A items ([#16](https://github.com/pdugan20/bibliocommons-mcp/issues/16)) ([6b1bcc4](https://github.com/pdugan20/bibliocommons-mcp/commit/6b1bcc483947f0d5fbdfaa04b9d2a701aa8f94b8))
+
 ## [0.4.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.3.0...v0.4.0) (2026-05-28)
 
 
