@@ -10,7 +10,7 @@ The remote/mobile connector is **shipped and live** — deployed to Fly, WorkOS 
 
 1. **Resume the docs site (Mintlify).** Fully built in-repo (`docs-site/`), hosting is **paused** on Mintlify's one-site-per-account limit — owner-gated, needs contacting Mintlify. See [`docs-site/TRACKER.md`](docs-site/TRACKER.md) (Phase 3 + the once-unblocked setup steps) and [`docs-site/DEFERRED.md`](docs-site/DEFERRED.md).
 2. **Iterate on the UI cards.** Cards render in-product now; the polish work (iOS flash/corners, theming, status visuals, digital-cover CDN allow-list) is milestone 4 in [`preview-cards.md`](preview-cards.md) — **active**.
-3. **Other followups.** The catalog/loan feature briefs below (renew, ready-for-pickup, bulk) plus the continuous CI/readiness triage. The deeper backlog (digital queue holds, suspend, recommendations, multi-library) lives in [`../roadmap.md`](../roadmap.md).
+3. **Other followups.** The big catalog/loan feature briefs below (renew, ready-for-pickup, bulk holds, digital queue holds) have all **shipped** — what's left is smaller: capture a real renewal-failure response to tighten error classification, and the genuinely-unbuilt v1.1 items **suspend/unsuspend holds** and **change pickup branch on an existing hold**. The deeper backlog (recommendations, multi-library, multi-user) lives in [`../roadmap.md`](../roadmap.md).
 
 ## Format
 
