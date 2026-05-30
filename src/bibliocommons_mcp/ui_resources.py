@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ._ui_bundles import HOLDS_HTML, LOANS_HTML, SEARCH_HTML
-from .ui import register_ui_resource
+from .ui import advertise_ui_extension, register_ui_resource
 
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 
 def register_all(mcp: FastMCP) -> dict[str, str]:
     """Register every UI bundle and return its name → URI map."""
+    # Declare the MCP Apps extension in `initialize` — without this the host
+    # silently skips rendering even though tools carry `_meta.ui.resourceUri`.
+    advertise_ui_extension(mcp)
     holds_uri = register_ui_resource(
         mcp,
         name="holds",

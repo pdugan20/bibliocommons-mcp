@@ -1,25 +1,25 @@
 """MCP Apps integration helpers.
 
-This module wires the prebuilt React bundles in ``_ui_bundles.py`` into
-the MCP server as UI resources following the MCP Apps extension
-(``io.modelcontextprotocol/ui``, spec rev 2026-01-26 — currently
-Draft).
+Wires the prebuilt React bundles in ``_ui_bundles.py`` into the MCP server as
+UI resources following the MCP Apps extension (``io.modelcontextprotocol/ui``),
+matching the wire format the shipping ``@modelcontextprotocol/ext-apps`` SDK
+(v1.7) negotiates — the same one the sibling ``rewind`` server uses and that
+renders in Claude Desktop and the mobile app.
 
-Two functions matter for the rest of the codebase:
+Three pieces matter:
 
-- :func:`register_ui_resource` — register one HTML bundle as a
-  ``ui://`` MCP resource, attaching a Content-Security-Policy in the
-  resource's ``_meta`` so the host iframe will load Syndetics jacket
-  images.
+- :func:`advertise_ui_extension` — declare the ``io.modelcontextprotocol/ui``
+  extension in the server's ``initialize`` capabilities. **Load-bearing:**
+  without it the host sees a tool's ``_meta.ui.resourceUri`` but silently skips
+  rendering, because capability negotiation failed.
 
-- :func:`ui_tool_meta` — return the ``meta`` dict to attach to a
-  ``@mcp.tool(...)`` so the host knows which UI resource to render
-  when the tool returns. The result's ``structuredContent`` is what
-  the bundle receives via ``ui/notifications/tool-result``.
+- :func:`register_ui_resource` — register one HTML bundle as a ``ui://``
+  resource with mime ``text/html;profile=mcp-app`` and a per-bundle CSP under
+  ``_meta.ui.csp`` so the host iframe loads Syndetics jacket images.
 
-The spec is still Draft, so the meta keys are versioned per the
-``protocolVersion`` constant below. If the spec lands under a
-different namespace, this is the single file to edit.
+- :func:`ui_tool_meta` — the ``meta`` dict to attach to a ``@mcp.tool(...)`` so
+  the host renders the referenced UI resource when the tool returns; the
+  result's ``structuredContent`` is delivered to the bundle.
 """
 
 from __future__ import annotations
@@ -32,40 +32,56 @@ from pydantic import AnyUrl
 if TYPE_CHECKING:
     from mcp.server.fastmcp import FastMCP
 
-# MCP Apps extension namespace. Both resources and tools annotate
-# under this key so hosts can discover and bind them.
-UI_META_KEY = "io.modelcontextprotocol/ui"
+# MCP Apps extension id (the key under `capabilities.extensions`).
+UI_EXTENSION_ID = "io.modelcontextprotocol/ui"
 
-# Spec revision we target. Matches the version the
-# `@modelcontextprotocol/ext-apps` JS SDK negotiates against in
-# `web/package.json`.
-UI_PROTOCOL_VERSION = "2026-01-26"
+# Resource mime type the extension expects (the `;profile=mcp-app` suffix is
+# how the host recognizes an MCP App resource, not a plain HTML resource).
+UI_MIME_TYPE = "text/html;profile=mcp-app"
 
-# Default CSP for our bundles. Bundles are entirely self-contained
-# HTML (Vite + vite-plugin-singlefile inlines every script/style), so
-# `'self'` plus inline + the two image hosts that serve our jackets
-# is sufficient. `data:` covers the 1×1 transparent placeholders the
-# components fall back to when a jacket is missing.
-#
-# Syndetics is BiblioCommons's third-party jacket provider; its URLs
-# come back in the gateway's `briefInfo.jacket` field. The CDN host
-# serves BC's own fallback covers.
-DEFAULT_IMG_SRC = (
-    "'self' data: https://secure.syndetics.com https://*.syndetics.com "
-    "https://cor-cdn-static.bibliocommons.com"
-)
-DEFAULT_STYLE_SRC = "'self' 'unsafe-inline'"
-DEFAULT_SCRIPT_SRC = "'self' 'unsafe-inline'"
+# Per-bundle `_meta`/`meta` use the short `ui` key (+ a legacy `ui/resourceUri`
+# fallback), matching ext-apps 1.7 / rewind — NOT the full extension-id key.
+
+# Image hosts our bundles load jacket art from (Syndetics is BiblioCommons's
+# jacket provider; the CDN host serves BC's own fallback covers). Passed to the
+# host as the resource's CSP `resourceDomains`.
+IMAGE_DOMAINS = [
+    "https://secure.syndetics.com",
+    "https://*.syndetics.com",
+    "https://cor-cdn-static.bibliocommons.com",
+]
 
 
 def ui_resource_uri(name: str) -> str:
-    """Stable URI for a UI bundle resource.
-
-    Used by both the resource registration and the tools that
-    reference it. Keeping it in one place means tools and resources
-    can't drift.
-    """
+    """Stable URI for a UI bundle resource — shared by the resource
+    registration and the tools that reference it, so they can't drift."""
     return f"ui://bibliocommons-mcp/{name}"
+
+
+def advertise_ui_extension(mcp: FastMCP) -> None:
+    """Advertise the MCP Apps UI extension in the ``initialize`` response.
+
+    The installed Python SDK's ``ServerCapabilities`` has no typed
+    ``extensions`` field (only ``experimental``), but the model allows extra
+    keys — so we inject ``extensions`` by wrapping the low-level server's
+    ``create_initialization_options`` (used by both the stdio and Streamable
+    HTTP transports). Idempotent.
+    """
+    server = mcp._mcp_server
+    if getattr(server, "_ui_extension_advertised", False):
+        return
+    original = server.create_initialization_options
+
+    def _with_ui_extension(*args: Any, **kwargs: Any):
+        opts = original(*args, **kwargs)
+        caps = opts.capabilities
+        extensions = dict(getattr(caps, "extensions", None) or {})
+        extensions[UI_EXTENSION_ID] = {"mimeTypes": [UI_MIME_TYPE]}
+        new_caps = caps.model_copy(update={"extensions": extensions})
+        return opts.model_copy(update={"capabilities": new_caps})
+
+    server.create_initialization_options = _with_ui_extension
+    server._ui_extension_advertised = True
 
 
 def register_ui_resource(
@@ -75,46 +91,25 @@ def register_ui_resource(
     title: str,
     html: str,
     description: str | None = None,
-    img_src: str = DEFAULT_IMG_SRC,
-    style_src: str = DEFAULT_STYLE_SRC,
-    script_src: str = DEFAULT_SCRIPT_SRC,
+    resource_domains: list[str] | None = None,
 ) -> str:
-    """Register a UI bundle as an MCP resource and return its URI.
+    """Register a UI bundle as an MCP App resource and return its URI.
 
-    The returned URI is what callers pass to :func:`ui_tool_meta` on
-    the tool(s) that should render this bundle.
+    The returned URI is what callers pass to :func:`ui_tool_meta` on the
+    tool(s) that should render this bundle.
     """
     uri = ui_resource_uri(name)
-    # Build the CSP string from the per-bundle directive args. Bundles
-    # vary in what they fetch (search renders more jackets than a
-    # zero-state holds card), so we let each caller widen the policy
-    # if needed.
-    csp = "; ".join(
-        [
-            "default-src 'none'",
-            f"img-src {img_src}",
-            f"style-src {style_src}",
-            f"script-src {script_src}",
-            "connect-src 'none'",
-            "frame-src 'none'",
-        ]
-    )
     meta: dict[str, Any] = {
-        UI_META_KEY: {
-            "version": UI_PROTOCOL_VERSION,
-            "csp": csp,
-        }
+        "ui": {"csp": {"resourceDomains": resource_domains or IMAGE_DOMAINS}}
     }
     resource = FunctionResource(
         uri=AnyUrl(uri),
         name=name,
         title=title,
         description=description,
-        mime_type="text/html",
-        # FunctionResource calls `fn()` on read. The bundles are large
-        # (~500KB each) but already in memory, so the callable just
-        # hands them back. Lazy is fine; the SDK won't read until a
-        # client asks for it.
+        mime_type=UI_MIME_TYPE,
+        # Bundles are large (~500KB) but already in memory; hand them back on
+        # read. The SDK won't read until a client asks.
         fn=lambda html=html: html,
         meta=meta,
     )
@@ -126,13 +121,11 @@ def ui_tool_meta(resource_uri: str) -> dict[str, Any]:
     """Return the ``meta=`` dict for a tool that should render UI.
 
     Pass to ``@mcp.tool(..., meta=ui_tool_meta(...))``. The host reads
-    this and, when the tool returns, loads the referenced UI resource
-    and posts the tool's ``structuredContent`` into it via
-    ``ui/notifications/tool-result``.
+    ``_meta.ui.resourceUri`` (with the legacy ``ui/resourceUri`` fallback),
+    loads the referenced UI resource when the tool returns, and posts the
+    tool's ``structuredContent`` into it.
     """
     return {
-        UI_META_KEY: {
-            "version": UI_PROTOCOL_VERSION,
-            "resourceUri": resource_uri,
-        }
+        "ui": {"resourceUri": resource_uri},
+        "ui/resourceUri": resource_uri,
     }
