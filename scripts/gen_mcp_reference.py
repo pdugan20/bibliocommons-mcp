@@ -51,7 +51,10 @@ def _kind(tool) -> str:
 def _first_para(text: str | None) -> str:
     if not text:
         return ""
-    return text.strip().split("\n\n", 1)[0].replace("\n", " ").strip()
+    first = text.strip().split("\n\n", 1)[0]
+    # Collapse all internal whitespace (newlines + continuation indentation)
+    # to single spaces so output is deterministic across environments.
+    return " ".join(first.split())
 
 
 def _type_str(spec: dict) -> str:

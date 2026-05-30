@@ -9,6 +9,7 @@ on drift. Run via `make docs-reference`.
 
 from __future__ import annotations
 
+import inspect
 import pathlib
 
 from bibliocommons_mcp.server import main
@@ -31,7 +32,9 @@ for settings.
 
 
 def main_() -> None:
-    help_text = (main.__doc__ or "").strip()
+    # cleandoc removes the uniform docstring indentation so the output is
+    # deterministic regardless of how the source is indented.
+    help_text = inspect.cleandoc(main.__doc__ or "")
     body = (
         HEADER + "\n```text\nbibliocommons-mcp [subcommand]\n\n" + help_text + "\n```\n"
     )
