@@ -120,6 +120,13 @@ roughly in priority order:
 - Lazy-load covers past the first 3 rows (a 20-hold view shouldn't
   eagerly fetch 20 Syndetics images).
 - Bundle-size trim (currently ~520 KB/bundle).
+- **Digital-cover CDN allow-list (CSP).** The host iframe enforces
+  `_meta.ui.csp.resourceDomains` and silently drops covers from any host
+  not on it. Confirmed for OverDrive (`*.od-cdn.com`, PR #23). **Still
+  unverified: hoopla** — its covers come from a different host
+  (`*.hoopladigital.com` / a CloudFront domain) and will show the grey
+  box until added to `IMAGE_DOMAINS` in `ui.py`. Signal to watch: a
+  grey-box cover on a digital item — grab the broken URL, add its host.
 
 ## Effort
 
