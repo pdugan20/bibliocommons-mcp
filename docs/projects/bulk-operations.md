@@ -1,5 +1,23 @@
 # Project: Bulk hold operations
 
+> **Status: shipped** in the v0.4.0 "collapse mutation tools to
+> list-accepting only" refactor. Both halves landed, and the design
+> question below resolved toward **one list-accepting tool each** (not
+> separate singular/plural tools):
+>
+> - **Cancel** — `cancel_hold(holds: list[HoldRef], dry_run=False)`,
+>   single native bulk `DELETE`; `dry_run` previews. Partial failures
+>   surface in `BulkCancelHoldsResult`.
+> - **Place (physical)** — `place_hold(bib_ids: list[str],
+pickup_branch=None, delay_seconds=1.0) -> BulkPlaceHoldResult`; N
+>   sequential POSTs with the polite delay baked in as a parameter.
+> - **Place (digital queue)** — `place_digital_hold(bib_ids: list[str],
+delay_seconds=1.0)` joins Libby waitlists, same shape.
+>
+> See `src/bibliocommons_mcp/server.py`. The only deferred piece is
+> richer renewal-style error classification, tracked in
+> [`renew-loans.md`](renew-loans.md).
+
 ## Goal
 
 Expose bulk cancel and bulk place-hold as first-class MCP tools (or arguments on the existing tools), so the agent can do "cancel all my holds at the central branch" or "place a hold on these five CDs" in one call.

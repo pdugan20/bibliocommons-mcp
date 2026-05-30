@@ -1,5 +1,13 @@
 # Project: Ready-for-pickup tool
 
+> **Status: shipped.** Live as `ready_for_pickup()` in
+> `src/bibliocommons_mcp/server.py` — design choice (b) won (a dedicated
+> tool, not a `status_filter` arg). Filters `list_holds` to
+> `status == "READY_FOR_PICKUP"` and renders the holds UI card. The
+> arrival-date / expiry-window enrichment (steps 3–4) was **not** done;
+> it returns the same `Hold` fields as `list_holds`. Revisit only if a
+> user wants the pickup-by date surfaced.
+
 ## Goal
 
 Surface holds that have arrived at the user's pickup branch as a dedicated MCP tool, so the agent can answer "what's waiting for me at the library" without filtering `list_holds` client-side.
