@@ -9,8 +9,9 @@ Owner: 🤖 in-repo (code/docs) · 🧑 owner-owned (Mintlify account / DNS).
 
 **Where we are:** Phases 0–2 done — the full Mintlify site is scaffolded in
 `docs-mintlify/` (all narrative pages) and the CLI + MCP reference is generated
-from source with anti-drift + broken-link CI. Remaining is owner-owned: stand
-up the Mintlify project + `docs.getbiblio.app` (Phase 3), then cutover (Phase 4).
+from source with anti-drift + broken-link CI. **Phase 3 (hosting) is PAUSED** —
+Mintlify's one-site-per-account limit needs resolving with Mintlify first (see
+Phase 3). The site previews locally now via `make docs`; Phase 4 follows hosting.
 
 ---
 
@@ -57,15 +58,43 @@ up the Mintlify project + `docs.getbiblio.app` (Phase 3), then cutover (Phase 4)
 
 ---
 
-## Phase 3 — Hosting / deploy 🧑
+## Phase 3 — Hosting / deploy 🧑 (PAUSED)
 
 | ✓   | Owner | Task                                                               |
 | --- | ----- | ------------------------------------------------------------------ |
-| ⬜  | 🧑    | Create the Mintlify project (free OSS), connect the GitHub repo    |
-| ⬜  | 🧑    | Point `docs.getbiblio.app` CNAME per Mintlify; confirm auto-deploy |
+| ⏸️  | 🧑    | Create the Mintlify project (free OSS), connect the GitHub repo    |
+| ⏸️  | 🧑    | Point `docs.getbiblio.app` CNAME per Mintlify; confirm auto-deploy |
 | ⬜  | 🤖    | Confirm `llms.txt` + contextual menu live; spot-check nav/search   |
 
-**Blocker:** needs a Mintlify SaaS account + DNS (owner).
+**⏸️ PAUSED — blocker:** Mintlify's free tier appears to allow **one site per
+account**, and the owner's account already hosts another site
+(clickwheel / rewind). Resolving needs **contacting Mintlify** (second
+site/org, or a separate account for this project). Until then the site is fully
+built in-repo (`docs-mintlify/`) and previewable locally with `make docs`; it
+just isn't hosted. Fallback if a second site isn't possible: self-host the
+Mintlify build, or switch to Cloudflare Pages + Astro Starlight (see
+DEFERRED.md).
+
+### Setup steps (run these once unblocked)
+
+**A. Connect the repo** — at `app.mintlify.com`:
+
+1. Sign up / log in; free (OSS/Hobby) plan.
+2. Install the **Mintlify GitHub App** on `pdugan20/bibliocommons-mcp`.
+3. **Settings → Deployment → Git Settings**
+   (`app.mintlify.com/settings/deployment/git-settings`): org `pdugan20`, repo
+   `bibliocommons-mcp`, branch `main`, **subdirectory `docs-mintlify`**. Save.
+4. It deploys from `main` on push; open the `*.mintlify.app` preview and
+   confirm it renders.
+
+**B. Custom domain `docs.getbiblio.app`** — at
+`app.mintlify.com/settings/deployment/custom-domain`:
+
+1. Enter `docs.getbiblio.app`; it shows **two verification TXT records**.
+2. Add both TXT records in Cloudflare exactly as shown (`_acme-challenge…` +
+   `_cf-custom-hostname…`), **DNS only (grey)**. Wait for both to verify green.
+3. Then add a **CNAME** `docs` → `cname.mintlify.builders`, **DNS only (grey)**.
+4. Mintlify issues the cert; `https://docs.getbiblio.app` goes live.
 
 ---
 

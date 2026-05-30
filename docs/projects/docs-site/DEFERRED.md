@@ -16,3 +16,12 @@ Explicitly parked, with the reason. Not silent omissions.
   pending the BiblioCommons/SPL ToS question. Promote later if it clears.
 - **Versioned docs.** Single current version is fine until the tool surface
   changes enough to need it.
+
+## Paused (2026-05-30) — Mintlify hosting (Phase 3)
+
+Mintlify's free tier appears to allow **one site per account**, and the owner's
+account already hosts another project's site. Phase 3 is paused pending
+**contacting Mintlify** for a second site / org. The site is fully built in-repo
+and previewable with `make docs`; only hosting is blocked. Fallbacks if a second
+Mintlify site isn't granted: self-host the Mintlify build output (static), or
+switch to **Cloudflare Pages + Astro Starlight** (we already use Cloudflare).
