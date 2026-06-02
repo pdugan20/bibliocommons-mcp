@@ -1,0 +1,26 @@
+---
+title: Requirements
+description: What you need before installing bibliocommons-mcp, and what each capability requires.
+icon: list-check
+---
+
+Most of this is just Python and a library card. A couple of features need one
+extra thing each.
+
+## Baseline
+
+- **Python 3.11+** (the `uvx` / `pipx` / `pip` install in the
+  [Quickstart](/quickstart) handles the rest).
+- A **BiblioCommons-powered library** you have a card at. You pick yours by
+  subdomain (`seattle`, `sfpl`, and so on).
+
+## By capability
+
+| Capability | Needs |
+| --- | --- |
+| Search and availability | Just the library subdomain. Runs in read-only catalog mode, no card. |
+| Holds, loans, digital | Your **card number** and **PIN**, set with `bibliocommons-mcp init` or env vars. |
+| Digital waitlists (`place_digital_hold`) | A **notification email** (`digital_notification_email`), the same address your BiblioCommons account uses. |
+| Phone use (remote connector) | An **always-on HTTPS host** and a **WorkOS** account for OAuth. See [Self-host the remote connector](/guides/self-host-remote). |
+
+See [Configuration](/reference/configuration) for where each value goes.

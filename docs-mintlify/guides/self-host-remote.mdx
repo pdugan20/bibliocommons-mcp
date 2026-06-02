@@ -1,6 +1,7 @@
 ---
 title: Self-host the remote connector
-description: Run bibliocommons-mcp over HTTPS so you can use it from the Claude mobile app — single-user, OAuth-gated.
+description: Run bibliocommons-mcp over HTTPS so you can use it from the Claude mobile app; single-user, OAuth-gated.
+icon: globe
 ---
 
 The Claude mobile app can only attach to a **remote** MCP server reachable over
@@ -16,9 +17,9 @@ auth-gated so only you can use it, with your card wired in.
 
 - **Transport:** Streamable HTTP (`bibliocommons-mcp serve --http`).
 - **Host:** any always-on container host. We use **Fly.io** (an always-on
-  machine keeps the in-memory session warm — see [Local vs remote](/concepts/local-vs-remote)).
+  machine keeps the in-memory session warm; see [Local vs remote](/concepts/local-vs-remote)).
 - **Auth:** the server is an OAuth 2.1 **Resource Server**; login is delegated to
-  **WorkOS AuthKit**. The server holds no auth secret — it validates tokens
+  **WorkOS AuthKit**. The server holds no auth secret; it validates tokens
   against WorkOS's public keys.
 
 ## Steps
@@ -31,7 +32,7 @@ auth-gated so only you can use it, with your card wired in.
    fly open /healthz        # {"status":"ok", ... ,"mode":"read-only"}
    ```
 
-   With no WorkOS env set, it comes up **authless read-only** — a good first
+   With no WorkOS env set, it comes up **authless read-only**, a good first
    check before adding auth.
 
 2. **Custom domain + TLS:**
@@ -42,7 +43,7 @@ auth-gated so only you can use it, with your card wired in.
 
    Add the DNS records it prints. Confirm `https://your-domain/healthz`.
 
-3. **Turn on single-user auth** — point the server at your WorkOS environment and
+3. **Turn on single-user auth.** Point the server at your WorkOS environment and
    wire your card (run it yourself so the PIN stays out of any logs):
 
    ```bash
@@ -64,7 +65,7 @@ auth-gated so only you can use it, with your card wired in.
    fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=user_01YOURID
    ```
 
-   Until that's set, it's fail-safe — nobody gets the card.
+   Until that's set, it's fail-safe: nobody gets the card.
 
 5. **Add the connector** on claude.ai web → Connectors →
    `https://your-domain/mcp`. It syncs to the mobile app.
@@ -77,7 +78,7 @@ and each user logs in and stores their own card at a hosted `/account` page.
 
 <Warning>
   Hosting a multi-user proxy means storing other patrons' card numbers + PINs
-  and acting on their behalf — a materially different posture. **Check your
+  and acting on their behalf, a materially different posture. **Check your
   library's / BiblioCommons' Terms of Service before onboarding anyone but
   yourself.**
 </Warning>

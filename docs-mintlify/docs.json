@@ -1,12 +1,12 @@
 {
   "$schema": "https://mintlify.com/schema.json",
-  "theme": "almond",
+  "theme": "luma",
   "name": "bibliocommons-mcp",
-  "description": "An MCP server for BiblioCommons public libraries — search the catalog, place holds, and manage checkouts from Claude.",
+  "description": "An MCP server for BiblioCommons public libraries: search the catalog, place holds, and manage checkouts from Claude.",
   "logo": { "light": "/logo/light.svg", "dark": "/logo/dark.svg" },
   "favicon": "/favicon.svg",
   "appearance": { "default": "system" },
-  "colors": { "primary": "#6366f1", "light": "#8b94f0", "dark": "#7c3aed" },
+  "colors": { "primary": "#0062AA", "light": "#4D9FE8", "dark": "#0062AA" },
   "contextual": {
     "options": ["copy", "view", "claude", "chatgpt", "cursor", "vscode", "mcp"]
   },
@@ -27,27 +27,29 @@
         "groups": [
           {
             "group": "Getting started",
-            "pages": ["introduction", "quickstart", "install"]
+            "pages": ["introduction", "quickstart", "requirements", "install"]
           },
           {
-            "group": "How-to guides",
+            "group": "Everyday use",
             "pages": [
               "guides/search",
               "guides/holds",
               "guides/digital",
               "guides/loans",
-              "guides/branches",
+              "guides/branches"
+            ]
+          },
+          {
+            "group": "Claude (MCP)",
+            "pages": [
               "guides/recipes",
+              "concepts/local-vs-remote",
               "guides/self-host-remote"
             ]
           },
           {
             "group": "Concepts",
-            "pages": [
-              "concepts/architecture",
-              "concepts/local-vs-remote",
-              "concepts/security"
-            ]
+            "pages": ["concepts/architecture", "concepts/security"]
           },
           { "group": "Help", "pages": ["troubleshooting", "changelog"] }
         ]

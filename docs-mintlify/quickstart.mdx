@@ -1,6 +1,7 @@
 ---
 title: Quickstart
-description: Install bibliocommons-mcp, configure your library card, and run your first search from Claude — in a few minutes.
+description: Install bibliocommons-mcp, configure your library card, and run your first search from Claude in a few minutes.
+icon: rocket
 ---
 
 This gets you from zero to "search the catalog from Claude" locally. For other
@@ -37,11 +38,11 @@ bibliocommons-mcp init
 
 It writes `~/.config/bibliocommons-mcp/config.toml` (mode `0600`) with your
 **library subdomain**, **card number**, and **PIN**. You can also set these via
-environment variables — see [Configuration](/reference/configuration).
+environment variables (see [Configuration](/reference/configuration)).
 
 <Note>
-  Your library subdomain is the first part of your catalog URL — e.g.
-  `seattle` for `seattle.bibliocommons.com`, `sfpl` for San Francisco.
+  Your library subdomain is the first part of your catalog URL: `seattle` for
+  `seattle.bibliocommons.com`, `sfpl` for San Francisco.
 </Note>
 
 ## 3. Connect it to Claude Desktop
@@ -68,8 +69,8 @@ Ask Claude:
 
 Claude will call [`search`](/reference/mcp-tools) and
 [`availability`](/reference/mcp-tools). When something seems off, ask it to run
-**`library_health`** first — that confirms login + your hold quotas.
+**`library_health`** first; that confirms login plus your hold quotas.
 
 <Card title="More example prompts" icon="comments" href="/guides/recipes">
-  A grab-bag of things to ask — placing holds, returning ebooks, renewing loans.
+  A grab-bag of things to ask: placing holds, returning ebooks, renewing loans.
 </Card>
