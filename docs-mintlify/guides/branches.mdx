@@ -1,6 +1,7 @@
 ---
 title: Branches & availability
 description: List branches, resolve branch names/codes, and check per-branch copy status.
+icon: building-columns
 ---
 
 ## List branches
@@ -14,9 +15,9 @@ is cached in memory for the life of the server.
 ## Branch names vs codes
 
 Anywhere a branch is accepted (e.g. `place_hold`'s `pickup_branch`), you can pass
-a **name or a code** — the resolver matches case-insensitive substrings.
+a **name or a code**; the resolver matches case-insensitive substrings.
 
-Some branches have **locker variants** — names like "Lake City Branch: SPL
+Some branches have **locker variants**, names like "Lake City Branch: SPL
 Lockers" with codes starting `LOCK…`. When a name is ambiguous, the resolver
 **prefers the regular branch** over the locker variant.
 
@@ -28,5 +29,5 @@ have to name it every time.
 > Which branches have a copy of this on the shelf right now?
 
 [`availability(bib_id)`](/reference/mcp-tools) returns each branch's copy count,
-status (available / in-transit / on-hold), call number, and collection — plus
+status (available / in-transit / on-hold), call number, and collection, plus
 digital format info for e-titles.

@@ -1,6 +1,7 @@
 ---
 title: Architecture
-description: How bibliocommons-mcp is put together — a thin, stateless proxy over the BiblioCommons gateway.
+description: "How bibliocommons-mcp is put together: a thin, stateless proxy over the BiblioCommons gateway."
+icon: sitemap
 ---
 
 bibliocommons-mcp is a small MCP server wrapping the public BiblioCommons
@@ -22,7 +23,7 @@ One server instance talks to **one** library, set by subdomain
 config. This keeps the model simple and matches how BiblioCommons scopes its
 gateway.
 
-The same endpoints work for any BiblioCommons-powered library — tested against
+The same endpoints work for any BiblioCommons-powered library, tested against
 `seattle` and `sfpl`.
 
 ## Stateless by design
@@ -34,12 +35,12 @@ The same endpoints work for any BiblioCommons-powered library — tested against
 
 ## Tool layer
 
-Tools are grouped by what they touch: **catalog** (read-only — `search`,
+Tools are grouped by what they touch: **catalog** (read-only: `search`,
 `availability`, `list_branches`), **holds/checkouts** (`place_hold`,
 `borrow_digital`, `place_digital_hold`, `cancel_hold`, …), and **account**
 (`list_holds`, `list_loans`, `library_health`). Each tool declares MCP
 annotations (read-only / writes / destructive) so clients can gate confirmations
-— see the [tool reference](/reference/mcp-tools).
+(see the [tool reference](/reference/mcp-tools)).
 
 For how the same server runs locally vs. remotely, see
 [Local vs remote](/concepts/local-vs-remote).

@@ -1,10 +1,11 @@
 ---
 title: Search the catalog
 description: Keyword search with format and sort facets, plus per-branch availability.
+icon: magnifying-glass
 ---
 
 Two read-only tools cover discovery: [`search`](/reference/mcp-tools) and
-[`availability`](/reference/mcp-tools). Just ask in plain language — Claude
+[`availability`](/reference/mcp-tools). Just ask in plain language and Claude
 fills in the parameters.
 
 ## Search
@@ -40,10 +41,10 @@ filter to it unless you say otherwise.
 
 `availability(bib_id)` returns per-branch copy status, hold counts, and (for
 digital titles) the available formats. Get a `bib_id` from `search` results.
-Branch names and 3-letter codes both work elsewhere — see
-[Branches & availability](/guides/branches).
+Branch names and 3-letter codes both work elsewhere (see
+[Branches & availability](/guides/branches)).
 
 <Note>
-  Search and availability are read-only and need no card/PIN — they work in
+  Search and availability are read-only and need no card/PIN; they work in
   read-only "catalog mode" too. Account actions (holds, loans) need credentials.
 </Note>

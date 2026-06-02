@@ -1,6 +1,7 @@
 ---
 title: Troubleshooting
 description: Common errors and how to fix them.
+icon: life-ring
 ---
 
 ## "Run `bibliocommons-mcp init`" / config error on startup
@@ -19,7 +20,7 @@ actions.
 ## The client connects but tools fail / no library card configured (remote)
 
 In single-user remote mode you must allow-list your WorkOS account id. The error
-prints it — add it: `fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=user_…`.
+prints it; add it: `fly secrets set BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=user_…`.
 See [Self-host the remote connector](/guides/self-host-remote).
 
 ## `401` / login won't complete (remote)
@@ -40,8 +41,8 @@ The SDK's DNS-rebinding protection trusts only the configured hosts. Set
 ## "Branch not found"
 
 Branch names match case-insensitive substrings; try the 3-letter code (e.g.
-`LCY`) or run `list_branches`. Locker variants use `LOCK…` codes — see
-[Branches](/guides/branches).
+`LCY`) or run `list_branches`. Locker variants use `LOCK…` codes (see
+[Branches](/guides/branches)).
 
 ## A search ignores my page size
 
@@ -49,5 +50,5 @@ Page size is fixed at **25**; use `page=N` and the response's `pages` count.
 
 ## Seeing more detail
 
-Set `BIBLIOCOMMONS_MCP_LOG_LEVEL=DEBUG` (or `INFO`). Logs go to **stderr** —
+Set `BIBLIOCOMMONS_MCP_LOG_LEVEL=DEBUG` (or `INFO`). Logs go to **stderr**;
 credentials are never logged. On Fly: `fly logs`.
