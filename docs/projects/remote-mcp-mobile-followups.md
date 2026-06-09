@@ -21,7 +21,7 @@ None — all of F1–F3 are done.
 
 | #   | Item                                                                                          | Result                                                           |
 | --- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| F1  | **Favicon** — book icon at the apex + `/favicon.svg` / apple-touch routes                     | done ✅ (Google's s2 crawl is cosmetic, not blocking)            |
+| F1  | **Favicon** — book icon at the apex + `/favicon.svg` routes                                   | done ✅ — apple-touch later dropped on purpose: Google's s2 flattens it to an opaque JPEG at 48/64px |
 | F2a | **Secrets** — `WORKOS_CLIENT_ID`, `BIBLIOCOMMONS_CARD/PIN`, `BIBLIOCOMMONS_MCP_SINGLE_USER=1` | done ✅ — auth live, `/mcp` 401s without a token                 |
 | F2b | **WorkOS dashboard** — DCR + CIMD + Resource Indicator                                        | done ✅ — Claude registered + connected, so this is confirmed    |
 | F2c | **Owner allow-list** — `BIBLIOCOMMONS_MCP_OWNER_SUBJECTS=<owner WorkOS user_id>`              | done ✅ — set to the owner's id; only the owner reaches the card |

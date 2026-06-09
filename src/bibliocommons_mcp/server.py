@@ -312,8 +312,15 @@ async def favicon_svg(_request: Request) -> Response:
 
 
 @mcp.custom_route("/apple-touch-icon.png", methods=["GET"])
+@mcp.custom_route("/apple-touch-icon-precomposed.png", methods=["GET"])
 async def apple_touch_icon(_request: Request) -> Response:
-    return _static_response("apple-touch-icon.png", "image/png")
+    """Intentionally 404. Apple-touch icons are treated as opaque, so Google's
+    favicon service (s2/favicons) flattens them and returns a JPEG at 48/64px —
+    a baked-in background at exactly the sizes the Claude clients use. With no
+    apple-touch icon served, Google falls back to the transparent favicon.ico /
+    favicon.svg and the icon stays transparent at every size.
+    """
+    return Response(status_code=404)
 
 
 @mcp.custom_route("/", methods=["GET"])
@@ -326,7 +333,6 @@ async def index(_request: Request) -> HTMLResponse:
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         '<link rel="icon" href="/favicon.ico" sizes="any">'
         '<link rel="icon" type="image/svg+xml" href="/favicon.svg">'
-        '<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
         "<title>getbiblio</title>"
         "<style>body{font-family:system-ui,sans-serif;max-width:32rem;"
         "margin:4rem auto;padding:0 1rem;line-height:1.5}</style></head><body>"
