@@ -4,7 +4,7 @@
   "name": "bibliocommons-mcp",
   "description": "An MCP server for BiblioCommons public libraries: search the catalog, place holds, and manage checkouts from Claude.",
   "logo": { "light": "/logo/light.svg", "dark": "/logo/dark.svg" },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.png",
   "appearance": { "default": "system" },
   "colors": { "primary": "#0062AA", "light": "#4D9FE8", "dark": "#0062AA" },
   "contextual": {
