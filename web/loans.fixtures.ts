@@ -71,6 +71,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 3,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [
         {
           checkout_id: "1052952601",
@@ -119,6 +120,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 0,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [],
     },
   },
@@ -128,6 +130,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [
         {
           checkout_id: "TODAY",
@@ -150,6 +153,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [
         {
           checkout_id: "PHYS",
@@ -174,6 +178,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [
         {
           checkout_id: "-3399081509618396918",
@@ -198,6 +203,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [
         {
           checkout_id: "REN0",
@@ -222,6 +228,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/checkedout",
       loans: [
         {
           checkout_id: "DUE2",

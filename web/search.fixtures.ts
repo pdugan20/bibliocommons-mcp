@@ -72,6 +72,8 @@ export const fixtures: Fixture[] = [
       pages: 3,
       total: 67,
       library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30C3453854",
@@ -113,6 +115,8 @@ export const fixtures: Fixture[] = [
       pages: 0,
       total: 0,
       library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [],
     },
   },
@@ -123,6 +127,8 @@ export const fixtures: Fixture[] = [
       pages: 1,
       total: 1,
       library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30C3857930",
@@ -146,6 +152,8 @@ export const fixtures: Fixture[] = [
       pages: 5,
       total: 108,
       library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30C2585948",
@@ -169,6 +177,8 @@ export const fixtures: Fixture[] = [
       pages: 1,
       total: 2,
       library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30CX1",
@@ -202,6 +212,8 @@ export const fixtures: Fixture[] = [
       pages: 1,
       total: 4,
       library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30CF1",

@@ -37,6 +37,7 @@ export type Loan = {
 export type LoanList = {
   count: number;
   library?: string | null;
+  more_url?: string | null;
   loans: Loan[];
 };
 
@@ -53,15 +54,14 @@ function dueText(loan: Loan): string {
   today.setUTCHours(0, 0, 0, 0);
   const dayMs = 24 * 60 * 60 * 1000;
   const days = Math.round((dueDate.getTime() - today.getTime()) / dayMs);
-  const shortDate = formatMonthDay(iso) ?? "";
 
-  if (days < 0) return `Overdue · ${shortDate}`;
-  if (days <= 3) {
-    const when =
-      days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`;
-    return `Due ${when} · ${shortDate}`;
-  }
-  return `Due ${shortDate}`;
+  // Relative phrasings carry the timing on their own — only the far-future
+  // case needs the explicit date.
+  if (days < 0) return "Overdue";
+  if (days === 0) return "Due today";
+  if (days === 1) return "Due tomorrow";
+  if (days <= 3) return `Due in ${days} days`;
+  return `Due ${formatMonthDay(iso) ?? ""}`;
 }
 
 function renewalHint(loan: Loan): string | null {
@@ -91,11 +91,7 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
     <>
       {index > 0 && <div style={rowDividerStyle} />}
       <div style={baseRow}>
-        <CoverImage
-          jacket={loan.jacket}
-          format={loan.format}
-          eager={index < 3}
-        />
+        <CoverImage jacket={loan.jacket} eager={index < 3} />
         <div style={metaStyle}>
           <h3 style={LOAN_TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
           <div style={pillRowStyle}>

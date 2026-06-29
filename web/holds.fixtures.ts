@@ -65,6 +65,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 3,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "71992850",
@@ -115,6 +116,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 0,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [],
     },
   },
@@ -125,6 +127,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "71992850",
@@ -149,6 +152,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "X1",
@@ -174,6 +178,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "T1",
@@ -198,6 +203,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "E1",
@@ -222,6 +228,7 @@ export const fixtures: Fixture[] = [
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "Q1",

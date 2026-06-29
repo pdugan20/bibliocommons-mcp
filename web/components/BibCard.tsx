@@ -36,6 +36,7 @@ export type SearchResult = {
   pages?: number | null;
   total?: number | null;
   library?: string | null;
+  more_url?: string | null;
   results: BibSummary[];
 };
 
@@ -60,7 +61,7 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
     <>
       {index > 0 && <div style={rowDividerStyle} />}
       <div style={index === 0 ? firstRowStyle : rowStyle}>
-        <CoverImage jacket={bib.jacket} format={bib.format} eager={index < 3} />
+        <CoverImage jacket={bib.jacket} eager={index < 3} />
         <div style={metaStyle}>
           <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
           {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
@@ -68,9 +69,6 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
           <div style={pillRowStyle}>
             {format && <span style={badgeStyle}>{format}</span>}
             {bib.year && <span style={lineStyle}>{bib.year}</span>}
-            {bib.call_number && (
-              <span style={lineStyle}>{bib.call_number}</span>
-            )}
           </div>
         </div>
       </div>

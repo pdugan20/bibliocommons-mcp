@@ -44,6 +44,26 @@ const emptyStyle: CSSProperties = {
   opacity: 0.7,
 };
 
+const footerStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 8,
+  marginTop: 12,
+  paddingTop: 10,
+  borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
+  fontSize: 12,
+};
+
+const footerNoteStyle: CSSProperties = { opacity: 0.6 };
+
+const linkStyle: CSSProperties = {
+  color: "light-dark(#0b5da6, #9ccbf0)",
+  textDecoration: "none",
+  fontWeight: 600,
+  whiteSpace: "nowrap",
+};
+
 function FilterBar({
   formats,
   value,
@@ -86,12 +106,20 @@ export function CardFrame<T extends WithFormat>({
   items,
   emptyText,
   renderItem,
+  footerNote,
+  moreUrl,
+  moreLabel,
 }: {
   library?: string | null;
   title: string;
   items: T[];
   emptyText: string;
   renderItem: (item: T, index: number) => ReactNode;
+  /** Small muted note on the left of the footer (e.g. "Page 1 of 3"). */
+  footerNote?: string | null;
+  /** A single link back to the library catalog. */
+  moreUrl?: string | null;
+  moreLabel?: string;
 }) {
   const [filter, setFilter] = useState<string | null>(null);
 
@@ -125,6 +153,21 @@ export function CardFrame<T extends WithFormat>({
       ) : (
         <div style={{ marginTop: 10 }}>
           {shown.map((it, i) => renderItem(it, i))}
+        </div>
+      )}
+      {(moreUrl || footerNote) && (
+        <div style={footerStyle}>
+          <span style={footerNoteStyle}>{footerNote ?? ""}</span>
+          {moreUrl && (
+            <a
+              href={moreUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={linkStyle}
+            >
+              {moreLabel ?? "View in catalog"} →
+            </a>
+          )}
         </div>
       )}
     </div>

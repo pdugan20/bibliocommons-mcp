@@ -41,6 +41,7 @@ export type Hold = {
 export type HoldList = {
   count: number;
   library?: string | null;
+  more_url?: string | null;
   holds: Hold[];
 };
 
@@ -92,11 +93,7 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
     <>
       {index > 0 && <div style={rowDividerStyle} />}
       <div style={spent ? { ...baseRow, opacity: 0.55 } : baseRow}>
-        <CoverImage
-          jacket={hold.jacket}
-          format={hold.format}
-          eager={index < 3}
-        />
+        <CoverImage jacket={hold.jacket} eager={index < 3} />
         <div style={metaStyle}>
           <h3
             style={

@@ -24,10 +24,3 @@ export function formatLabel(format?: string | null): string | null {
   if (!format) return null;
   return FORMAT_LABELS[format] ?? format;
 }
-
-// Disc media is square; everything else uses the book-shaped portrait box.
-const SQUARE_FORMATS = new Set(["MUSIC_CD", "AUDIOBOOK_CD", "VINYL"]);
-
-export function isSquareFormat(format?: string | null): boolean {
-  return !!format && SQUARE_FORMATS.has(format);
-}

@@ -2,43 +2,46 @@
  * Shared cover thumbnail for every card. One place for cover sizing, the
  * fallback treatment, lazy/eager loading, and image decoding.
  *
- * - The box matches the media's real aspect ratio — portrait for books,
- *   square for discs (CD/vinyl) — and `objectFit: cover` fills it, so
- *   nothing letterboxes (grey bars) or crops the wrong way.
+ * - Fixed width, **natural height**: every cover is the same width and the
+ *   height follows the art's real aspect ratio (a square CD stays square, a
+ *   portrait book stays portrait, a tall DVD stays tall) — so nothing is
+ *   letterboxed or cropped. Matches the BiblioCommons catalog layout.
  * - We pull the `large` jacket (a full-quality JPG) rather than the
- *   `small`/`medium` 256-colour GIFs: the box renders ~64-88px CSS, i.e.
- *   ~128-176px on a 2x display, so the small thumbnail looked soft.
+ *   `small`/`medium` 256-colour GIFs: the box renders ~64px CSS wide, i.e.
+ *   ~128px on a 2x display, so the small thumbnail looked soft.
  * - `eager` (first ~3 rows) loads above-the-fold covers immediately and
  *   hints high priority; the long tail stays lazy.
- * - A hairline border defines the cover edge against the card; when there's
- *   no jacket we draw an intentional book glyph, not a bare grey box.
- * - Width is the responsive `--bc-cover-w` (see lib/responsive); height is
- *   the same for a square cover, or `--bc-cover-h` for a portrait one.
+ * - A faint hairline border defines the edge; with no jacket we draw a
+ *   book glyph in a portrait-shaped box.
+ * - Width is the responsive `--bc-cover-w` (see lib/responsive).
  */
 import type { CSSProperties } from "react";
 
-import { isSquareFormat } from "./format.js";
 import type { Jacket } from "./jacket.js";
 
 export const COVER_WIDTH = 64;
-export const COVER_HEIGHT = 88;
 const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
 
-const baseWrapStyle: CSSProperties = {
-  position: "relative",
+const wrapStyle: CSSProperties = {
   flexShrink: 0,
   width: "var(--bc-cover-w, 64px)",
-  background: COVER_FALLBACK_BG,
   borderRadius: 4,
-  border: "1px solid light-dark(rgba(0,0,0,0.14), rgba(255,255,255,0.14))",
+  border: "1px solid light-dark(rgba(0,0,0,0.08), rgba(255,255,255,0.10))",
   boxSizing: "border-box",
   overflow: "hidden",
+  background: COVER_FALLBACK_BG,
+};
+
+// No jacket: give the box a book-shaped footprint to hold the glyph.
+const placeholderWrapStyle: CSSProperties = {
+  ...wrapStyle,
+  position: "relative",
+  aspectRatio: "2 / 3",
 };
 
 const imgStyle: CSSProperties = {
   width: "100%",
-  height: "100%",
-  objectFit: "cover",
+  height: "auto",
   display: "block",
 };
 
@@ -74,12 +77,9 @@ function PlaceholderGlyph() {
 
 export function CoverImage({
   jacket,
-  format,
   eager,
 }: {
   jacket?: Jacket | null;
-  /** Format facet code (BK, MUSIC_CD, …) — decides square vs portrait. */
-  format?: string | null;
   /** True for the first few above-the-fold rows. */
   eager?: boolean;
 }) {
@@ -91,28 +91,28 @@ export function CoverImage({
     jacket?.medium ??
     jacket?.small ??
     null;
-  const square = isSquareFormat(format);
-  const wrapStyle: CSSProperties = {
-    ...baseWrapStyle,
-    height: square ? "var(--bc-cover-w, 64px)" : "var(--bc-cover-h, 88px)",
-  };
+
+  if (!src) {
+    return (
+      <div style={placeholderWrapStyle}>
+        <PlaceholderGlyph />
+      </div>
+    );
+  }
+
   return (
     <div style={wrapStyle}>
-      {src ? (
-        <img
-          src={src}
-          // Decorative: the adjacent <h3> already names the item, so an
-          // alt of "Cover of …" would just double-announce — and an empty
-          // alt avoids a broken-image label if the host CSP drops the URL.
-          alt=""
-          style={imgStyle}
-          loading={eager ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={eager ? "high" : "low"}
-        />
-      ) : (
-        <PlaceholderGlyph />
-      )}
+      <img
+        src={src}
+        // Decorative: the adjacent <h3> already names the item, so an alt
+        // of "Cover of …" would just double-announce — and an empty alt
+        // avoids a broken-image label if the host CSP drops the URL.
+        alt=""
+        style={imgStyle}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={eager ? "high" : "low"}
+      />
     </div>
   );
 }
