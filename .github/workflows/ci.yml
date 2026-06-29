@@ -43,7 +43,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Run Prettier check
-        run: npx prettier@3 --check '**/*.{json,yml,yaml,md}' --ignore-path .prettierignore
+        # Pinned to the repo's prettier (web/package-lock.json) so CI doesn't
+        # float to a newer 3.x whose markdown rules disagree with committed
+        # files (3.9.x rewrites a bare "~approx" to "~~", i.e. strikethrough).
+        run: npx prettier@3.8.3 --check '**/*.{json,yml,yaml,md}' --ignore-path .prettierignore
 
   claude-lint:
     name: Claude Lint
