@@ -13,111 +13,11 @@
 import { StrictMode, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 
-import { BibCard } from "../components/BibCard.js";
-import { HoldCard } from "../components/HoldCard.js";
-import { LoanCard } from "../components/LoanCard.js";
-import { headingStyle } from "../lib/card-style.js";
 import { ResponsiveStyles } from "../lib/responsive.js";
-import { rootStyle } from "../lib/root-style.js";
 import { fixtures as holdsFixtures } from "../holds.fixtures.js";
 import { fixtures as loansFixtures } from "../loans.fixtures.js";
 import { fixtures as searchFixtures } from "../search.fixtures.js";
-
-// --- App shells, copied verbatim (minus useApp plumbing) from the
-// --- holds/loans/search entry points so the gallery renders exactly
-// --- what ships.
-
-function HoldsShell({
-  payload,
-}: {
-  payload: (typeof holdsFixtures)[number]["structuredContent"];
-}) {
-  if (payload.count === 0) {
-    return (
-      <div style={rootStyle}>
-        <h2 style={headingStyle}>Holds</h2>
-        <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
-          No active holds.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div style={rootStyle}>
-      <h2 style={headingStyle}>Holds ({payload.count})</h2>
-      <div style={{ marginTop: 8 }}>
-        {payload.holds.map((hold, i) => (
-          <HoldCard key={hold.hold_id} hold={hold} index={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function LoansShell({
-  payload,
-}: {
-  payload: (typeof loansFixtures)[number]["structuredContent"];
-}) {
-  if (payload.count === 0) {
-    return (
-      <div style={rootStyle}>
-        <h2 style={headingStyle}>Checkouts</h2>
-        <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
-          Nothing currently checked out.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div style={rootStyle}>
-      <h2 style={headingStyle}>Checkouts ({payload.count})</h2>
-      <div style={{ marginTop: 8 }}>
-        {payload.loans.map((loan, i) => (
-          <LoanCard key={loan.checkout_id} loan={loan} index={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function paginationSummary(
-  payload: (typeof searchFixtures)[number]["structuredContent"],
-): string {
-  const { total, page, pages } = payload;
-  if (total == null) return "Results";
-  if (total === 0) return "No results";
-  if (pages && pages > 1)
-    return `Page ${page ?? 1} of ${pages} · ${total} results`;
-  return `${total} result${total === 1 ? "" : "s"}`;
-}
-
-function SearchShell({
-  payload,
-}: {
-  payload: (typeof searchFixtures)[number]["structuredContent"];
-}) {
-  if (payload.results.length === 0) {
-    return (
-      <div style={rootStyle}>
-        <h2 style={headingStyle}>Search</h2>
-        <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
-          No matches.
-        </p>
-      </div>
-    );
-  }
-  return (
-    <div style={rootStyle}>
-      <h2 style={headingStyle}>{paginationSummary(payload)}</h2>
-      <div style={{ marginTop: 8 }}>
-        {payload.results.map((bib, i) => (
-          <BibCard key={bib.bib_id} bib={bib} index={i} />
-        ))}
-      </div>
-    </div>
-  );
-}
+import { HoldsShell, LoansShell, SearchShell } from "./shells.js";
 
 // --- Theme columns: approximate the Claude host conversation backdrop so
 // --- the cream/charcoal card chrome reads the way it will in-product.
