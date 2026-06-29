@@ -105,7 +105,7 @@ jobs:
         run: python -m pytest tests/ -v --tb=short --cov-report=xml
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.xml
           fail_ci_if_error: false
@@ -118,7 +118,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Lint Dockerfile (hadolint)
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.3.0
         with:
           dockerfile: Dockerfile
       - name: Check fly.toml formatting (taplo)
