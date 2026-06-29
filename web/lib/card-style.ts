@@ -51,10 +51,6 @@ export const pillRowStyle: CSSProperties = {
   gap: 6,
   flexWrap: "wrap",
   marginTop: 3,
-  // Pull the row left by the chip's own horizontal padding so the chip's
-  // *text* optically aligns with the title above and the meta line below,
-  // instead of being indented by the chip's left padding.
-  marginLeft: -8,
 };
 
 // --- Chip family. Status and format now share one quiet, tonal shape so
