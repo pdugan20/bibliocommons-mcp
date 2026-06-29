@@ -29,13 +29,13 @@ const COVER_PLASTIC_ETERNITY = {
   local_url: null,
 };
 
-const COVER_IN_UTERO = {
+const COVER_UNPLUGGED = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=/SC.GIF&client=sepup&type=xw12&upc=720642472927",
+    "https://secure.syndetics.com/index.aspx?isbn=/SC.GIF&client=sepup&type=xw12&upc=720642472729",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=/MC.GIF&client=sepup&type=xw12&upc=720642472927",
+    "https://secure.syndetics.com/index.aspx?isbn=/MC.GIF&client=sepup&type=xw12&upc=720642472729",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=/LC.JPG&client=sepup&type=xw12&upc=720642472927",
+    "https://secure.syndetics.com/index.aspx?isbn=/LC.JPG&client=sepup&type=xw12&upc=720642472729",
   local_url: null,
 };
 
@@ -172,14 +172,14 @@ export const fixtures: Fixture[] = [
         {
           hold_id: "T1",
           metadata_id: "S30C2936752",
-          title: "In utero",
+          title: "MTV Unplugged in New York",
           material_type: "PHYSICAL",
           status: "IN_TRANSIT",
           position: null,
           pickup_branch: "LCY",
           placed: "2026-05-25",
           expiry: "2027-03-01",
-          jacket: COVER_IN_UTERO,
+          jacket: COVER_UNPLUGGED,
         },
       ],
     },

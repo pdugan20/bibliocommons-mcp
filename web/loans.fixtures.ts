@@ -30,11 +30,11 @@ function isoOffset(days: number): string {
 
 const COVER_EVERYBODY = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/SC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/SC.GIF&client=sepup&type=xw12",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/MC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/MC.GIF&client=sepup&type=xw12",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/LC.JPG&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/LC.JPG&client=sepup&type=xw12",
   local_url: null,
 };
 

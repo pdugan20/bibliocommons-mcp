@@ -1,0 +1,273 @@
+/**
+ * Dev-only static gallery — NOT a shipped bundle.
+ *
+ * Lives under web/workbench/ so the bundle build's top-level `web/*.html`
+ * glob (web/scripts/inline_bundles.mjs) never picks it up. It imports the
+ * real card components + fixtures and reproduces each app shell WITHOUT
+ * the MCP Apps host handshake, so every fixture renders directly. Used to
+ * eyeball / screenshot all card states in light + dark while polishing.
+ *
+ * Serve via:  cd web && npx vite --port 5175
+ * Then open:  http://localhost:5175/workbench/gallery.html
+ */
+import { StrictMode, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
+
+import { BibCard } from "../components/BibCard.js";
+import { HoldCard } from "../components/HoldCard.js";
+import { LoanCard } from "../components/LoanCard.js";
+import { headingStyle } from "../lib/card-style.js";
+import { rootStyle } from "../lib/root-style.js";
+import { fixtures as holdsFixtures } from "../holds.fixtures.js";
+import { fixtures as loansFixtures } from "../loans.fixtures.js";
+import { fixtures as searchFixtures } from "../search.fixtures.js";
+
+// --- App shells, copied verbatim (minus useApp plumbing) from the
+// --- holds/loans/search entry points so the gallery renders exactly
+// --- what ships.
+
+function HoldsShell({
+  payload,
+}: {
+  payload: (typeof holdsFixtures)[number]["structuredContent"];
+}) {
+  if (payload.count === 0) {
+    return (
+      <div style={rootStyle}>
+        <h2 style={headingStyle}>Holds</h2>
+        <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
+          No active holds.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div style={rootStyle}>
+      <h2 style={headingStyle}>Holds ({payload.count})</h2>
+      <div style={{ marginTop: 8 }}>
+        {payload.holds.map((hold, i) => (
+          <HoldCard key={hold.hold_id} hold={hold} index={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LoansShell({
+  payload,
+}: {
+  payload: (typeof loansFixtures)[number]["structuredContent"];
+}) {
+  if (payload.count === 0) {
+    return (
+      <div style={rootStyle}>
+        <h2 style={headingStyle}>Checkouts</h2>
+        <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
+          Nothing currently checked out.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div style={rootStyle}>
+      <h2 style={headingStyle}>Checkouts ({payload.count})</h2>
+      <div style={{ marginTop: 8 }}>
+        {payload.loans.map((loan, i) => (
+          <LoanCard key={loan.checkout_id} loan={loan} index={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function paginationSummary(
+  payload: (typeof searchFixtures)[number]["structuredContent"],
+): string {
+  const { total, page, pages } = payload;
+  if (total == null) return "Results";
+  if (total === 0) return "No results";
+  if (pages && pages > 1)
+    return `Page ${page ?? 1} of ${pages} · ${total} results`;
+  return `${total} result${total === 1 ? "" : "s"}`;
+}
+
+function SearchShell({
+  payload,
+}: {
+  payload: (typeof searchFixtures)[number]["structuredContent"];
+}) {
+  if (payload.results.length === 0) {
+    return (
+      <div style={rootStyle}>
+        <h2 style={headingStyle}>Search</h2>
+        <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
+          No matches.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div style={rootStyle}>
+      <h2 style={headingStyle}>{paginationSummary(payload)}</h2>
+      <div style={{ marginTop: 8 }}>
+        {payload.results.map((bib, i) => (
+          <BibCard key={bib.bib_id} bib={bib} index={i} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Theme columns: approximate the Claude host conversation backdrop so
+// --- the cream/charcoal card chrome reads the way it will in-product.
+
+const CARD_WIDTH = 400;
+
+const HOST_BG: Record<"light" | "dark", string> = {
+  light: "#ffffff",
+  dark: "#1f1e1d",
+};
+
+function ThemeColumn({
+  theme,
+  children,
+}: {
+  theme: "light" | "dark";
+  children: ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        colorScheme: theme,
+        background: HOST_BG[theme],
+        color: theme === "dark" ? "#e8e6e3" : "#1a1a1a",
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        flex: 1,
+        minHeight: "100vh",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          textTransform: "uppercase",
+          letterSpacing: 1,
+          opacity: 0.5,
+        }}
+      >
+        {theme}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Labeled({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div style={{ width: CARD_WIDTH, maxWidth: "100%" }}>
+      <div style={{ fontSize: 11, opacity: 0.55, marginBottom: 6 }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Section({
+  title,
+  render,
+}: {
+  title: string;
+  render: (theme: "light" | "dark") => ReactNode;
+}) {
+  return (
+    <>
+      <h1
+        id={title.toLowerCase()}
+        style={{
+          gridColumn: "1 / -1",
+          margin: "8px 0 0",
+          padding: "8px 24px",
+          fontSize: 13,
+          fontWeight: 700,
+          textTransform: "uppercase",
+          letterSpacing: 1.5,
+          background: "#000",
+          color: "#fff",
+        }}
+      >
+        {title}
+      </h1>
+      <ThemeColumn theme="light">{render("light")}</ThemeColumn>
+      <ThemeColumn theme="dark">{render("dark")}</ThemeColumn>
+    </>
+  );
+}
+
+function Gallery() {
+  // ?only=holds|loans|search renders a single section so each can be
+  // screenshotted at a bounded height.
+  const only = new URLSearchParams(location.search).get("only");
+  const show = (name: string) => !only || only === name;
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      }}
+    >
+      {show("holds") && (
+        <Section
+          title="Holds"
+          render={() => (
+            <>
+              {holdsFixtures.map((fx) => (
+                <Labeled key={fx.name} label={fx.name}>
+                  <HoldsShell payload={fx.structuredContent} />
+                </Labeled>
+              ))}
+            </>
+          )}
+        />
+      )}
+      {show("loans") && (
+        <Section
+          title="Checkouts"
+          render={() => (
+            <>
+              {loansFixtures.map((fx) => (
+                <Labeled key={fx.name} label={fx.name}>
+                  <LoansShell payload={fx.structuredContent} />
+                </Labeled>
+              ))}
+            </>
+          )}
+        />
+      )}
+      {show("search") && (
+        <Section
+          title="Search"
+          render={() => (
+            <>
+              {searchFixtures.map((fx) => (
+                <Labeled key={fx.name} label={fx.name}>
+                  <SearchShell payload={fx.structuredContent} />
+                </Labeled>
+              ))}
+            </>
+          )}
+        />
+      )}
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <Gallery />
+  </StrictMode>,
+);

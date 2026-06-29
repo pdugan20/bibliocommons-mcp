@@ -6,8 +6,16 @@
  */
 import type { CSSProperties } from "react";
 
-import { ACCENT } from "../lib/palette.js";
-import type { Jacket } from "./HoldCard.js";
+import {
+  firstRowStyle,
+  lineStyle,
+  metaStyle,
+  pillRowStyle,
+  rowStyle,
+  titleStyle,
+} from "../lib/card-style.js";
+import { CoverImage } from "../lib/cover.js";
+import type { Jacket } from "../lib/jacket.js";
 
 export type BibSummary = {
   bib_id: string;
@@ -20,57 +28,7 @@ export type BibSummary = {
   jacket?: Jacket | null;
 };
 
-const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
-const COVER_WIDTH = 64;
-const COVER_HEIGHT = 88;
-
-const rowStyle: CSSProperties = {
-  display: "flex",
-  gap: 12,
-  paddingTop: 10,
-  paddingBottom: 10,
-  borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
-};
-
-const firstRowStyle: CSSProperties = {
-  ...rowStyle,
-  borderTop: "none",
-  paddingTop: 4,
-};
-
-const coverWrapStyle: CSSProperties = {
-  flexShrink: 0,
-  width: COVER_WIDTH,
-  height: COVER_HEIGHT,
-  background: COVER_FALLBACK_BG,
-  borderRadius: 4,
-  overflow: "hidden",
-};
-
-const coverImgStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
-};
-
-const metaStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  minWidth: 0,
-  flex: 1,
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  margin: 0,
-  display: "-webkit-box",
-  WebkitBoxOrient: "vertical" as CSSProperties["WebkitBoxOrient"],
-  WebkitLineClamp: 2,
-  overflow: "hidden",
-};
+const BIB_TITLE_STYLE = titleStyle(2);
 
 const subtitleStyle: CSSProperties = {
   fontSize: 12,
@@ -83,20 +41,8 @@ const subtitleStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-const lineStyle: CSSProperties = {
-  fontSize: 12,
-  opacity: 0.75,
-  margin: 0,
-};
-
-const badgeRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  flexWrap: "wrap",
-  marginTop: 2,
-};
-
+// Quiet neutral chip: format is secondary metadata, so it shouldn't out-
+// shout the title. Saturated solid fills are reserved for status pills.
 const badgeStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -105,9 +51,10 @@ const badgeStyle: CSSProperties = {
   borderRadius: 4,
   fontSize: 11,
   fontWeight: 600,
-  letterSpacing: 0.3,
-  background: ACCENT,
-  color: "white",
+  letterSpacing: 0.2,
+  whiteSpace: "nowrap",
+  background: "light-dark(rgba(0,0,0,0.06), rgba(255,255,255,0.10))",
+  color: "light-dark(#3a3a3a, #cfcfcf)",
 };
 
 // Friendly labels for the format facet codes the gateway returns.
@@ -131,40 +78,18 @@ function formatLabel(format?: string | null): string | null {
   return FORMAT_LABELS[format] ?? format;
 }
 
-function CoverImage({ bib }: { bib: BibSummary }) {
-  const src =
-    bib.jacket?.local_url ?? bib.jacket?.small ?? bib.jacket?.medium ?? null;
-  if (!src) return <div style={coverWrapStyle} aria-hidden="true" />;
-  return (
-    <div style={coverWrapStyle}>
-      <img
-        src={src}
-        alt={bib.title ? `Cover of ${bib.title}` : ""}
-        style={coverImgStyle}
-        loading="lazy"
-      />
-    </div>
-  );
-}
-
-export function BibCard({
-  bib,
-  isFirst,
-}: {
-  bib: BibSummary;
-  isFirst?: boolean;
-}) {
+export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const format = formatLabel(bib.format);
   const author = (bib.authors ?? [])[0];
 
   return (
-    <div style={isFirst ? firstRowStyle : rowStyle}>
-      <CoverImage bib={bib} />
+    <div style={index === 0 ? firstRowStyle : rowStyle}>
+      <CoverImage jacket={bib.jacket} eager={index < 3} />
       <div style={metaStyle}>
-        <h3 style={titleStyle}>{bib.title ?? "(untitled)"}</h3>
+        <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
         {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
         {author && <p style={lineStyle}>by {author}</p>}
-        <div style={badgeRowStyle}>
+        <div style={pillRowStyle}>
           {format && <span style={badgeStyle}>{format}</span>}
           {bib.year && <span style={lineStyle}>{bib.year}</span>}
           {bib.call_number && <span style={lineStyle}>{bib.call_number}</span>}

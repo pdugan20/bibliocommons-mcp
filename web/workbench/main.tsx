@@ -58,10 +58,13 @@ type Status =
   | "initialized"
   | "pushed-result";
 
-type Viewport = "mobile" | "tablet" | "desktop";
+type Viewport = "narrow" | "mobile" | "tablet" | "desktop";
 type Theme = "light" | "dark";
 
 const VIEWPORT_WIDTHS: Record<Viewport, number> = {
+  // 320 ≈ a real iOS chat bubble — narrower than a phone's full width, where
+  // pill-wrap and padding issues actually bite. 380+ under-tests that case.
+  narrow: 320,
   mobile: 380,
   tablet: 600,
   desktop: 720,
@@ -361,6 +364,7 @@ function Workbench() {
           <ToggleGroup
             label="Viewport"
             options={[
+              { value: "narrow", label: "iPhone" },
               { value: "mobile", label: "Mobile" },
               { value: "tablet", label: "Tablet" },
               { value: "desktop", label: "Desktop" },

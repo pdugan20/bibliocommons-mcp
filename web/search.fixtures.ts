@@ -39,11 +39,11 @@ const COVER_HEAVIER = {
 
 const COVER_SING_BACKWARDS = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=9781642860986/SC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780306922800/SC.GIF&client=sepup&type=xw12",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9781642860986/MC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780306922800/MC.GIF&client=sepup&type=xw12",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=9781642860986/LC.JPG&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780306922800/LC.JPG&client=sepup&type=xw12",
   local_url: null,
 };
 
@@ -61,11 +61,11 @@ const COVER_OD = {
 
 const COVER_EVERYBODY = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/SC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/SC.GIF&client=sepup&type=xw12",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/MC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/MC.GIF&client=sepup&type=xw12",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/LC.JPG&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/LC.JPG&client=sepup&type=xw12",
   local_url: null,
 };
 

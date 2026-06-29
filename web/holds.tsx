@@ -11,6 +11,7 @@ import { createRoot } from "react-dom/client";
 import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { HoldCard, type Hold } from "./components/HoldCard.js";
+import { headingStyle } from "./lib/card-style.js";
 import { rootStyle } from "./lib/root-style.js";
 
 type HoldList = {
@@ -49,7 +50,7 @@ function HoldsApp() {
   if (payload.count === 0) {
     return (
       <div style={rootStyle}>
-        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Holds</h2>
+        <h2 style={headingStyle}>Holds</h2>
         <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
           No active holds.
         </p>
@@ -64,7 +65,7 @@ function HoldsApp() {
       </h2>
       <div style={{ marginTop: 8 }}>
         {payload.holds.map((hold, i) => (
-          <HoldCard key={hold.hold_id} hold={hold} isFirst={i === 0} />
+          <HoldCard key={hold.hold_id} hold={hold} index={i} />
         ))}
       </div>
     </div>

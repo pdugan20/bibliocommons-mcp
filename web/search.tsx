@@ -8,6 +8,7 @@ import { createRoot } from "react-dom/client";
 import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { BibCard, type BibSummary } from "./components/BibCard.js";
+import { headingStyle } from "./lib/card-style.js";
 import { rootStyle } from "./lib/root-style.js";
 
 type SearchResult = {
@@ -57,7 +58,7 @@ function SearchApp() {
   if (payload.results.length === 0) {
     return (
       <div style={rootStyle}>
-        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Search</h2>
+        <h2 style={headingStyle}>Search</h2>
         <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
           No matches.
         </p>
@@ -72,7 +73,7 @@ function SearchApp() {
       </h2>
       <div style={{ marginTop: 8 }}>
         {payload.results.map((bib, i) => (
-          <BibCard key={bib.bib_id} bib={bib} isFirst={i === 0} />
+          <BibCard key={bib.bib_id} bib={bib} index={i} />
         ))}
       </div>
     </div>

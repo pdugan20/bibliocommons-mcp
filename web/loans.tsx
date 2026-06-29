@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { LoanCard, type Loan } from "./components/LoanCard.js";
+import { headingStyle } from "./lib/card-style.js";
 import { rootStyle } from "./lib/root-style.js";
 
 type LoanList = {
@@ -42,7 +43,7 @@ function LoansApp() {
   if (payload.count === 0) {
     return (
       <div style={rootStyle}>
-        <h2 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Checkouts</h2>
+        <h2 style={headingStyle}>Checkouts</h2>
         <p style={{ marginTop: 8, marginBottom: 0, opacity: 0.7 }}>
           Nothing currently checked out.
         </p>
@@ -57,7 +58,7 @@ function LoansApp() {
       </h2>
       <div style={{ marginTop: 8 }}>
         {payload.loans.map((loan, i) => (
-          <LoanCard key={loan.checkout_id} loan={loan} isFirst={i === 0} />
+          <LoanCard key={loan.checkout_id} loan={loan} index={i} />
         ))}
       </div>
     </div>

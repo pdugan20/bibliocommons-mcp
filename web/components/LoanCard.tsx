@@ -4,14 +4,23 @@
  *
  * Data shape mirrors `bibliocommons_mcp.models.Loan`.
  */
-import type { CSSProperties } from "react";
-
+import {
+  firstRowStyle,
+  lineStyle,
+  metaStyle,
+  pillRowStyle,
+  pillStyle,
+  rowStyle,
+  titleStyle,
+} from "../lib/card-style.js";
+import { CoverImage } from "../lib/cover.js";
+import { formatMonthDay } from "../lib/date.js";
+import type { Jacket } from "../lib/jacket.js";
 import {
   STATUS_DUE_SOON,
   STATUS_OVERDUE,
   STATUS_QUEUED,
 } from "../lib/palette.js";
-import type { Jacket } from "./HoldCard.js";
 
 export type Loan = {
   checkout_id: string;
@@ -26,83 +35,7 @@ export type Loan = {
   times_renewed?: number;
 };
 
-const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
-const COVER_WIDTH = 64;
-const COVER_HEIGHT = 88;
-
-const rowStyle: CSSProperties = {
-  display: "flex",
-  gap: 12,
-  paddingTop: 10,
-  paddingBottom: 10,
-  borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
-};
-
-const firstRowStyle: CSSProperties = {
-  ...rowStyle,
-  borderTop: "none",
-  paddingTop: 4,
-};
-
-const coverWrapStyle: CSSProperties = {
-  flexShrink: 0,
-  width: COVER_WIDTH,
-  height: COVER_HEIGHT,
-  background: COVER_FALLBACK_BG,
-  borderRadius: 4,
-  overflow: "hidden",
-};
-
-const coverImgStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
-};
-
-const metaStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  minWidth: 0,
-  flex: 1,
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  margin: 0,
-  display: "-webkit-box",
-  WebkitBoxOrient: "vertical" as CSSProperties["WebkitBoxOrient"],
-  WebkitLineClamp: 3,
-  overflow: "hidden",
-};
-
-const lineStyle: CSSProperties = {
-  fontSize: 12,
-  opacity: 0.75,
-  margin: 0,
-};
-
-const pillRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  flexWrap: "wrap",
-  marginTop: 2,
-};
-
-const pillStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  height: 18,
-  padding: "0 8px",
-  borderRadius: 9,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0.2,
-  textTransform: "uppercase",
-};
+const LOAN_TITLE_STYLE = titleStyle(3);
 
 type DueLabel = { text: string; color: string; bg: string };
 
@@ -119,7 +52,7 @@ function dueForRender(loan: Loan): DueLabel {
   today.setUTCHours(0, 0, 0, 0);
   const dayMs = 24 * 60 * 60 * 1000;
   const days = Math.round((dueDate.getTime() - today.getTime()) / dayMs);
-  const shortDate = formatShort(iso);
+  const shortDate = formatMonthDay(iso) ?? "";
 
   if (days < 0) {
     return {
@@ -135,50 +68,7 @@ function dueForRender(loan: Loan): DueLabel {
       bg: STATUS_DUE_SOON,
     };
   }
-  return {
-    text: `due ${shortDate}`,
-    color: "white",
-    bg: STATUS_QUEUED,
-  };
-}
-
-function formatShort(iso?: string | null): string {
-  if (!iso) return "";
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
-  if (!m) return iso;
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const month = months[Number.parseInt(m[2], 10) - 1] ?? m[2];
-  const day = Number.parseInt(m[3], 10);
-  return `${month} ${day}`;
-}
-
-function CoverImage({ loan }: { loan: Loan }) {
-  const src =
-    loan.jacket?.local_url ?? loan.jacket?.small ?? loan.jacket?.medium ?? null;
-  if (!src) return <div style={coverWrapStyle} aria-hidden="true" />;
-  return (
-    <div style={coverWrapStyle}>
-      <img
-        src={src}
-        alt={loan.title ? `Cover of ${loan.title}` : ""}
-        style={coverImgStyle}
-        loading="lazy"
-      />
-    </div>
-  );
+  return { text: `due ${shortDate}`, color: "white", bg: STATUS_QUEUED };
 }
 
 function renewalHint(loan: Loan): string | null {
@@ -188,28 +78,23 @@ function renewalHint(loan: Loan): string | null {
     if (n > 0) return `Renewable · ${n}× renewed`;
     return "Renewable";
   }
-  if (actions.includes("checkIn")) return "Digital · return only";
+  // "Digital" already shows in the pill row, so don't repeat it here.
+  if (actions.includes("checkIn")) return "Return only";
   return null;
 }
 
-export function LoanCard({ loan, isFirst }: { loan: Loan; isFirst?: boolean }) {
+export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
   const due = dueForRender(loan);
   const material = loan.material_type === "DIGITAL" ? "Digital" : "Physical";
   const hint = renewalHint(loan);
 
   return (
-    <div style={isFirst ? firstRowStyle : rowStyle}>
-      <CoverImage loan={loan} />
+    <div style={index === 0 ? firstRowStyle : rowStyle}>
+      <CoverImage jacket={loan.jacket} eager={index < 3} />
       <div style={metaStyle}>
-        <h3 style={titleStyle}>{loan.title ?? "(untitled)"}</h3>
+        <h3 style={LOAN_TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
         <div style={pillRowStyle}>
-          <span
-            style={{
-              ...pillStyle,
-              color: due.color,
-              background: due.bg,
-            }}
-          >
+          <span style={{ ...pillStyle, color: due.color, background: due.bg }}>
             {due.text}
           </span>
           <span style={lineStyle}>{material}</span>
