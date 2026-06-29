@@ -17,6 +17,7 @@ import { BibCard } from "../components/BibCard.js";
 import { HoldCard } from "../components/HoldCard.js";
 import { LoanCard } from "../components/LoanCard.js";
 import { headingStyle } from "../lib/card-style.js";
+import { ResponsiveStyles } from "../lib/responsive.js";
 import { rootStyle } from "../lib/root-style.js";
 import { fixtures as holdsFixtures } from "../holds.fixtures.js";
 import { fixtures as loansFixtures } from "../loans.fixtures.js";
@@ -177,9 +178,11 @@ function Labeled({ label, children }: { label: string; children: ReactNode }) {
 
 function Section({
   title,
+  themes,
   render,
 }: {
   title: string;
+  themes: ("light" | "dark")[];
   render: (theme: "light" | "dark") => ReactNode;
 }) {
   return (
@@ -200,22 +203,35 @@ function Section({
       >
         {title}
       </h1>
-      <ThemeColumn theme="light">{render("light")}</ThemeColumn>
-      <ThemeColumn theme="dark">{render("dark")}</ThemeColumn>
+      {themes.map((t) => (
+        <ThemeColumn key={t} theme={t}>
+          {render(t)}
+        </ThemeColumn>
+      ))}
     </>
   );
 }
 
 function Gallery() {
   // ?only=holds|loans|search renders a single section so each can be
-  // screenshotted at a bounded height.
-  const only = new URLSearchParams(location.search).get("only");
+  // screenshotted at a bounded height. ?theme=light|dark renders a single
+  // theme column — handy for screenshotting the narrow (responsive) case
+  // at a small window width, where the @media query in lib/responsive fires.
+  const params = new URLSearchParams(location.search);
+  const only = params.get("only");
+  const theme = params.get("theme");
+  const themes: ("light" | "dark")[] =
+    theme === "light"
+      ? ["light"]
+      : theme === "dark"
+        ? ["dark"]
+        : ["light", "dark"];
   const show = (name: string) => !only || only === name;
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        gridTemplateColumns: themes.length === 1 ? "1fr" : "1fr 1fr",
         fontFamily:
           '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
@@ -223,6 +239,7 @@ function Gallery() {
       {show("holds") && (
         <Section
           title="Holds"
+          themes={themes}
           render={() => (
             <>
               {holdsFixtures.map((fx) => (
@@ -237,6 +254,7 @@ function Gallery() {
       {show("loans") && (
         <Section
           title="Checkouts"
+          themes={themes}
           render={() => (
             <>
               {loansFixtures.map((fx) => (
@@ -251,6 +269,7 @@ function Gallery() {
       {show("search") && (
         <Section
           title="Search"
+          themes={themes}
           render={() => (
             <>
               {searchFixtures.map((fx) => (
@@ -268,6 +287,7 @@ function Gallery() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <ResponsiveStyles />
     <Gallery />
   </StrictMode>,
 );

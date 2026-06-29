@@ -12,6 +12,7 @@ import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { HoldCard, type Hold } from "./components/HoldCard.js";
 import { headingStyle } from "./lib/card-style.js";
+import { ResponsiveStyles } from "./lib/responsive.js";
 import { rootStyle } from "./lib/root-style.js";
 
 type HoldList = {
@@ -74,6 +75,7 @@ function HoldsApp() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <ResponsiveStyles />
     <HoldsApp />
   </StrictMode>,
 );

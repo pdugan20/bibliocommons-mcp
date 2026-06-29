@@ -69,11 +69,27 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
   const placed = formatMonthDay(hold.placed);
   const material = hold.material_type === "DIGITAL" ? "Digital" : "Physical";
 
+  // Status-aware treatment beyond the pill: a ready-for-pickup hold gets a
+  // green cover ring (it's the one that needs action); expired/cancelled
+  // holds dim and strike through so they read as spent.
+  const raw = hold.status ?? "";
+  const ring = raw === "READY_FOR_PICKUP" ? STATUS_READY : undefined;
+  const spent = raw === "EXPIRED" || raw === "CANCELLED";
+  const baseRow = index === 0 ? firstRowStyle : rowStyle;
+
   return (
-    <div style={index === 0 ? firstRowStyle : rowStyle}>
-      <CoverImage jacket={hold.jacket} eager={index < 3} />
+    <div style={spent ? { ...baseRow, opacity: 0.55 } : baseRow}>
+      <CoverImage jacket={hold.jacket} eager={index < 3} accent={ring} />
       <div style={metaStyle}>
-        <h3 style={HOLD_TITLE_STYLE}>{hold.title ?? "(untitled)"}</h3>
+        <h3
+          style={
+            spent
+              ? { ...HOLD_TITLE_STYLE, textDecoration: "line-through" }
+              : HOLD_TITLE_STYLE
+          }
+        >
+          {hold.title ?? "(untitled)"}
+        </h3>
         <div style={pillRowStyle}>
           <span
             style={{ ...pillStyle, color: status.color, background: status.bg }}

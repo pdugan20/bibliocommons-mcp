@@ -8,6 +8,7 @@ import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { LoanCard, type Loan } from "./components/LoanCard.js";
 import { headingStyle } from "./lib/card-style.js";
+import { ResponsiveStyles } from "./lib/responsive.js";
 import { rootStyle } from "./lib/root-style.js";
 
 type LoanList = {
@@ -67,6 +68,7 @@ function LoansApp() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <ResponsiveStyles />
     <LoansApp />
   </StrictMode>,
 );

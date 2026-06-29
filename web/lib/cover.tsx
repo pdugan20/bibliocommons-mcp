@@ -9,6 +9,9 @@
  *   hints high priority; the long tail stays lazy.
  * - When there's no jacket URL we draw an intentional book glyph rather
  *   than a bare grey rectangle that reads as "broken/loading".
+ * - Size is driven by `--bc-cover-w/h` (see lib/responsive) so the cover
+ *   shrinks on a narrow iOS bubble; `accent` draws a status ring (a
+ *   pickup-ready hold reads green, an overdue loan reads red).
  */
 import type { CSSProperties } from "react";
 
@@ -21,8 +24,8 @@ const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
 const wrapStyle: CSSProperties = {
   position: "relative",
   flexShrink: 0,
-  width: COVER_WIDTH,
-  height: COVER_HEIGHT,
+  width: "var(--bc-cover-w, 64px)",
+  height: "var(--bc-cover-h, 88px)",
   background: COVER_FALLBACK_BG,
   borderRadius: 4,
   overflow: "hidden",
@@ -68,14 +71,20 @@ function PlaceholderGlyph() {
 export function CoverImage({
   jacket,
   eager,
+  accent,
 }: {
   jacket?: Jacket | null;
   /** True for the first few above-the-fold rows. */
   eager?: boolean;
+  /** Status ring color (e.g. green for ready-for-pickup, red for overdue). */
+  accent?: string;
 }) {
   const src = jacket?.local_url ?? jacket?.small ?? jacket?.medium ?? null;
+  const style = accent
+    ? { ...wrapStyle, outline: `2px solid ${accent}`, outlineOffset: 1 }
+    : wrapStyle;
   return (
-    <div style={wrapStyle}>
+    <div style={style}>
       {src ? (
         <img
           src={src}

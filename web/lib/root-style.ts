@@ -25,8 +25,9 @@ export const rootStyle: CSSProperties = {
   background: `light-dark(${CARD_BG_LIGHT}, ${CARD_BG_DARK})`,
   // Asymmetric padding on purpose: the h2/h3 leading reads ~3-4px above
   // glyph cap-height, so a symmetric 20px top+bottom feels top-heavy.
-  // Trim the top to compensate.
-  padding: "16px 20px 20px 20px",
+  // Trim the top to compensate. Horizontal padding is a responsive var
+  // (lib/responsive) — tighter on a narrow iOS bubble.
+  padding: "16px var(--bc-pad-x, 20px) 20px",
   borderRadius: 12,
   border: `1px solid light-dark(${CARD_BORDER_LIGHT}, ${CARD_BORDER_DARK})`,
   boxSizing: "border-box",

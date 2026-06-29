@@ -87,10 +87,12 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
   const due = dueForRender(loan);
   const material = loan.material_type === "DIGITAL" ? "Digital" : "Physical";
   const hint = renewalHint(loan);
+  // An overdue loan reads urgent: a red cover ring to match the red pill.
+  const ring = due.bg === STATUS_OVERDUE ? STATUS_OVERDUE : undefined;
 
   return (
     <div style={index === 0 ? firstRowStyle : rowStyle}>
-      <CoverImage jacket={loan.jacket} eager={index < 3} />
+      <CoverImage jacket={loan.jacket} eager={index < 3} accent={ring} />
       <div style={metaStyle}>
         <h3 style={LOAN_TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
         <div style={pillRowStyle}>

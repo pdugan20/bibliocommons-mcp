@@ -9,6 +9,7 @@ import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { BibCard, type BibSummary } from "./components/BibCard.js";
 import { headingStyle } from "./lib/card-style.js";
+import { ResponsiveStyles } from "./lib/responsive.js";
 import { rootStyle } from "./lib/root-style.js";
 
 type SearchResult = {
@@ -82,6 +83,7 @@ function SearchApp() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
+    <ResponsiveStyles />
     <SearchApp />
   </StrictMode>,
 );
