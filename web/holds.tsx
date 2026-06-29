@@ -32,7 +32,11 @@ function HoldsApp() {
     },
   });
 
-  useHostStyles(app);
+  // Pass the initial host context so the host's theme + style vars apply on
+  // mount, not just on later host-context-changed notifications. Without the
+  // second arg, light-dark() follows the iframe's OS preference instead of
+  // the user's Claude appearance (per ext-apps useHostStyles docs).
+  useHostStyles(app, app?.getHostContext());
 
   if (error) {
     return <div style={rootStyle}>Error: {error.message}</div>;

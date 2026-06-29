@@ -39,11 +39,33 @@ const COVER_HEAVIER = {
 
 const COVER_SING_BACKWARDS = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=9781529104202/SC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9781642860986/SC.GIF&client=sepup&type=xw12",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9781529104202/MC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9781642860986/MC.GIF&client=sepup&type=xw12",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=9781529104202/LC.JPG&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9781642860986/LC.JPG&client=sepup&type=xw12",
+  local_url: null,
+};
+
+// OverDrive (Libby) digital cover — different CDN than Syndetics; pairs with
+// the EBOOK/EAUDIOBOOK results below and exercises the `*.od-cdn.com` CSP
+// allow-list entry (ui.py).
+const COVER_OVERDRIVE_DIGITAL =
+  "https://img1.od-cdn.com/ImageType-100/1523-1/%7BF100E9B4-8CF4-4525-916F-FDE4A77586A4%7DImg100.jpg";
+const COVER_OD = {
+  small: COVER_OVERDRIVE_DIGITAL,
+  medium: COVER_OVERDRIVE_DIGITAL,
+  large: COVER_OVERDRIVE_DIGITAL,
+  local_url: null,
+};
+
+const COVER_EVERYBODY = {
+  small:
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/SC.GIF&client=sepup&type=xw12",
+  medium:
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/MC.GIF&client=sepup&type=xw12",
+  large:
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464460/LC.JPG&client=sepup&type=xw12",
   local_url: null,
 };
 
@@ -168,6 +190,60 @@ export const fixtures: Fixture[] = [
           format: "BK",
           year: "2010",
           call_number: "F 781.65 A615",
+          jacket: null,
+        },
+      ],
+    },
+  },
+  {
+    name: "All format badges",
+    description:
+      "One hit per format so every badge label renders, including the two digital (OverDrive-cover) formats, a DVD, and a deliberately-unknown code that falls through to the raw passthrough.",
+    structuredContent: {
+      page: 1,
+      pages: 1,
+      total: 4,
+      results: [
+        {
+          bib_id: "S30CF1",
+          // od-cdn cover (Splotch by Gianna Marino) — proves the OverDrive
+          // CSP allow-list entry renders on a search row too.
+          title: "Splotch",
+          subtitle: null,
+          authors: ["Marino, Gianna"],
+          format: "EBOOK",
+          year: "2010",
+          call_number: "EBOOK OVERDRIVE",
+          jacket: COVER_OD,
+        },
+        {
+          bib_id: "S30CF2",
+          title: "Everybody Loves Our Town",
+          subtitle: "An Oral History of Grunge",
+          authors: ["Yarm, Mark"],
+          format: "EAUDIOBOOK",
+          year: "2011",
+          call_number: "EAUDIO OVERDRIVE",
+          jacket: COVER_EVERYBODY,
+        },
+        {
+          bib_id: "S30CF3",
+          title: "Hype!",
+          subtitle: "The Motion Picture",
+          authors: ["Pray, Doug"],
+          format: "DVD",
+          year: "1996",
+          call_number: "DVD 781.66 H997",
+          jacket: null,
+        },
+        {
+          bib_id: "S30CF4",
+          title: "Nevermind",
+          subtitle: null,
+          authors: ["Nirvana (Musical group)"],
+          format: "VINYL",
+          year: "2021",
+          call_number: "LP 782.42166 N667n",
           jacket: null,
         },
       ],

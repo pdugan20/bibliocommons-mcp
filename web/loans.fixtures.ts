@@ -48,13 +48,23 @@ const COVER_SINGULARITY = {
   local_url: null,
 };
 
+const COVER_HEAVIER = {
+  small:
+    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/SC.GIF&client=sepup&type=xw12",
+  medium:
+    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/MC.GIF&client=sepup&type=xw12",
+  large:
+    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/LC.JPG&client=sepup&type=xw12",
+  local_url: null,
+};
+
 const COVER_COME_AS_YOU_ARE = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=9780767900522/SC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780385471992/SC.GIF&client=sepup&type=xw12",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9780767900522/MC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780385471992/MC.GIF&client=sepup&type=xw12",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=9780767900522/LC.JPG&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780385471992/LC.JPG&client=sepup&type=xw12",
   local_url: null,
 };
 
@@ -171,6 +181,50 @@ export const fixtures: Fixture[] = [
           jacket: null,
           actions: ["renew", "updateFormat"],
           times_renewed: 1,
+        },
+      ],
+    },
+  },
+  {
+    name: "Renewable (not yet renewed)",
+    description:
+      "Physical loan with `actions: ['renew']` and `times_renewed: 0` — hint reads plain 'Renewable' (no '· N× renewed').",
+    structuredContent: {
+      count: 1,
+      loans: [
+        {
+          checkout_id: "REN0",
+          metadata_id: "S30C3453854",
+          title: "Heavier Than Heaven",
+          material_type: "PHYSICAL",
+          due: isoOffset(12),
+          call_number: "B COBAIN, K. CROSS",
+          branch: "LCY",
+          jacket: COVER_HEAVIER,
+          actions: ["renew", "updateFormat"],
+          times_renewed: 0,
+        },
+      ],
+    },
+  },
+  {
+    name: "Due in 2 days (mid bucket)",
+    description:
+      "Exercises the 'due in N days' branch between today/tomorrow and the normal >3-day case.",
+    structuredContent: {
+      count: 1,
+      loans: [
+        {
+          checkout_id: "DUE2",
+          metadata_id: "S30C2636037",
+          title: "The Singularity Is Near",
+          material_type: "DIGITAL",
+          due: isoOffset(2),
+          call_number: "EBOOK OVERDRIVE",
+          branch: null,
+          jacket: COVER_SINGULARITY,
+          actions: ["checkIn", "updateFormat"],
+          times_renewed: 0,
         },
       ],
     },

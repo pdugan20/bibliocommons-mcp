@@ -43,7 +43,8 @@ function SearchApp() {
     },
   });
 
-  useHostStyles(app);
+  // See holds.tsx — pass initial host context so theme applies on mount.
+  useHostStyles(app, app?.getHostContext());
 
   if (error) {
     return <div style={rootStyle}>Error: {error.message}</div>;
