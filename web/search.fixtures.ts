@@ -2,14 +2,7 @@
  * Fixtures for the search bundle. Each is a plausible SearchResult
  * payload the search tool could return.
  */
-import type { BibSummary } from "./components/BibCard.js";
-
-export type SearchResult = {
-  page?: number | null;
-  pages?: number | null;
-  total?: number | null;
-  results: BibSummary[];
-};
+import { type SearchResult } from "./components/BibCard.js";
 
 export type Fixture = {
   name: string;
@@ -78,6 +71,7 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 3,
       total: 67,
+      library: "Seattle Public Library",
       results: [
         {
           bib_id: "S30C3453854",
@@ -118,6 +112,7 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 0,
       total: 0,
+      library: "Seattle Public Library",
       results: [],
     },
   },
@@ -127,6 +122,7 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 1,
       total: 1,
+      library: "Seattle Public Library",
       results: [
         {
           bib_id: "S30C3857930",
@@ -149,6 +145,7 @@ export const fixtures: Fixture[] = [
       page: 2,
       pages: 5,
       total: 108,
+      library: "Seattle Public Library",
       results: [
         {
           bib_id: "S30C2585948",
@@ -171,6 +168,7 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 1,
       total: 2,
+      library: "Seattle Public Library",
       results: [
         {
           bib_id: "S30CX1",
@@ -203,6 +201,7 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 1,
       total: 4,
+      library: "Seattle Public Library",
       results: [
         {
           bib_id: "S30CF1",

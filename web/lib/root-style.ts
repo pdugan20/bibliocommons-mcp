@@ -23,11 +23,11 @@ export const rootStyle: CSSProperties = {
   lineHeight: 1.4,
   color: "var(--color-text-primary, light-dark(#1a1a1a, #f0f0f0))",
   background: `light-dark(${CARD_BG_LIGHT}, ${CARD_BG_DARK})`,
-  // Asymmetric padding on purpose: the h2/h3 leading reads ~3-4px above
-  // glyph cap-height, so a symmetric 20px top+bottom feels top-heavy.
-  // Trim the top to compensate. Horizontal padding is a responsive var
-  // (lib/responsive) — tighter on a narrow iOS bubble.
-  padding: "16px var(--bc-pad-x, 20px) 20px",
+  // Asymmetric padding on purpose: the last row already carries ~10px of
+  // its own bottom padding, so the card only needs a little more beneath it
+  // (a symmetric 20px read as too much dead space). Horizontal padding is a
+  // responsive var (lib/responsive) — tighter on a narrow iOS bubble.
+  padding: "16px var(--bc-pad-x, 20px) 8px",
   borderRadius: 12,
   border: `1px solid light-dark(${CARD_BORDER_LIGHT}, ${CARD_BORDER_DARK})`,
   boxSizing: "border-box",

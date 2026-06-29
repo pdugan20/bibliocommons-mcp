@@ -6,30 +6,28 @@
  */
 import type { CSSProperties } from "react";
 
-/** Section heading ("Holds (3)", "Page 1 of 3 · 67 results"). Sits a clear
- * step above the 14px item titles so a screenshot reads top-down. */
-export const headingStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 16,
-  fontWeight: 700,
-  letterSpacing: -0.1,
-};
-
 export const rowStyle: CSSProperties = {
   display: "flex",
-  // Center the meta block against the 88px cover so short cards (a single
+  // Center the meta block against the cover so short cards (a single
   // ready hold) don't leave the cover hanging in dead space.
   alignItems: "center",
   gap: 12,
   paddingTop: 10,
   paddingBottom: 10,
-  borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
 };
 
 export const firstRowStyle: CSSProperties = {
   ...rowStyle,
-  borderTop: "none",
-  paddingTop: 4,
+  paddingTop: 2,
+};
+
+/** iOS-style inset row separator: a hairline that starts at the text's
+ * left edge (past the cover + gap) rather than spanning the full width.
+ * Rendered as its own element between rows, not as a row border. */
+export const rowDividerStyle: CSSProperties = {
+  height: 1,
+  background: "light-dark(#ececec, #2e2e2e)",
+  marginLeft: "calc(var(--bc-cover-w, 64px) + 12px)",
 };
 
 export const metaStyle: CSSProperties = {
@@ -50,39 +48,43 @@ export const lineStyle: CSSProperties = {
 export const pillRowStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 6,
   flexWrap: "wrap",
   marginTop: 2,
 };
 
-/** Stadium status pill (Ready / queue / due-state). Saturated solid fills
- * are reserved for these — the format badge is a quiet neutral chip. */
-export const pillStyle: CSSProperties = {
+// --- Chip family. Status and format now share one quiet, tonal shape so
+// the status reads as part of the same system as the Book/CD badge rather
+// than a loud solid pill. Variants differ only in tint.
+const chipBase: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
-  height: 18,
+  height: 19,
   padding: "0 8px",
-  borderRadius: 9,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0.2,
-  textTransform: "uppercase",
-  whiteSpace: "nowrap", // long "due in N days" labels shouldn't wrap/clip
-};
-
-/** Quiet neutral chip for the format badge (eBook / CD / Book / …). Format
- * is secondary metadata, so it stays tonal — saturated fills are reserved
- * for the status pill. Shared across all three cards. */
-export const badgeStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  height: 18,
-  padding: "0 8px",
-  borderRadius: 4,
+  borderRadius: 5,
   fontSize: 11,
   fontWeight: 600,
   letterSpacing: 0.2,
   whiteSpace: "nowrap",
+};
+
+/** Active status (ready / queued / in transit / due / overdue) — tonal blue. */
+export const statusChipStyle: CSSProperties = {
+  ...chipBase,
+  background: "light-dark(rgba(15,109,191,0.12), rgba(77,159,232,0.22))",
+  color: "light-dark(#0b5da6, #9ccbf0)",
+};
+
+/** Spent status (expired / cancelled) — tonal neutral, paired with dim. */
+export const spentChipStyle: CSSProperties = {
+  ...chipBase,
+  background: "light-dark(rgba(0,0,0,0.06), rgba(255,255,255,0.10))",
+  color: "light-dark(#6b7280, #a3a3a3)",
+};
+
+/** Format badge (eBook / CD / Book / …) — quiet neutral chip. */
+export const badgeStyle: CSSProperties = {
+  ...chipBase,
   background: "light-dark(rgba(0,0,0,0.06), rgba(255,255,255,0.10))",
   color: "light-dark(#3a3a3a, #cfcfcf)",
 };

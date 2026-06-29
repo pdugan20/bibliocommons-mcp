@@ -5,10 +5,13 @@
  * - The box matches the media's real aspect ratio — portrait for books,
  *   square for discs (CD/vinyl) — and `objectFit: cover` fills it, so
  *   nothing letterboxes (grey bars) or crops the wrong way.
+ * - We pull the `large` jacket (a full-quality JPG) rather than the
+ *   `small`/`medium` 256-colour GIFs: the box renders ~64-88px CSS, i.e.
+ *   ~128-176px on a 2x display, so the small thumbnail looked soft.
  * - `eager` (first ~3 rows) loads above-the-fold covers immediately and
  *   hints high priority; the long tail stays lazy.
- * - When there's no jacket URL we draw an intentional book glyph rather
- *   than a bare grey rectangle that reads as "broken/loading".
+ * - A hairline border defines the cover edge against the card; when there's
+ *   no jacket we draw an intentional book glyph, not a bare grey box.
  * - Width is the responsive `--bc-cover-w` (see lib/responsive); height is
  *   the same for a square cover, or `--bc-cover-h` for a portrait one.
  */
@@ -27,6 +30,8 @@ const baseWrapStyle: CSSProperties = {
   width: "var(--bc-cover-w, 64px)",
   background: COVER_FALLBACK_BG,
   borderRadius: 4,
+  border: "1px solid light-dark(rgba(0,0,0,0.14), rgba(255,255,255,0.14))",
+  boxSizing: "border-box",
   overflow: "hidden",
 };
 
@@ -78,7 +83,14 @@ export function CoverImage({
   /** True for the first few above-the-fold rows. */
   eager?: boolean;
 }) {
-  const src = jacket?.local_url ?? jacket?.small ?? jacket?.medium ?? null;
+  // Prefer a library upload, then the high-res JPG, falling back to the
+  // smaller GIFs so a partial jacket still renders something.
+  const src =
+    jacket?.local_url ??
+    jacket?.large ??
+    jacket?.medium ??
+    jacket?.small ??
+    null;
   const square = isSquareFormat(format);
   const wrapStyle: CSSProperties = {
     ...baseWrapStyle,

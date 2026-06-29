@@ -3,12 +3,7 @@
  * the loans tool could return. Workbench iterates these to render
  * every due-state without standing up real gateway data.
  */
-import type { Loan } from "./components/LoanCard.js";
-
-export type LoanList = {
-  count: number;
-  loans: Loan[];
-};
+import { type LoanList } from "./components/LoanCard.js";
 
 export type Fixture = {
   name: string;
@@ -75,6 +70,7 @@ export const fixtures: Fixture[] = [
       "An overdue ebook, an ebook due tomorrow, and an audiobook due in two weeks — all OverDrive.",
     structuredContent: {
       count: 3,
+      library: "Seattle Public Library",
       loans: [
         {
           checkout_id: "1052952601",
@@ -122,6 +118,7 @@ export const fixtures: Fixture[] = [
     name: "Empty (no loans)",
     structuredContent: {
       count: 0,
+      library: "Seattle Public Library",
       loans: [],
     },
   },
@@ -130,6 +127,7 @@ export const fixtures: Fixture[] = [
     description: "Single loan with due == today; pill should read 'due today'.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       loans: [
         {
           checkout_id: "TODAY",
@@ -151,6 +149,7 @@ export const fixtures: Fixture[] = [
       "Physical book checked out at Lake City — shows the Book badge, branch code, and call number.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       loans: [
         {
           checkout_id: "PHYS",
@@ -160,7 +159,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           due: isoOffset(10),
           call_number: "B COBAIN, K. CROSS",
-          branch: "LCY",
+          branch: "Lake City",
           jacket: COVER_HEAVIER,
           actions: ["renew", "updateFormat"],
           times_renewed: 1,
@@ -174,6 +173,7 @@ export const fixtures: Fixture[] = [
       "Physical loan with `actions: ['renew', ...]` and `times_renewed: 1` — card surfaces 'Renewable · 1× renewed'.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       loans: [
         {
           checkout_id: "-3399081509618396918",
@@ -183,7 +183,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           due: isoOffset(20),
           call_number: "E MCCLURE",
-          branch: "LCY",
+          branch: "Lake City",
           jacket: null,
           actions: ["renew", "updateFormat"],
           times_renewed: 1,
@@ -197,6 +197,7 @@ export const fixtures: Fixture[] = [
       "Physical loan with `actions: ['renew']` and `times_renewed: 0` — hint reads plain 'Renewable' (no '· N× renewed').",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       loans: [
         {
           checkout_id: "REN0",
@@ -206,7 +207,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           due: isoOffset(12),
           call_number: "B COBAIN, K. CROSS",
-          branch: "LCY",
+          branch: "Lake City",
           jacket: COVER_HEAVIER,
           actions: ["renew", "updateFormat"],
           times_renewed: 0,
@@ -220,6 +221,7 @@ export const fixtures: Fixture[] = [
       "Exercises the 'due in N days' branch between today/tomorrow and the normal >3-day case.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       loans: [
         {
           checkout_id: "DUE2",

@@ -1,6 +1,6 @@
 /**
  * One row in a search results list. Cover + title/subtitle + authors
- * + format badge + year. No status pill (catalog data is stateless).
+ * + format badge + year. No status chip (catalog data is stateless).
  *
  * Data shape mirrors `bibliocommons_mcp.models.BibSummary`.
  */
@@ -12,6 +12,7 @@ import {
   lineStyle,
   metaStyle,
   pillRowStyle,
+  rowDividerStyle,
   rowStyle,
   titleStyle,
 } from "../lib/card-style.js";
@@ -28,6 +29,14 @@ export type BibSummary = {
   year?: string | null;
   call_number?: string | null;
   jacket?: Jacket | null;
+};
+
+export type SearchResult = {
+  page?: number | null;
+  pages?: number | null;
+  total?: number | null;
+  library?: string | null;
+  results: BibSummary[];
 };
 
 const BIB_TITLE_STYLE = titleStyle(2);
@@ -48,18 +57,23 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const author = (bib.authors ?? [])[0];
 
   return (
-    <div style={index === 0 ? firstRowStyle : rowStyle}>
-      <CoverImage jacket={bib.jacket} format={bib.format} eager={index < 3} />
-      <div style={metaStyle}>
-        <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
-        {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
-        {author && <p style={lineStyle}>by {author}</p>}
-        <div style={pillRowStyle}>
-          {format && <span style={badgeStyle}>{format}</span>}
-          {bib.year && <span style={lineStyle}>{bib.year}</span>}
-          {bib.call_number && <span style={lineStyle}>{bib.call_number}</span>}
+    <>
+      {index > 0 && <div style={rowDividerStyle} />}
+      <div style={index === 0 ? firstRowStyle : rowStyle}>
+        <CoverImage jacket={bib.jacket} format={bib.format} eager={index < 3} />
+        <div style={metaStyle}>
+          <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
+          {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
+          {author && <p style={lineStyle}>by {author}</p>}
+          <div style={pillRowStyle}>
+            {format && <span style={badgeStyle}>{format}</span>}
+            {bib.year && <span style={lineStyle}>{bib.year}</span>}
+            {bib.call_number && (
+              <span style={lineStyle}>{bib.call_number}</span>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

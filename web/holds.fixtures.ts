@@ -6,12 +6,7 @@
  * Shape mirrors `bibliocommons_mcp.models.HoldList` exactly — keep in
  * sync if the server-side model changes.
  */
-import type { Hold } from "./components/HoldCard.js";
-
-export type HoldList = {
-  count: number;
-  holds: Hold[];
-};
+import { type HoldList } from "./components/HoldCard.js";
 
 export type Fixture = {
   name: string;
@@ -69,6 +64,7 @@ export const fixtures: Fixture[] = [
       "A physical book (ready), a CD (in queue, square cover), and a digital ebook deep in the OverDrive queue.",
     structuredContent: {
       count: 3,
+      library: "Seattle Public Library",
       holds: [
         {
           hold_id: "71992850",
@@ -78,7 +74,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           status: "READY_FOR_PICKUP",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-20",
           expiry: "2027-03-03",
           jacket: COVER_HEAVIER,
@@ -91,7 +87,7 @@ export const fixtures: Fixture[] = [
           format: "MUSIC_CD",
           status: "NOT_YET_AVAILABLE",
           position: 1,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-27",
           expiry: "2027-03-03",
           jacket: COVER_PLASTIC_ETERNITY,
@@ -118,6 +114,7 @@ export const fixtures: Fixture[] = [
     name: "Empty (no holds)",
     structuredContent: {
       count: 0,
+      library: "Seattle Public Library",
       holds: [],
     },
   },
@@ -127,6 +124,7 @@ export const fixtures: Fixture[] = [
       "Just one card, ready at Lake City — the most common workflow trigger.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       holds: [
         {
           hold_id: "71992850",
@@ -136,7 +134,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           status: "READY_FOR_PICKUP",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-20",
           expiry: "2027-03-03",
           jacket: COVER_HEAVIER,
@@ -150,6 +148,7 @@ export const fixtures: Fixture[] = [
       "Edge case: very long title and no cover-art URL. Title should wrap at 3 lines max; cover area shows the neutral placeholder.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       holds: [
         {
           hold_id: "X1",
@@ -160,7 +159,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           status: "NOT_YET_AVAILABLE",
           position: 17,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-04-15",
           expiry: "2027-02-12",
           jacket: null,
@@ -174,6 +173,7 @@ export const fixtures: Fixture[] = [
       "A CD hold pulled at another branch and on its way — square cover.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       holds: [
         {
           hold_id: "T1",
@@ -183,7 +183,7 @@ export const fixtures: Fixture[] = [
           format: "MUSIC_CD",
           status: "IN_TRANSIT",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-25",
           expiry: "2027-03-01",
           jacket: COVER_UNPLUGGED,
@@ -197,6 +197,7 @@ export const fixtures: Fixture[] = [
       "Edge case: the spent state — grey pill + dim + strikethrough. Hold sat ready and was never picked up.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       holds: [
         {
           hold_id: "E1",
@@ -206,7 +207,7 @@ export const fixtures: Fixture[] = [
           format: "BK",
           status: "EXPIRED",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-03-01",
           expiry: "2026-04-12",
           jacket: COVER_HEAVIER,
@@ -220,6 +221,7 @@ export const fixtures: Fixture[] = [
       "NOT_YET_AVAILABLE with no queue position — exercises the 'queued' fallback label (no '#N in queue').",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
       holds: [
         {
           hold_id: "Q1",
@@ -229,7 +231,7 @@ export const fixtures: Fixture[] = [
           format: "MUSIC_CD",
           status: "NOT_YET_AVAILABLE",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-06-01",
           expiry: "2027-03-03",
           jacket: COVER_PLASTIC_ETERNITY,
