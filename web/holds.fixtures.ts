@@ -66,7 +66,7 @@ export const fixtures: Fixture[] = [
   {
     name: "Mixed queue (typical)",
     description:
-      "Two physical holds (one queued, one ready) plus a digital hold deep in the OverDrive queue.",
+      "A physical book (ready), a CD (in queue, square cover), and a digital ebook deep in the OverDrive queue.",
     structuredContent: {
       count: 3,
       holds: [
@@ -75,6 +75,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3453854",
           title: "Heavier Than Heaven",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "READY_FOR_PICKUP",
           position: null,
           pickup_branch: "LCY",
@@ -87,6 +88,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3857930",
           title: "Plastic Eternity",
           material_type: "PHYSICAL",
+          format: "MUSIC_CD",
           status: "NOT_YET_AVAILABLE",
           position: 1,
           pickup_branch: "LCY",
@@ -101,6 +103,7 @@ export const fixtures: Fixture[] = [
           // fixture that proves the *.od-cdn.com CSP allow-list entry renders.
           title: "Splotch",
           material_type: "DIGITAL",
+          format: "EBOOK",
           status: "NOT_YET_AVAILABLE",
           position: 8,
           pickup_branch: null,
@@ -130,6 +133,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3453854",
           title: "Heavier Than Heaven",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "READY_FOR_PICKUP",
           position: null,
           pickup_branch: "LCY",
@@ -153,6 +157,7 @@ export const fixtures: Fixture[] = [
           title:
             "A Compendium of Quite Excessively Long Titles That Editors Once Thought Would Sell Books And Which Cataloguers Are Now Forced To Reckon With",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "NOT_YET_AVAILABLE",
           position: 17,
           pickup_branch: "LCY",
@@ -164,8 +169,9 @@ export const fixtures: Fixture[] = [
     },
   },
   {
-    name: "In transit",
-    description: "Hold has been pulled at another branch and is on its way.",
+    name: "In transit (CD)",
+    description:
+      "A CD hold pulled at another branch and on its way — square cover.",
     structuredContent: {
       count: 1,
       holds: [
@@ -174,6 +180,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C2936752",
           title: "MTV Unplugged in New York",
           material_type: "PHYSICAL",
+          format: "MUSIC_CD",
           status: "IN_TRANSIT",
           position: null,
           pickup_branch: "LCY",
@@ -187,7 +194,7 @@ export const fixtures: Fixture[] = [
   {
     name: "Expired hold",
     description:
-      "Edge case: the only state that renders the red pill. Hold sat ready and was never picked up.",
+      "Edge case: the spent state — grey pill + dim + strikethrough. Hold sat ready and was never picked up.",
     structuredContent: {
       count: 1,
       holds: [
@@ -196,6 +203,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3453854",
           title: "Heavier Than Heaven",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "EXPIRED",
           position: null,
           pickup_branch: "LCY",
@@ -218,6 +226,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3857930",
           title: "Plastic Eternity",
           material_type: "PHYSICAL",
+          format: "MUSIC_CD",
           status: "NOT_YET_AVAILABLE",
           position: null,
           pickup_branch: "LCY",

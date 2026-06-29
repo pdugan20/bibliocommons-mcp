@@ -7,6 +7,7 @@
 import type { CSSProperties } from "react";
 
 import {
+  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
@@ -15,6 +16,7 @@ import {
   titleStyle,
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
+import { formatLabel } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type BibSummary = {
@@ -41,50 +43,13 @@ const subtitleStyle: CSSProperties = {
   overflow: "hidden",
 };
 
-// Quiet neutral chip: format is secondary metadata, so it shouldn't out-
-// shout the title. Saturated solid fills are reserved for status pills.
-const badgeStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  height: 18,
-  padding: "0 8px",
-  borderRadius: 4,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0.2,
-  whiteSpace: "nowrap",
-  background: "light-dark(rgba(0,0,0,0.06), rgba(255,255,255,0.10))",
-  color: "light-dark(#3a3a3a, #cfcfcf)",
-};
-
-// Friendly labels for the format facet codes the gateway returns.
-const FORMAT_LABELS: Record<string, string> = {
-  BK: "Book",
-  EBOOK: "eBook",
-  EAUDIOBOOK: "Audiobook",
-  AUDIOBOOK_CD: "Audiobook (CD)",
-  MUSIC_CD: "CD",
-  DVD: "DVD",
-  BLU_RAY: "Blu-ray",
-  LARGEPRINT: "Large print",
-  LP: "Large print",
-  MN: "Score",
-  MAGAZINE: "Magazine",
-  STREAMING_VIDEO: "Streaming",
-};
-
-function formatLabel(format?: string | null): string | null {
-  if (!format) return null;
-  return FORMAT_LABELS[format] ?? format;
-}
-
 export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const format = formatLabel(bib.format);
   const author = (bib.authors ?? [])[0];
 
   return (
     <div style={index === 0 ? firstRowStyle : rowStyle}>
-      <CoverImage jacket={bib.jacket} eager={index < 3} />
+      <CoverImage jacket={bib.jacket} format={bib.format} eager={index < 3} />
       <div style={metaStyle}>
         <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
         {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}

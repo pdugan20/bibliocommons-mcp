@@ -13,14 +13,12 @@ export const CARD_BG_DARK = "#272726";
 export const CARD_BORDER_LIGHT = "#d9d9d9";
 export const CARD_BORDER_DARK = "#383836";
 
-/** BiblioCommons brand-adjacent accent. Used for status pills and
- * "ready for pickup" indicators. */
-export const ACCENT = "#0f6dbf";
+/** Single blue accent for every active status pill — ready, queued, in
+ * transit, due, overdue. The reds/greens/ambers were intentionally dropped:
+ * the pill text carries the state, so the palette stays calm and mostly
+ * monochrome. White pill text on this blue is ≈ 4.6:1 (WCAG AA). */
+export const STATUS_ACTIVE = "#0f6dbf";
 
-/** Status colors for hold + loan states. Darkened from the tailwind-600
- * tier to the 700 tier so 11px white pill text clears WCAG AA (4.5:1) on
- * both card backgrounds — the 600 greens/ambers were ~3.2–3.3:1. */
-export const STATUS_READY = "#15803d"; // green — pick it up (white text ≈ 4.9:1)
-export const STATUS_QUEUED = "#0f6dbf"; // blue — in queue (white text ≈ 4.6:1)
-export const STATUS_DUE_SOON = "#b45309"; // amber — due in <3 days (white text ≈ 4.7:1)
-export const STATUS_OVERDUE = "#b91c1c"; // red — past due (white text ≈ 5.9:1)
+/** Neutral slate for spent/inactive states (expired, cancelled), paired
+ * with the dim + strikethrough treatment. */
+export const STATUS_SPENT = "#6b7280";

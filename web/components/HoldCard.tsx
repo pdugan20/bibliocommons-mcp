@@ -1,11 +1,12 @@
 /**
  * One row in the holds list. Cover image on the left, metadata on the
- * right (title, status pill, queue position, pickup branch).
+ * right (title, status pill, format, queue position, pickup branch).
  *
  * Data shape mirrors `bibliocommons_mcp.models.Hold` — keep field
  * names in sync if anything changes server-side.
  */
 import {
+  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
@@ -16,14 +17,16 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
+import { formatLabel } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
-import { STATUS_OVERDUE, STATUS_QUEUED, STATUS_READY } from "../lib/palette.js";
+import { STATUS_ACTIVE, STATUS_SPENT } from "../lib/palette.js";
 
 export type Hold = {
   hold_id: string;
   metadata_id?: string | null;
   title?: string | null;
   material_type?: "PHYSICAL" | "DIGITAL" | null;
+  format?: string | null;
   status?: string | null;
   position?: number | null;
   pickup_branch?: string | null;
@@ -34,7 +37,7 @@ export type Hold = {
 
 const HOLD_TITLE_STYLE = titleStyle(3);
 
-type StatusLabel = { text: string; color: string; bg: string };
+type StatusLabel = { text: string; bg: string };
 
 function statusForRender(hold: Hold): StatusLabel {
   // Status comes from the gateway as snake- / UPPER-cased strings; we
@@ -43,12 +46,12 @@ function statusForRender(hold: Hold): StatusLabel {
   const raw = hold.status ?? "";
   switch (raw) {
     case "READY_FOR_PICKUP":
-      return { text: "Ready", color: "white", bg: STATUS_READY };
+      return { text: "Ready", bg: STATUS_ACTIVE };
     case "EXPIRED":
     case "CANCELLED":
-      return { text: raw.toLowerCase(), color: "white", bg: STATUS_OVERDUE };
+      return { text: raw.toLowerCase(), bg: STATUS_SPENT };
     case "IN_TRANSIT":
-      return { text: "In transit", color: "white", bg: STATUS_QUEUED };
+      return { text: "In transit", bg: STATUS_ACTIVE };
     case "NOT_YET_AVAILABLE":
     default: {
       // Queued: lead with position when we have one; fall back to the
@@ -59,7 +62,7 @@ function statusForRender(hold: Hold): StatusLabel {
           : raw
             ? raw.replace(/_/g, " ").toLowerCase()
             : "queued";
-      return { text, color: "white", bg: STATUS_QUEUED };
+      return { text, bg: STATUS_ACTIVE };
     }
   }
 }
@@ -67,19 +70,17 @@ function statusForRender(hold: Hold): StatusLabel {
 export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
   const status = statusForRender(hold);
   const placed = formatMonthDay(hold.placed);
+  const format = formatLabel(hold.format);
   const material = hold.material_type === "DIGITAL" ? "Digital" : "Physical";
 
-  // Status-aware treatment beyond the pill: a ready-for-pickup hold gets a
-  // green cover ring (it's the one that needs action); expired/cancelled
-  // holds dim and strike through so they read as spent.
+  // Expired/cancelled holds dim + strike through so they read as spent.
   const raw = hold.status ?? "";
-  const ring = raw === "READY_FOR_PICKUP" ? STATUS_READY : undefined;
   const spent = raw === "EXPIRED" || raw === "CANCELLED";
   const baseRow = index === 0 ? firstRowStyle : rowStyle;
 
   return (
     <div style={spent ? { ...baseRow, opacity: 0.55 } : baseRow}>
-      <CoverImage jacket={hold.jacket} eager={index < 3} accent={ring} />
+      <CoverImage jacket={hold.jacket} format={hold.format} eager={index < 3} />
       <div style={metaStyle}>
         <h3
           style={
@@ -91,12 +92,14 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
           {hold.title ?? "(untitled)"}
         </h3>
         <div style={pillRowStyle}>
-          <span
-            style={{ ...pillStyle, color: status.color, background: status.bg }}
-          >
+          <span style={{ ...pillStyle, color: "white", background: status.bg }}>
             {status.text}
           </span>
-          <span style={lineStyle}>{material}</span>
+          {format ? (
+            <span style={badgeStyle}>{format}</span>
+          ) : (
+            <span style={lineStyle}>{material}</span>
+          )}
           {hold.pickup_branch && (
             <span style={lineStyle}>{hold.pickup_branch}</span>
           )}

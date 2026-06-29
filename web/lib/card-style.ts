@@ -70,6 +70,23 @@ export const pillStyle: CSSProperties = {
   whiteSpace: "nowrap", // long "due in N days" labels shouldn't wrap/clip
 };
 
+/** Quiet neutral chip for the format badge (eBook / CD / Book / …). Format
+ * is secondary metadata, so it stays tonal — saturated fills are reserved
+ * for the status pill. Shared across all three cards. */
+export const badgeStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  height: 18,
+  padding: "0 8px",
+  borderRadius: 4,
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: 0.2,
+  whiteSpace: "nowrap",
+  background: "light-dark(rgba(0,0,0,0.06), rgba(255,255,255,0.10))",
+  color: "light-dark(#3a3a3a, #cfcfcf)",
+};
+
 export function titleStyle(lines: number): CSSProperties {
   return {
     fontSize: 14,

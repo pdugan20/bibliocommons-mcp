@@ -28,6 +28,16 @@ function isoOffset(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+const COVER_HEAVIER = {
+  small:
+    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/SC.GIF&client=sepup&type=xw12",
+  medium:
+    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/MC.GIF&client=sepup&type=xw12",
+  large:
+    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/LC.JPG&client=sepup&type=xw12",
+  local_url: null,
+};
+
 const COVER_EVERYBODY = {
   small:
     "https://secure.syndetics.com/index.aspx?isbn=9780307464446/SC.GIF&client=sepup&type=xw12",
@@ -48,16 +58,6 @@ const COVER_SINGULARITY = {
   local_url: null,
 };
 
-const COVER_HEAVIER = {
-  small:
-    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/SC.GIF&client=sepup&type=xw12",
-  medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/MC.GIF&client=sepup&type=xw12",
-  large:
-    "https://secure.syndetics.com/index.aspx?isbn=9780786884025/LC.JPG&client=sepup&type=xw12",
-  local_url: null,
-};
-
 const COVER_COME_AS_YOU_ARE = {
   small:
     "https://secure.syndetics.com/index.aspx?isbn=9780385471992/SC.GIF&client=sepup&type=xw12",
@@ -72,7 +72,7 @@ export const fixtures: Fixture[] = [
   {
     name: "Mixed urgency (typical)",
     description:
-      "Three loans across the urgency spectrum: one overdue, one due soon, one digital due in two weeks.",
+      "An overdue ebook, an ebook due tomorrow, and an audiobook due in two weeks — all OverDrive.",
     structuredContent: {
       count: 3,
       loans: [
@@ -81,6 +81,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C2815026",
           title: "Everybody Loves Our Town",
           material_type: "DIGITAL",
+          format: "EBOOK",
           due: isoOffset(-2),
           call_number: "EBOOK OVERDRIVE",
           branch: null,
@@ -93,6 +94,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C2636037",
           title: "The Singularity Is Near",
           material_type: "DIGITAL",
+          format: "EBOOK",
           due: isoOffset(1),
           call_number: "EBOOK OVERDRIVE",
           branch: null,
@@ -105,6 +107,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3452840",
           title: "Come as You Are",
           material_type: "DIGITAL",
+          format: "EAUDIOBOOK",
           due: isoOffset(14),
           call_number: "EAUDIO OVERDRIVE",
           branch: null,
@@ -133,6 +136,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C9",
           title: "Everybody Loves Our Town",
           material_type: "DIGITAL",
+          format: "EBOOK",
           due: isoOffset(0),
           call_number: "EBOOK OVERDRIVE",
           branch: null,
@@ -142,9 +146,9 @@ export const fixtures: Fixture[] = [
     },
   },
   {
-    name: "Physical with branch + call number",
+    name: "Physical book with branch + call number",
     description:
-      "Physical book checked out at Lake City — shows branch code and call number lines.",
+      "Physical book checked out at Lake City — shows the Book badge, branch code, and call number.",
     structuredContent: {
       count: 1,
       loans: [
@@ -153,10 +157,11 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C9",
           title: "Heavier Than Heaven",
           material_type: "PHYSICAL",
+          format: "BK",
           due: isoOffset(10),
           call_number: "B COBAIN, K. CROSS",
           branch: "LCY",
-          jacket: null,
+          jacket: COVER_HEAVIER,
           actions: ["renew", "updateFormat"],
           times_renewed: 1,
         },
@@ -175,6 +180,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3680329",
           title: "A Garden to Save the Birds",
           material_type: "PHYSICAL",
+          format: "BK",
           due: isoOffset(20),
           call_number: "E MCCLURE",
           branch: "LCY",
@@ -197,6 +203,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C3453854",
           title: "Heavier Than Heaven",
           material_type: "PHYSICAL",
+          format: "BK",
           due: isoOffset(12),
           call_number: "B COBAIN, K. CROSS",
           branch: "LCY",
@@ -219,6 +226,7 @@ export const fixtures: Fixture[] = [
           metadata_id: "S30C2636037",
           title: "The Singularity Is Near",
           material_type: "DIGITAL",
+          format: "EBOOK",
           due: isoOffset(2),
           call_number: "EBOOK OVERDRIVE",
           branch: null,

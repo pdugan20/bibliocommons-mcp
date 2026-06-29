@@ -1,31 +1,30 @@
 /**
  * Shared cover thumbnail for every card. One place for cover sizing, the
- * fallback treatment, lazy/eager loading, and image decoding — the three
- * cards previously each carried a byte-identical copy of this.
+ * fallback treatment, lazy/eager loading, and image decoding.
  *
- * - `objectFit: contain` so square CD/DVD/vinyl art letterboxes on the
- *   neutral matte instead of being cropped by the portrait 64x88 box.
+ * - The box matches the media's real aspect ratio — portrait for books,
+ *   square for discs (CD/vinyl) — and `objectFit: cover` fills it, so
+ *   nothing letterboxes (grey bars) or crops the wrong way.
  * - `eager` (first ~3 rows) loads above-the-fold covers immediately and
  *   hints high priority; the long tail stays lazy.
  * - When there's no jacket URL we draw an intentional book glyph rather
  *   than a bare grey rectangle that reads as "broken/loading".
- * - Size is driven by `--bc-cover-w/h` (see lib/responsive) so the cover
- *   shrinks on a narrow iOS bubble; `accent` draws a status ring (a
- *   pickup-ready hold reads green, an overdue loan reads red).
+ * - Width is the responsive `--bc-cover-w` (see lib/responsive); height is
+ *   the same for a square cover, or `--bc-cover-h` for a portrait one.
  */
 import type { CSSProperties } from "react";
 
+import { isSquareFormat } from "./format.js";
 import type { Jacket } from "./jacket.js";
 
 export const COVER_WIDTH = 64;
-export const COVER_HEIGHT = 88; // ~book aspect; square media letterboxes via objectFit:contain
+export const COVER_HEIGHT = 88;
 const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
 
-const wrapStyle: CSSProperties = {
+const baseWrapStyle: CSSProperties = {
   position: "relative",
   flexShrink: 0,
   width: "var(--bc-cover-w, 64px)",
-  height: "var(--bc-cover-h, 88px)",
   background: COVER_FALLBACK_BG,
   borderRadius: 4,
   overflow: "hidden",
@@ -34,7 +33,7 @@ const wrapStyle: CSSProperties = {
 const imgStyle: CSSProperties = {
   width: "100%",
   height: "100%",
-  objectFit: "contain",
+  objectFit: "cover",
   display: "block",
 };
 
@@ -70,21 +69,23 @@ function PlaceholderGlyph() {
 
 export function CoverImage({
   jacket,
+  format,
   eager,
-  accent,
 }: {
   jacket?: Jacket | null;
+  /** Format facet code (BK, MUSIC_CD, …) — decides square vs portrait. */
+  format?: string | null;
   /** True for the first few above-the-fold rows. */
   eager?: boolean;
-  /** Status ring color (e.g. green for ready-for-pickup, red for overdue). */
-  accent?: string;
 }) {
   const src = jacket?.local_url ?? jacket?.small ?? jacket?.medium ?? null;
-  const style = accent
-    ? { ...wrapStyle, outline: `2px solid ${accent}`, outlineOffset: 1 }
-    : wrapStyle;
+  const square = isSquareFormat(format);
+  const wrapStyle: CSSProperties = {
+    ...baseWrapStyle,
+    height: square ? "var(--bc-cover-w, 64px)" : "var(--bc-cover-h, 88px)",
+  };
   return (
-    <div style={style}>
+    <div style={wrapStyle}>
       {src ? (
         <img
           src={src}
