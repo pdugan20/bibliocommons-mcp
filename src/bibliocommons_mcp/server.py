@@ -672,8 +672,7 @@ def search(
     bibs = data.get("entities", {}).get("bibs", {})
     pag = data.get("catalogSearch", {}).get("pagination", {})
     more_url = (
-        f"{client.catalog_origin}/v2/search"
-        f"?query={quote_plus(query)}&searchType=smart"
+        f"{client.catalog_origin}/v2/search?query={quote_plus(query)}&searchType=smart"
     )
     return SearchResult(
         page=pag.get("page"),
