@@ -96,7 +96,7 @@ not need to cut a release to update the phone; you need a deploy.
 **Preferred — GitHub Actions (`Deploy to Fly`).** A `workflow_dispatch`
 workflow (`.github/workflows/fly-deploy.yml`) deploys from a runner: no laptop,
 no interactive auth, no local Docker, no terminal timeout. Trigger it from the
-repo's **Actions** tab → *Deploy to Fly* → *Run workflow* (pick the branch to
+repo's **Actions** tab → _Deploy to Fly_ → _Run workflow_ (pick the branch to
 ship, usually `main`). One-time setup — create a deploy token and add it as a
 repo secret:
 
