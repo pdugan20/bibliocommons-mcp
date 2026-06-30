@@ -184,7 +184,7 @@ export const fixtures: Fixture[] = [
   {
     name: "Renewable physical (already renewed once)",
     description:
-      "Physical loan with `actions: ['renew', ...]` and `times_renewed: 1` — card surfaces 'Renewable · 1× renewed'.",
+      "Physical loan with `actions: ['renew', ...]` and `times_renewed: 1`. The count isn't surfaced; the hint reads plain 'Renewable'.",
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",
@@ -211,7 +211,7 @@ export const fixtures: Fixture[] = [
   {
     name: "Renewable (not yet renewed)",
     description:
-      "Physical loan with `actions: ['renew']` and `times_renewed: 0` — hint reads plain 'Renewable' (no '· N× renewed').",
+      "Physical loan with `actions: ['renew']` and `times_renewed: 0` — hint reads plain 'Renewable'.",
     structuredContent: {
       count: 1,
       library: "Seattle Public Library",

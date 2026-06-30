@@ -68,11 +68,9 @@ function dueText(loan: Loan): string {
 
 function renewalHint(loan: Loan): string | null {
   const actions = loan.actions ?? [];
-  if (actions.includes("renew")) {
-    const n = loan.times_renewed ?? 0;
-    if (n > 0) return `Renewable · ${n}× renewed`;
-    return "Renewable";
-  }
+  // Just whether it's renewable — the renewal count (times_renewed) is
+  // more detail than a "can I keep this longer?" glance needs.
+  if (actions.includes("renew")) return "Renewable";
   if (actions.includes("checkIn")) return "Return only";
   return null;
 }
