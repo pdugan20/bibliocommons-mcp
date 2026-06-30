@@ -1,13 +1,25 @@
 /**
- * One row in a search results list. Cover + title/subtitle + authors
- * + format badge + year. No status pill (catalog data is stateless).
+ * One row in a search results list. Cover + title/subtitle + author +
+ * format · year. No status chip (catalog data is stateless).
  *
  * Data shape mirrors `bibliocommons_mcp.models.BibSummary`.
  */
+import {
+  firstRowStyle,
+  lineStyle,
+  metaStyle,
+  rowDividerStyle,
+  rowStyle,
+  titleStyle,
+} from "../lib/card-style.js";
+import { CoverImage } from "../lib/cover.js";
+import { cleanCreator, formatLabelLong } from "../lib/format.js";
+import type { Jacket } from "../lib/jacket.js";
+import { RecordLink } from "../lib/open-link.js";
+
 import type { CSSProperties } from "react";
 
-import { ACCENT } from "../lib/palette.js";
-import type { Jacket } from "./HoldCard.js";
+const COVER_LINK_STYLE: CSSProperties = { display: "block", flexShrink: 0 };
 
 export type BibSummary = {
   bib_id: string;
@@ -18,158 +30,68 @@ export type BibSummary = {
   year?: string | null;
   call_number?: string | null;
   jacket?: Jacket | null;
+  availability_status?: string | null;
+  available_copies?: number | null;
+  held_copies?: number | null;
+  total_copies?: number | null;
+  url?: string | null;
 };
 
-const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
-const COVER_WIDTH = 64;
-const COVER_HEIGHT = 88;
-
-const rowStyle: CSSProperties = {
-  display: "flex",
-  gap: 12,
-  paddingTop: 10,
-  paddingBottom: 10,
-  borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
-};
-
-const firstRowStyle: CSSProperties = {
-  ...rowStyle,
-  borderTop: "none",
-  paddingTop: 4,
-};
-
-const coverWrapStyle: CSSProperties = {
-  flexShrink: 0,
-  width: COVER_WIDTH,
-  height: COVER_HEIGHT,
-  background: COVER_FALLBACK_BG,
-  borderRadius: 4,
-  overflow: "hidden",
-};
-
-const coverImgStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
-};
-
-const metaStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  minWidth: 0,
-  flex: 1,
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  margin: 0,
-  display: "-webkit-box",
-  WebkitBoxOrient: "vertical" as CSSProperties["WebkitBoxOrient"],
-  WebkitLineClamp: 2,
-  overflow: "hidden",
-};
-
-const subtitleStyle: CSSProperties = {
-  fontSize: 12,
-  fontStyle: "italic",
-  opacity: 0.7,
-  margin: 0,
-  display: "-webkit-box",
-  WebkitBoxOrient: "vertical" as CSSProperties["WebkitBoxOrient"],
-  WebkitLineClamp: 1,
-  overflow: "hidden",
-};
-
-const lineStyle: CSSProperties = {
-  fontSize: 12,
-  opacity: 0.75,
-  margin: 0,
-};
-
-const badgeRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  flexWrap: "wrap",
-  marginTop: 2,
-};
-
-const badgeStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  height: 18,
-  padding: "0 8px",
-  borderRadius: 4,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0.3,
-  background: ACCENT,
-  color: "white",
-};
-
-// Friendly labels for the format facet codes the gateway returns.
-const FORMAT_LABELS: Record<string, string> = {
-  BK: "Book",
-  EBOOK: "eBook",
-  EAUDIOBOOK: "Audiobook",
-  AUDIOBOOK_CD: "Audiobook (CD)",
-  MUSIC_CD: "CD",
-  DVD: "DVD",
-  BLU_RAY: "Blu-ray",
-  LARGEPRINT: "Large print",
-  LP: "Large print",
-  MN: "Score",
-  MAGAZINE: "Magazine",
-  STREAMING_VIDEO: "Streaming",
-};
-
-function formatLabel(format?: string | null): string | null {
-  if (!format) return null;
-  return FORMAT_LABELS[format] ?? format;
+/** A one-word availability label folded onto the format line. Plain text
+ * (no red/green) — the status word is the signal, not colour. The wait-time
+ * detail (holds on copies) lives in the dedicated `availability` tool. */
+function availabilityLabel(b: BibSummary): string | null {
+  const status = b.availability_status ?? null;
+  const avail = b.available_copies ?? null;
+  if (status === "ON_ORDER") return "On order";
+  if (avail != null && avail > 0) return "Available";
+  if (status === "AVAILABLE") return "Available";
+  if (avail === 0 || status === "UNAVAILABLE") return "All copies in use";
+  return null;
 }
 
-function CoverImage({ bib }: { bib: BibSummary }) {
-  const src =
-    bib.jacket?.local_url ?? bib.jacket?.small ?? bib.jacket?.medium ?? null;
-  if (!src) return <div style={coverWrapStyle} aria-hidden="true" />;
-  return (
-    <div style={coverWrapStyle}>
-      <img
-        src={src}
-        alt={bib.title ? `Cover of ${bib.title}` : ""}
-        style={coverImgStyle}
-        loading="lazy"
-      />
-    </div>
-  );
-}
+export type SearchResult = {
+  page?: number | null;
+  pages?: number | null;
+  total?: number | null;
+  library?: string | null;
+  more_url?: string | null;
+  results: BibSummary[];
+};
 
-export function BibCard({
-  bib,
-  isFirst,
-}: {
-  bib: BibSummary;
-  isFirst?: boolean;
-}) {
-  const format = formatLabel(bib.format);
+const BIB_TITLE_STYLE = titleStyle(2);
+
+export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const author = (bib.authors ?? [])[0];
+  // Format · year · availability on one line so the row stays compact next
+  // to a short square CD cover.
+  const formatLine = [
+    formatLabelLong(bib.format),
+    bib.year,
+    availabilityLabel(bib),
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div style={isFirst ? firstRowStyle : rowStyle}>
-      <CoverImage bib={bib} />
-      <div style={metaStyle}>
-        <h3 style={titleStyle}>{bib.title ?? "(untitled)"}</h3>
-        {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
-        {author && <p style={lineStyle}>by {author}</p>}
-        <div style={badgeRowStyle}>
-          {format && <span style={badgeStyle}>{format}</span>}
-          {bib.year && <span style={lineStyle}>{bib.year}</span>}
-          {bib.call_number && <span style={lineStyle}>{bib.call_number}</span>}
+    <>
+      {index > 0 && <div style={rowDividerStyle} />}
+      <div style={index === 0 ? firstRowStyle : rowStyle}>
+        <RecordLink url={bib.url} style={COVER_LINK_STYLE}>
+          <CoverImage
+            jacket={bib.jacket}
+            eager={index < 3}
+            format={bib.format}
+          />
+        </RecordLink>
+        <div style={metaStyle}>
+          <h3 style={BIB_TITLE_STYLE}>
+            <RecordLink url={bib.url}>{bib.title ?? "(untitled)"}</RecordLink>
+          </h3>
+          {author && <p style={lineStyle}>{cleanCreator(author)}</p>}
+          {formatLine && <p style={lineStyle}>{formatLine}</p>}
         </div>
       </div>
-    </div>
+    </>
   );
 }

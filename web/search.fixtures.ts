@@ -2,14 +2,7 @@
  * Fixtures for the search bundle. Each is a plausible SearchResult
  * payload the search tool could return.
  */
-import type { BibSummary } from "./components/BibCard.js";
-
-export type SearchResult = {
-  page?: number | null;
-  pages?: number | null;
-  total?: number | null;
-  results: BibSummary[];
-};
+import { type SearchResult } from "./components/BibCard.js";
 
 export type Fixture = {
   name: string;
@@ -39,11 +32,33 @@ const COVER_HEAVIER = {
 
 const COVER_SING_BACKWARDS = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=9781529104202/SC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780306922800/SC.GIF&client=sepup&type=xw12",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=9781529104202/MC.GIF&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780306922800/MC.GIF&client=sepup&type=xw12",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=9781529104202/LC.JPG&client=sepup&type=xw12",
+    "https://secure.syndetics.com/index.aspx?isbn=9780306922800/LC.JPG&client=sepup&type=xw12",
+  local_url: null,
+};
+
+// OverDrive (Libby) digital cover — different CDN than Syndetics; pairs with
+// the EBOOK/EAUDIOBOOK results below and exercises the `*.od-cdn.com` CSP
+// allow-list entry (ui.py).
+const COVER_OVERDRIVE_DIGITAL =
+  "https://img1.od-cdn.com/ImageType-100/1523-1/%7BF100E9B4-8CF4-4525-916F-FDE4A77586A4%7DImg100.jpg";
+const COVER_OD = {
+  small: COVER_OVERDRIVE_DIGITAL,
+  medium: COVER_OVERDRIVE_DIGITAL,
+  large: COVER_OVERDRIVE_DIGITAL,
+  local_url: null,
+};
+
+const COVER_EVERYBODY = {
+  small:
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/SC.GIF&client=sepup&type=xw12",
+  medium:
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/MC.GIF&client=sepup&type=xw12",
+  large:
+    "https://secure.syndetics.com/index.aspx?isbn=9780307464446/LC.JPG&client=sepup&type=xw12",
   local_url: null,
 };
 
@@ -56,6 +71,9 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 3,
       total: 67,
+      library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30C3453854",
@@ -66,6 +84,11 @@ export const fixtures: Fixture[] = [
           year: "2019",
           call_number: "B COBAIN, K. CROSS",
           jacket: COVER_HEAVIER,
+          availability_status: "AVAILABLE",
+          available_copies: 3,
+          held_copies: 0,
+          total_copies: 5,
+          url: "https://seattle.bibliocommons.com/v2/record/S30C3453854",
         },
         {
           bib_id: "S30C3637382",
@@ -76,6 +99,11 @@ export const fixtures: Fixture[] = [
           year: "2020",
           call_number: "B LANEGAN, M. LANEGAN",
           jacket: COVER_SING_BACKWARDS,
+          availability_status: "UNAVAILABLE",
+          available_copies: 0,
+          held_copies: 4,
+          total_copies: 6,
+          url: "https://seattle.bibliocommons.com/v2/record/S30C3637382",
         },
         {
           bib_id: "S30C3857930",
@@ -86,6 +114,11 @@ export const fixtures: Fixture[] = [
           year: "2023",
           call_number: "CD 782.42166 M884P",
           jacket: COVER_PLASTIC_ETERNITY,
+          availability_status: "AVAILABLE",
+          available_copies: 1,
+          held_copies: 0,
+          total_copies: 1,
+          url: "https://seattle.bibliocommons.com/v2/record/S30C3857930",
         },
       ],
     },
@@ -96,6 +129,9 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 0,
       total: 0,
+      library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [],
     },
   },
@@ -105,6 +141,9 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 1,
       total: 1,
+      library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30C3857930",
@@ -127,6 +166,9 @@ export const fixtures: Fixture[] = [
       page: 2,
       pages: 5,
       total: 108,
+      library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30C2585948",
@@ -149,6 +191,9 @@ export const fixtures: Fixture[] = [
       page: 1,
       pages: 1,
       total: 2,
+      library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
       results: [
         {
           bib_id: "S30CX1",
@@ -173,4 +218,72 @@ export const fixtures: Fixture[] = [
       ],
     },
   },
+  {
+    name: "All format badges",
+    description:
+      "One hit per format so every badge label renders, including the two digital (OverDrive-cover) formats, a DVD, and a deliberately-unknown code that falls through to the raw passthrough.",
+    structuredContent: {
+      page: 1,
+      pages: 1,
+      total: 4,
+      library: "Seattle Public Library",
+      more_url:
+        "https://seattle.bibliocommons.com/v2/search?query=kurt+cobain&searchType=smart",
+      results: [
+        {
+          bib_id: "S30CF1",
+          // od-cdn cover (Splotch by Gianna Marino) — proves the OverDrive
+          // CSP allow-list entry renders on a search row too.
+          title: "Splotch",
+          subtitle: null,
+          authors: ["Marino, Gianna"],
+          format: "EBOOK",
+          year: "2010",
+          call_number: "EBOOK OVERDRIVE",
+          jacket: COVER_OD,
+        },
+        {
+          bib_id: "S30CF2",
+          title: "Everybody Loves Our Town",
+          subtitle: "An Oral History of Grunge",
+          authors: ["Yarm, Mark"],
+          format: "EAUDIOBOOK",
+          year: "2011",
+          call_number: "EAUDIO OVERDRIVE",
+          jacket: COVER_EVERYBODY,
+        },
+        {
+          bib_id: "S30CF3",
+          title: "Hype!",
+          subtitle: "The Motion Picture",
+          authors: ["Pray, Doug"],
+          format: "DVD",
+          year: "1996",
+          call_number: "DVD 781.66 H997",
+          jacket: null,
+        },
+        {
+          bib_id: "S30CF4",
+          title: "Nevermind",
+          subtitle: null,
+          authors: ["Nirvana (Musical group)"],
+          format: "VINYL",
+          year: "2021",
+          call_number: "LP 782.42166 N667n",
+          jacket: null,
+        },
+      ],
+    },
+  },
 ];
+
+// Mirror prod: the server fills each item's catalog record URL from the bib
+// id, so the workbench cards are clickable too.
+const RECORD_ORIGIN = "https://seattle.bibliocommons.com";
+for (const fx of fixtures) {
+  for (const r of fx.structuredContent.results) {
+    if (!r.url && r.bib_id) {
+      r.url = `${RECORD_ORIGIN}/v2/record/${r.bib_id}`;
+    }
+  }
+}

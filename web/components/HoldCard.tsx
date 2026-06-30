@@ -1,225 +1,168 @@
 /**
- * One row in the holds list. Cover image on the left, metadata on the
- * right (title, status pill, queue position, pickup branch).
+ * One row in the holds list. Cover on the left; on the right the title with
+ * a right-aligned status chip, then author, format · year, and a
+ * status-aware line (pickup deadline for ready holds, else placed date).
  *
  * Data shape mirrors `bibliocommons_mcp.models.Hold` — keep field
  * names in sync if anything changes server-side.
  */
 import type { CSSProperties } from "react";
 
-import { STATUS_OVERDUE, STATUS_QUEUED, STATUS_READY } from "../lib/palette.js";
+import {
+  badgeStyle,
+  firstRowStyle,
+  lineStyle,
+  metaStyle,
+  rowDividerStyle,
+  rowStyle,
+  spentChipStyle,
+  titleRowStyle,
+  titleStyle,
+} from "../lib/card-style.js";
+import { CoverImage } from "../lib/cover.js";
+import { formatMonthDay } from "../lib/date.js";
+import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
+import type { Jacket } from "../lib/jacket.js";
+import { RecordLink } from "../lib/open-link.js";
 
-export type Jacket = {
-  small?: string | null;
-  medium?: string | null;
-  large?: string | null;
-  local_url?: string | null;
-};
+const COVER_LINK_STYLE: CSSProperties = { display: "block", flexShrink: 0 };
 
 export type Hold = {
   hold_id: string;
   metadata_id?: string | null;
   title?: string | null;
+  author?: string | null;
+  year?: string | null;
   material_type?: "PHYSICAL" | "DIGITAL" | null;
+  format?: string | null;
   status?: string | null;
   position?: number | null;
+  /** Holdable copies serving the queue — pairs with position. */
+  copies?: number | null;
   pickup_branch?: string | null;
   placed?: string | null;
+  /** For a ready hold: the last day to collect it. */
+  pickup_by?: string | null;
   expiry?: string | null;
   jacket?: Jacket | null;
+  url?: string | null;
 };
 
-const COVER_FALLBACK_BG = "light-dark(#e5e3df, #38383a)";
-const COVER_WIDTH = 64;
-const COVER_HEIGHT = 88; // ~book-cover aspect; CDs are squarer but Syndetics returns book-shaped fallbacks
-
-const rowStyle: CSSProperties = {
-  display: "flex",
-  gap: 12,
-  paddingTop: 10,
-  paddingBottom: 10,
-  borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
+export type HoldList = {
+  count: number;
+  library?: string | null;
+  more_url?: string | null;
+  holds: Hold[];
 };
 
-const firstRowStyle: CSSProperties = {
-  ...rowStyle,
-  borderTop: "none",
-  paddingTop: 4,
-};
-
-const coverWrapStyle: CSSProperties = {
-  flexShrink: 0,
-  width: COVER_WIDTH,
-  height: COVER_HEIGHT,
-  background: COVER_FALLBACK_BG,
-  borderRadius: 4,
-  overflow: "hidden",
-};
-
-const coverImgStyle: CSSProperties = {
-  width: "100%",
-  height: "100%",
-  objectFit: "cover",
-  display: "block",
-};
-
-const metaStyle: CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  minWidth: 0, // lets long titles wrap inside flex
+const TITLE_STYLE: CSSProperties = { ...titleStyle(2), flex: 1, minWidth: 0 };
+// CD titles clamp to one line on a narrow viewport (the var flips to 1 via
+// a media query) so the title doesn't overshoot the short square cover.
+const TITLE_STYLE_CD: CSSProperties = {
+  ...titleStyle("var(--bc-cd-title-lines, 2)"),
   flex: 1,
+  minWidth: 0,
 };
+const CHIP_RIGHT: CSSProperties = { flexShrink: 0 };
 
-const titleStyle: CSSProperties = {
-  fontSize: 14,
-  fontWeight: 600,
-  margin: 0,
-  // Keep titles from blowing out the card vertically — three lines max.
-  display: "-webkit-box",
-  WebkitBoxOrient: "vertical" as CSSProperties["WebkitBoxOrient"],
-  WebkitLineClamp: 3,
-  overflow: "hidden",
-};
+// 1 -> "1st", 2 -> "2nd", 54 -> "54th".
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
 
-const lineStyle: CSSProperties = {
-  fontSize: 12,
-  opacity: 0.75,
-  margin: 0,
-};
-
-const pillRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  flexWrap: "wrap",
-  marginTop: 2,
-};
-
-const pillStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  height: 18,
-  padding: "0 8px",
-  borderRadius: 9,
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: 0.2,
-  textTransform: "uppercase",
-};
-
-type StatusLabel = { text: string; color: string; bg: string };
+type StatusLabel = { text: string; chip: CSSProperties };
 
 function statusForRender(hold: Hold): StatusLabel {
-  // Status comes from the gateway as snake- / UPPER-cased strings; we
-  // surface the friendly label + color pairing here so HoldCard
-  // callers don't repeat themselves.
   const raw = hold.status ?? "";
   switch (raw) {
     case "READY_FOR_PICKUP":
-      return {
-        text: "Ready",
-        color: "white",
-        bg: STATUS_READY,
-      };
+      return { text: "Ready", chip: badgeStyle };
     case "EXPIRED":
+      return { text: "Expired", chip: spentChipStyle };
     case "CANCELLED":
-      return {
-        text: raw.toLowerCase(),
-        color: "white",
-        bg: STATUS_OVERDUE,
-      };
+      return { text: "Cancelled", chip: spentChipStyle };
     case "IN_TRANSIT":
-      return {
-        text: "In transit",
-        color: "white",
-        bg: STATUS_QUEUED,
-      };
-    case "NOT_YET_AVAILABLE":
-    default: {
-      // Queued: lead with position when we have one; fall back to the
-      // raw status if not.
+      return { text: "In transit", chip: badgeStyle };
+    case "NOT_YET_AVAILABLE": {
+      // Position spelled out as a place in line ("8th in line"); when the
+      // gateway omits a position, fall back to a plain "Not available".
       const text =
         hold.position != null
-          ? `#${hold.position} in queue`
-          : raw
-            ? raw.replace(/_/g, " ").toLowerCase()
-            : "queued";
-      return { text, color: "white", bg: STATUS_QUEUED };
+          ? `${ordinal(hold.position)} in line`
+          : "Not available";
+      return { text, chip: badgeStyle };
+    }
+    default: {
+      // Unknown status: title-case the raw enum so it reads as a label.
+      const text = raw
+        ? raw.charAt(0) + raw.slice(1).toLowerCase().replace(/_/g, " ")
+        : "Queued";
+      return { text, chip: badgeStyle };
     }
   }
 }
 
-function formatPlaced(iso?: string | null): string | null {
-  // Gateway returns YYYY-MM-DD; render as e.g. "May 27" / "Jan 4"
-  // without dragging in a date library.
-  if (!iso) return null;
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
-  if (!m) return iso;
-  const months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const month = months[Number.parseInt(m[2], 10) - 1] ?? m[2];
-  const day = Number.parseInt(m[3], 10);
-  return `${month} ${day}`;
-}
-
-function CoverImage({ hold }: { hold: Hold }) {
-  // Prefer the library's local upload when present, otherwise fall
-  // back to Syndetics. small is fine here — we render at 64px wide.
-  const src =
-    hold.jacket?.local_url ?? hold.jacket?.small ?? hold.jacket?.medium ?? null;
-  if (!src) return <div style={coverWrapStyle} aria-hidden="true" />;
-  return (
-    <div style={coverWrapStyle}>
-      <img
-        src={src}
-        alt={hold.title ? `Cover of ${hold.title}` : ""}
-        style={coverImgStyle}
-        loading="lazy"
-      />
-    </div>
-  );
-}
-
-export function HoldCard({ hold, isFirst }: { hold: Hold; isFirst?: boolean }) {
+export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
   const status = statusForRender(hold);
-  const placed = formatPlaced(hold.placed);
-  const material = hold.material_type === "DIGITAL" ? "Digital" : "Physical";
+  const spent = hold.status === "EXPIRED" || hold.status === "CANCELLED";
+  const baseRow = index === 0 ? firstRowStyle : rowStyle;
+
+  const titleBase = isDiscFormat(hold.format) ? TITLE_STYLE_CD : TITLE_STYLE;
+
+  const formatYear = [formatLabelLong(hold.format), hold.year]
+    .filter(Boolean)
+    .join(" · ");
+
+  // The branch is the same fact in either state — where you collect it — so
+  // it reads identically ("Pickup at …") in both; the lead phrase carries
+  // the state (a deadline when ready, the placed date while waiting). Ready
+  // uses "Ready until" rather than "Pick up by" so it doesn't echo "Pickup".
+  const pickupBy = formatMonthDay(hold.pickup_by);
+  const placed = formatMonthDay(hold.placed);
+  const pickupAt = hold.pickup_branch
+    ? `Pickup at ${hold.pickup_branch}`
+    : null;
+  const metaLine = (
+    hold.status === "READY_FOR_PICKUP" && pickupBy
+      ? [`Ready until ${pickupBy}`, pickupAt]
+      : [placed ? `Placed ${placed}` : null, pickupAt]
+  )
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <div style={isFirst ? firstRowStyle : rowStyle}>
-      <CoverImage hold={hold} />
-      <div style={metaStyle}>
-        <h3 style={titleStyle}>{hold.title ?? "(untitled)"}</h3>
-        <div style={pillRowStyle}>
-          <span
-            style={{
-              ...pillStyle,
-              color: status.color,
-              background: status.bg,
-            }}
-          >
-            {status.text}
-          </span>
-          <span style={lineStyle}>{material}</span>
-          {hold.pickup_branch && (
-            <span style={lineStyle}>{hold.pickup_branch}</span>
-          )}
+    <>
+      {index > 0 && <div style={rowDividerStyle} />}
+      <div style={spent ? { ...baseRow, opacity: 0.55 } : baseRow}>
+        <RecordLink url={hold.url} style={COVER_LINK_STYLE}>
+          <CoverImage
+            jacket={hold.jacket}
+            eager={index < 3}
+            format={hold.format}
+          />
+        </RecordLink>
+        <div style={metaStyle}>
+          <div style={titleRowStyle}>
+            <h3
+              style={
+                spent
+                  ? { ...titleBase, textDecoration: "line-through" }
+                  : titleBase
+              }
+            >
+              <RecordLink url={hold.url}>
+                {hold.title ?? "(untitled)"}
+              </RecordLink>
+            </h3>
+            <span style={{ ...status.chip, ...CHIP_RIGHT }}>{status.text}</span>
+          </div>
+          {hold.author && <p style={lineStyle}>{cleanCreator(hold.author)}</p>}
+          {formatYear && <p style={lineStyle}>{formatYear}</p>}
+          {metaLine && <p style={lineStyle}>{metaLine}</p>}
         </div>
-        {placed && <p style={lineStyle}>Placed {placed}</p>}
       </div>
-    </div>
+    </>
   );
 }

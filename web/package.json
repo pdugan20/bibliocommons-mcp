@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --config workbench/vite.config.ts",
     "build:bundles": "node scripts/inline_bundles.mjs",
+    "check:covers": "node scripts/check-fixture-covers.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

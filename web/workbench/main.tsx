@@ -58,14 +58,41 @@ type Status =
   | "initialized"
   | "pushed-result";
 
-type Viewport = "mobile" | "tablet" | "desktop";
+type Viewport = "narrow" | "mobile" | "tablet" | "desktop";
 type Theme = "light" | "dark";
 
 const VIEWPORT_WIDTHS: Record<Viewport, number> = {
+  // 320 ≈ a real iOS chat bubble — narrower than a phone's full width, where
+  // pill-wrap and padding issues actually bite. 380+ under-tests that case.
+  narrow: 320,
   mobile: 380,
   tablet: 600,
   desktop: 720,
 };
+
+// Initial state can be seeded from the URL so a specific bundle / fixture /
+// viewport / theme can be deep-linked and screenshotted, e.g.
+//   ?bundle=holds&fixture=In%20transit%20(CD)&viewport=mobile&theme=light
+const INIT = (() => {
+  const p = new URLSearchParams(location.search);
+  const bundle = bundles.find((b) => b.slug === p.get("bundle")) ?? bundles[0];
+  const fixture =
+    bundle.fixtures.find((f) => f.name === p.get("fixture")) ??
+    bundle.fixtures[0];
+  const vp = p.get("viewport");
+  const viewport: Viewport =
+    vp === "narrow" || vp === "mobile" || vp === "tablet" || vp === "desktop"
+      ? vp
+      : "desktop";
+  const th = p.get("theme");
+  const theme: Theme =
+    th === "light" || th === "dark"
+      ? th
+      : matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+  return { bundle, fixture, viewport, theme };
+})();
 
 function ToggleGroup({
   label,
@@ -137,16 +164,39 @@ const asideStyle: CSSProperties = {
 };
 
 function Workbench() {
-  const [bundle, setBundle] = useState<Bundle>(bundles[0]);
-  const [fixture, setFixture] = useState<Fixture>(bundles[0].fixtures[0]);
+  const [bundle, setBundle] = useState<Bundle>(INIT.bundle);
+  const [fixture, setFixture] = useState<Fixture>(INIT.fixture);
   const [reloadKey, setReloadKey] = useState(0);
   const [status, setStatus] = useState<Status>("mounting");
-  const [viewport, setViewport] = useState<Viewport>("desktop");
-  const [theme, setTheme] = useState<Theme>(
-    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
-  );
+  const [viewport, setViewport] = useState<Viewport>(INIT.viewport);
+  const [theme, setTheme] = useState<Theme>(INIT.theme);
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Auto-size the iframe to its content so the card is never clipped.
+  // Same-origin (localhost), so we can read the bundle document. We
+  // observe <body> (auto-height, so it shrinks too) rather than
+  // documentElement (which fills the frame and would get stuck tall),
+  // and use a ResizeObserver because the card renders *after* the
+  // postMessage handshake and reflows when the viewport toggle changes.
+  const [frameHeight, setFrameHeight] = useState(280);
+  const frameObsRef = useRef<ResizeObserver | null>(null);
+
+  const handleFrameLoad = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc?.body) return;
+    const measure = () => {
+      const h = Math.ceil(doc.body.scrollHeight);
+      if (h > 0) setFrameHeight(Math.max(h + 2, 120));
+    };
+    measure();
+    frameObsRef.current?.disconnect();
+    const ro = new ResizeObserver(measure);
+    ro.observe(doc.body);
+    frameObsRef.current = ro;
+  }, []);
+
+  useEffect(() => () => frameObsRef.current?.disconnect(), []);
 
   // Apply theme to the workbench chrome (host doc).
   useEffect(() => {
@@ -361,6 +411,7 @@ function Workbench() {
           <ToggleGroup
             label="Viewport"
             options={[
+              { value: "narrow", label: "iPhone" },
               { value: "mobile", label: "Mobile" },
               { value: "tablet", label: "Tablet" },
               { value: "desktop", label: "Desktop" },
@@ -390,11 +441,13 @@ function Workbench() {
             ref={iframeRef}
             src={bundle.entryUrl}
             title={bundle.label}
+            onLoad={handleFrameLoad}
+            scrolling="no"
             style={{
               display: "block",
               width: "100%",
               maxWidth: VIEWPORT_WIDTHS[viewport],
-              minHeight: 280,
+              height: frameHeight,
               border: "none",
               background: "transparent",
               transition: "max-width 200ms ease",

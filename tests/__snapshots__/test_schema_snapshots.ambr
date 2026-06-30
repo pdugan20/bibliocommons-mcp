@@ -721,6 +721,19 @@
           'Hold': dict({
             'description': "One hold on the user's account.",
             'properties': dict({
+              'author': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Primary creator, from the joined bib record.',
+                'title': 'Author',
+              }),
               'expiry': dict({
                 'anyOf': list([
                   dict({
@@ -732,6 +745,19 @@
                 ]),
                 'default': None,
                 'title': 'Expiry',
+              }),
+              'format': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'.",
+                'title': 'Format',
               }),
               'hold_id': dict({
                 'title': 'Hold Id',
@@ -838,6 +864,32 @@
                 'default': None,
                 'title': 'Title',
               }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
+              }),
+              'year': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Publication date as printed.',
+                'title': 'Year',
+              }),
             }),
             'required': list([
               'hold_id',
@@ -919,6 +971,32 @@
             }),
             'title': 'Holds',
             'type': 'array',
+          }),
+          'library': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Library display name, e.g. 'Seattle Public Library'.",
+            'title': 'Library',
+          }),
+          'more_url': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Catalog holds page URL for a 'view all' link.",
+            'title': 'More Url',
           }),
         }),
         'required': list([
@@ -1018,6 +1096,19 @@
                 'title': 'Actions',
                 'type': 'array',
               }),
+              'author': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Primary creator, from the joined bib record.',
+                'title': 'Author',
+              }),
               'branch': dict({
                 'anyOf': list([
                   dict({
@@ -1058,6 +1149,19 @@
                 'default': None,
                 'description': 'ISO date due back.',
                 'title': 'Due',
+              }),
+              'format': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'.",
+                'title': 'Format',
               }),
               'jacket': dict({
                 'anyOf': list([
@@ -1112,6 +1216,32 @@
                 'default': None,
                 'title': 'Title',
               }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
+              }),
+              'year': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Publication date as printed.',
+                'title': 'Year',
+              }),
             }),
             'required': list([
               'checkout_id',
@@ -1125,12 +1255,38 @@
             'title': 'Count',
             'type': 'integer',
           }),
+          'library': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Library display name, e.g. 'Seattle Public Library'.",
+            'title': 'Library',
+          }),
           'loans': dict({
             'items': dict({
               '$ref': '#/$defs/Loan',
             }),
             'title': 'Loans',
             'type': 'array',
+          }),
+          'more_url': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Catalog checkouts page URL for a 'view all' link.",
+            'title': 'More Url',
           }),
         }),
         'required': list([
@@ -1491,6 +1647,19 @@
           'Hold': dict({
             'description': "One hold on the user's account.",
             'properties': dict({
+              'author': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Primary creator, from the joined bib record.',
+                'title': 'Author',
+              }),
               'expiry': dict({
                 'anyOf': list([
                   dict({
@@ -1502,6 +1671,19 @@
                 ]),
                 'default': None,
                 'title': 'Expiry',
+              }),
+              'format': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'.",
+                'title': 'Format',
               }),
               'hold_id': dict({
                 'title': 'Hold Id',
@@ -1608,6 +1790,32 @@
                 'default': None,
                 'title': 'Title',
               }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
+              }),
+              'year': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Publication date as printed.',
+                'title': 'Year',
+              }),
             }),
             'required': list([
               'hold_id',
@@ -1689,6 +1897,32 @@
             }),
             'title': 'Holds',
             'type': 'array',
+          }),
+          'library': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Library display name, e.g. 'Seattle Public Library'.",
+            'title': 'Library',
+          }),
+          'more_url': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Catalog holds page URL for a 'view all' link.",
+            'title': 'More Url',
           }),
         }),
         'required': list([
@@ -1828,6 +2062,31 @@
                 'title': 'Authors',
                 'type': 'array',
               }),
+              'availability_status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Aggregate copy status, 'AVAILABLE' / 'UNAVAILABLE'.",
+                'title': 'Availability Status',
+              }),
+              'available_copies': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Available Copies',
+              }),
               'bib_id': dict({
                 'description': "BiblioCommons bib id, e.g. 'S30C3857930'.",
                 'title': 'Bib Id',
@@ -1857,6 +2116,18 @@
                 'default': None,
                 'description': "Format facet, e.g. 'MUSIC_CD', 'BK', 'EBOOK'.",
                 'title': 'Format',
+              }),
+              'held_copies': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Held Copies',
               }),
               'jacket': dict({
                 'anyOf': list([
@@ -1892,6 +2163,31 @@
                 ]),
                 'default': None,
                 'title': 'Title',
+              }),
+              'total_copies': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Total Copies',
+              }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
               }),
               'year': dict({
                 'anyOf': list([
@@ -1978,6 +2274,32 @@
         }),
         'description': 'Paginated search results. Page size is fixed at 25 by the gateway.',
         'properties': dict({
+          'library': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Library display name, e.g. 'Seattle Public Library'.",
+            'title': 'Library',
+          }),
+          'more_url': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Catalog search page URL for a 'see all' link.",
+            'title': 'More Url',
+          }),
           'page': dict({
             'anyOf': list([
               dict({

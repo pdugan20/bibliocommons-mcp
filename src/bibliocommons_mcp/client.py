@@ -88,6 +88,11 @@ class Client:
     def http(self) -> httpx.Client:
         return self._bc.httpx_client
 
+    @property
+    def catalog_origin(self) -> str:
+        """Public catalog origin, e.g. 'https://seattle.bibliocommons.com'."""
+        return self._catalog_origin
+
     def authenticate(self, card: str, pin: str) -> None:
         if self._authed:
             return

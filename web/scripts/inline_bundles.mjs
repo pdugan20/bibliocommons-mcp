@@ -76,11 +76,17 @@ if (existsSync(distDir)) {
 const injectLoadingBg = {
   name: "inject-loading-bg",
   transformIndexHtml(html) {
-    const css = "html, body { background: light-dark(#fcfcfa, #272726); }";
+    // Round the document to the card's 12px radius (+ overflow:hidden) so the
+    // host iframe's square corners don't clip the card's rounded edge on iOS
+    // — the border-radius half of the milestone-4 iOS item (the white-flash
+    // background half already shipped). Needs on-device verification.
+    const css =
+      "html, body { background: light-dark(#fcfcfa, #272726); }" +
+      "html { border-radius: 12px; overflow: hidden; }";
     return html
       .replace(
         "<html",
-        '<html style="background: light-dark(#fcfcfa, #272726)"',
+        '<html style="background: light-dark(#fcfcfa, #272726); border-radius: 12px; overflow: hidden"',
       )
       .replace("</head>", `<style>${css}</style></head>`);
   },

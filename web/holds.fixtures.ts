@@ -6,12 +6,7 @@
  * Shape mirrors `bibliocommons_mcp.models.HoldList` exactly — keep in
  * sync if the server-side model changes.
  */
-import type { Hold } from "./components/HoldCard.js";
-
-export type HoldList = {
-  count: number;
-  holds: Hold[];
-};
+import { type HoldList } from "./components/HoldCard.js";
 
 export type Fixture = {
   name: string;
@@ -29,13 +24,13 @@ const COVER_PLASTIC_ETERNITY = {
   local_url: null,
 };
 
-const COVER_IN_UTERO = {
+const COVER_UNPLUGGED = {
   small:
-    "https://secure.syndetics.com/index.aspx?isbn=/SC.GIF&client=sepup&type=xw12&upc=720642723722",
+    "https://secure.syndetics.com/index.aspx?isbn=/SC.GIF&client=sepup&type=xw12&upc=720642472729",
   medium:
-    "https://secure.syndetics.com/index.aspx?isbn=/MC.GIF&client=sepup&type=xw12&upc=720642723722",
+    "https://secure.syndetics.com/index.aspx?isbn=/MC.GIF&client=sepup&type=xw12&upc=720642472729",
   large:
-    "https://secure.syndetics.com/index.aspx?isbn=/LC.JPG&client=sepup&type=xw12&upc=720642723722",
+    "https://secure.syndetics.com/index.aspx?isbn=/LC.JPG&client=sepup&type=xw12&upc=720642472729",
   local_url: null,
 };
 
@@ -49,23 +44,42 @@ const COVER_HEAVIER = {
   local_url: null,
 };
 
+// OverDrive (Libby) digital cover. Comes from a different CDN than the
+// Syndetics jacket — exercises the `*.od-cdn.com` CSP allow-list entry in
+// ui.py (PR #23), which otherwise has no fixture coverage. Real URL pulled
+// from the cassettes; OverDrive serves one image, so all three sizes reuse it.
+const COVER_OVERDRIVE_DIGITAL =
+  "https://img1.od-cdn.com/ImageType-100/1523-1/%7BF100E9B4-8CF4-4525-916F-FDE4A77586A4%7DImg100.jpg";
+const COVER_OD = {
+  small: COVER_OVERDRIVE_DIGITAL,
+  medium: COVER_OVERDRIVE_DIGITAL,
+  large: COVER_OVERDRIVE_DIGITAL,
+  local_url: null,
+};
+
 export const fixtures: Fixture[] = [
   {
     name: "Mixed queue (typical)",
     description:
-      "Two physical holds (one queued, one ready) plus a digital hold deep in the OverDrive queue.",
+      "A physical book (ready), a CD (in queue, square cover), and a digital ebook deep in the OverDrive queue.",
     structuredContent: {
       count: 3,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "71992850",
           metadata_id: "S30C3453854",
           title: "Heavier Than Heaven",
+          author: "Cross, Charles R.",
+          year: "2019",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "READY_FOR_PICKUP",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-20",
+          pickup_by: "2026-06-03",
           expiry: "2027-03-03",
           jacket: COVER_HEAVIER,
         },
@@ -73,10 +87,14 @@ export const fixtures: Fixture[] = [
           hold_id: "71992829",
           metadata_id: "S30C3857930",
           title: "Plastic Eternity",
+          author: "Mudhoney",
+          year: "2023",
           material_type: "PHYSICAL",
+          format: "MUSIC_CD",
           status: "NOT_YET_AVAILABLE",
           position: 1,
-          pickup_branch: "LCY",
+          copies: 3,
+          pickup_branch: "Lake City",
           placed: "2026-05-27",
           expiry: "2027-03-03",
           jacket: COVER_PLASTIC_ETERNITY,
@@ -84,14 +102,20 @@ export const fixtures: Fixture[] = [
         {
           hold_id: "A81AE857-2EEF-49B2-930F-8AE7114F6A7B",
           metadata_id: "S30C4144014",
-          title: "Steve Jobs in Exile",
+          // Real OverDrive title whose cover lives on od-cdn — the single
+          // fixture that proves the *.od-cdn.com CSP allow-list entry renders.
+          title: "Splotch",
+          author: "Marino, Gianna",
+          year: "2010",
           material_type: "DIGITAL",
+          format: "EBOOK",
           status: "NOT_YET_AVAILABLE",
           position: 8,
+          copies: 5,
           pickup_branch: null,
           placed: "2026-05-23",
           expiry: null,
-          jacket: null,
+          jacket: COVER_OD,
         },
       ],
     },
@@ -100,6 +124,8 @@ export const fixtures: Fixture[] = [
     name: "Empty (no holds)",
     structuredContent: {
       count: 0,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [],
     },
   },
@@ -109,16 +135,22 @@ export const fixtures: Fixture[] = [
       "Just one card, ready at Lake City — the most common workflow trigger.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "71992850",
           metadata_id: "S30C3453854",
           title: "Heavier Than Heaven",
+          author: "Cross, Charles R.",
+          year: "2019",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "READY_FOR_PICKUP",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-20",
+          pickup_by: "2026-06-03",
           expiry: "2027-03-03",
           jacket: COVER_HEAVIER,
         },
@@ -131,6 +163,8 @@ export const fixtures: Fixture[] = [
       "Edge case: very long title and no cover-art URL. Title should wrap at 3 lines max; cover area shows the neutral placeholder.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "X1",
@@ -138,9 +172,11 @@ export const fixtures: Fixture[] = [
           title:
             "A Compendium of Quite Excessively Long Titles That Editors Once Thought Would Sell Books And Which Cataloguers Are Now Forced To Reckon With",
           material_type: "PHYSICAL",
+          format: "BK",
           status: "NOT_YET_AVAILABLE",
           position: 17,
-          pickup_branch: "LCY",
+          copies: 9,
+          pickup_branch: "Lake City",
           placed: "2026-04-15",
           expiry: "2027-02-12",
           jacket: null,
@@ -149,24 +185,95 @@ export const fixtures: Fixture[] = [
     },
   },
   {
-    name: "In transit",
-    description: "Hold has been pulled at another branch and is on its way.",
+    name: "In transit (CD)",
+    description:
+      "A CD hold pulled at another branch and on its way — square cover.",
     structuredContent: {
       count: 1,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
       holds: [
         {
           hold_id: "T1",
           metadata_id: "S30C2936752",
-          title: "In utero",
+          title: "MTV Unplugged in New York",
+          author: "Nirvana",
+          year: "1994",
           material_type: "PHYSICAL",
+          format: "MUSIC_CD",
           status: "IN_TRANSIT",
           position: null,
-          pickup_branch: "LCY",
+          pickup_branch: "Lake City",
           placed: "2026-05-25",
           expiry: "2027-03-01",
-          jacket: COVER_IN_UTERO,
+          jacket: COVER_UNPLUGGED,
+        },
+      ],
+    },
+  },
+  {
+    name: "Expired hold",
+    description:
+      "Edge case: the spent state — grey pill + dim + strikethrough. Hold sat ready and was never picked up.",
+    structuredContent: {
+      count: 1,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
+      holds: [
+        {
+          hold_id: "E1",
+          metadata_id: "S30C3453854",
+          title: "Heavier Than Heaven",
+          author: "Cross, Charles R.",
+          year: "2019",
+          material_type: "PHYSICAL",
+          format: "BK",
+          status: "EXPIRED",
+          position: null,
+          pickup_branch: "Lake City",
+          placed: "2026-03-01",
+          expiry: "2026-04-12",
+          jacket: COVER_HEAVIER,
+        },
+      ],
+    },
+  },
+  {
+    name: "Queued without position",
+    description:
+      "NOT_YET_AVAILABLE with no queue position — exercises the 'queued' fallback label (no '#N in queue').",
+    structuredContent: {
+      count: 1,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
+      holds: [
+        {
+          hold_id: "Q1",
+          metadata_id: "S30C3857930",
+          title: "Plastic Eternity",
+          author: "Mudhoney",
+          year: "2023",
+          material_type: "PHYSICAL",
+          format: "MUSIC_CD",
+          status: "NOT_YET_AVAILABLE",
+          position: null,
+          pickup_branch: "Lake City",
+          placed: "2026-06-01",
+          expiry: "2027-03-03",
+          jacket: COVER_PLASTIC_ETERNITY,
         },
       ],
     },
   },
 ];
+
+// Mirror prod: the server fills each item's catalog record URL from the bib
+// id, so the workbench cards are clickable too.
+const RECORD_ORIGIN = "https://seattle.bibliocommons.com";
+for (const fx of fixtures) {
+  for (const h of fx.structuredContent.holds) {
+    if (!h.url && h.metadata_id) {
+      h.url = `${RECORD_ORIGIN}/v2/record/${h.metadata_id}`;
+    }
+  }
+}

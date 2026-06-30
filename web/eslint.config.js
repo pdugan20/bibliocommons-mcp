@@ -52,12 +52,16 @@ export default [
       ],
     },
   },
-  // The bundle script and Vite config run as Node ESM and reference
-  // node globals.
+  // The bundle/cover scripts and Vite config run as Node ESM and
+  // reference node globals (incl. the global fetch from Node 18+).
   {
     files: ["scripts/**/*.mjs", "**/vite.config.ts"],
     languageOptions: {
-      globals: { process: "readonly", console: "readonly" },
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        fetch: "readonly",
+      },
     },
   },
   prettier,

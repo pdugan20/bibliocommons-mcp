@@ -54,6 +54,15 @@ class BibSummary(BaseModel):
     year: str | None = Field(default=None, description="Publication date as printed.")
     call_number: str | None = Field(default=None)
     jacket: Jacket | None = Field(default=None)
+    availability_status: str | None = Field(
+        default=None, description="Aggregate copy status, 'AVAILABLE' / 'UNAVAILABLE'."
+    )
+    available_copies: int | None = Field(default=None)
+    held_copies: int | None = Field(default=None)
+    total_copies: int | None = Field(default=None)
+    url: str | None = Field(
+        default=None, description="Catalog record page URL for this title."
+    )
 
 
 class HoldRef(BaseModel):
@@ -72,6 +81,12 @@ class SearchResult(BaseModel):
     page: int | None = Field(default=None, description="1-indexed current page.")
     pages: int | None = Field(default=None, description="Total page count.")
     total: int | None = Field(default=None, description="Total matching bibs.")
+    library: str | None = Field(
+        default=None, description="Library display name, e.g. 'Seattle Public Library'."
+    )
+    more_url: str | None = Field(
+        default=None, description="Catalog search page URL for a 'see all' link."
+    )
     results: list[BibSummary] = Field(default_factory=list)
 
 
@@ -117,9 +132,16 @@ class Hold(BaseModel):
     hold_id: str
     metadata_id: str | None = Field(default=None, description="Bib id.")
     title: str | None = Field(default=None)
+    author: str | None = Field(
+        default=None, description="Primary creator, from the joined bib record."
+    )
     material_type: str | None = Field(
         default=None, description="'PHYSICAL' or 'DIGITAL'."
     )
+    format: str | None = Field(
+        default=None, description="Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'."
+    )
+    year: str | None = Field(default=None, description="Publication date as printed.")
     status: str | None = Field(
         default=None, description="'NOT_YET_AVAILABLE', 'READY_FOR_PICKUP', etc."
     )
@@ -134,10 +156,19 @@ class Hold(BaseModel):
     )
     expiry: str | None = Field(default=None)
     jacket: Jacket | None = Field(default=None)
+    url: str | None = Field(
+        default=None, description="Catalog record page URL for this title."
+    )
 
 
 class HoldList(BaseModel):
     count: int
+    library: str | None = Field(
+        default=None, description="Library display name, e.g. 'Seattle Public Library'."
+    )
+    more_url: str | None = Field(
+        default=None, description="Catalog holds page URL for a 'view all' link."
+    )
     holds: list[Hold] = Field(default_factory=list)
 
 
@@ -147,7 +178,14 @@ class Loan(BaseModel):
     checkout_id: str
     metadata_id: str | None = Field(default=None)
     title: str | None = Field(default=None)
+    author: str | None = Field(
+        default=None, description="Primary creator, from the joined bib record."
+    )
     material_type: str | None = Field(default=None)
+    format: str | None = Field(
+        default=None, description="Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'."
+    )
+    year: str | None = Field(default=None, description="Publication date as printed.")
     due: str | None = Field(default=None, description="ISO date due back.")
     call_number: str | None = Field(default=None)
     branch: str | None = Field(default=None)
@@ -166,10 +204,19 @@ class Loan(BaseModel):
         default=0,
         description="How many times this checkout has already been renewed.",
     )
+    url: str | None = Field(
+        default=None, description="Catalog record page URL for this title."
+    )
 
 
 class LoanList(BaseModel):
     count: int
+    library: str | None = Field(
+        default=None, description="Library display name, e.g. 'Seattle Public Library'."
+    )
+    more_url: str | None = Field(
+        default=None, description="Catalog checkouts page URL for a 'view all' link."
+    )
     loans: list[Loan] = Field(default_factory=list)
 
 
