@@ -47,6 +47,13 @@ def test_search_compresses_response(mock_client):
                         "publicationDate": "2023",
                         "callNumber": "CD ABC",
                     },
+                    # Per-bib availability rides along in the search response.
+                    "availability": {
+                        "statusType": "UNAVAILABLE",
+                        "availableCopies": 0,
+                        "heldCopies": 1,
+                        "totalCopies": 1,
+                    },
                 }
             }
         },
@@ -55,8 +62,19 @@ def test_search_compresses_response(mock_client):
     out = srv.search("mudhoney", format="MUSIC_CD")
     assert out.page == 1
     assert out.total == 1
-    assert out.results[0].title == "Plastic Eternity"
-    assert out.results[0].format == "MUSIC_CD"
+    r = out.results[0]
+    assert r.title == "Plastic Eternity"
+    assert r.format == "MUSIC_CD"
+    # Availability joined from entities.bibs[...].availability.
+    assert r.availability_status == "UNAVAILABLE"
+    assert r.available_copies == 0
+    assert r.held_copies == 1
+    assert r.total_copies == 1
+    # List-level fields for the card header + see-all link.
+    assert out.library == "Seattle Public Library"
+    assert out.more_url == (
+        "https://seattle.bibliocommons.com/v2/search?query=mudhoney&searchType=smart"
+    )
     mock_client.search.assert_called_once_with(
         "mudhoney", format="MUSIC_CD", page=1, sort_by=None
     )

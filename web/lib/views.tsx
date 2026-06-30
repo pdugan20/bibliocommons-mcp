@@ -9,16 +9,12 @@ import { HoldCard, type HoldList } from "../components/HoldCard.js";
 import { LoanCard, type LoanList } from "../components/LoanCard.js";
 import { CardFrame } from "./card-frame.js";
 
-function searchTitle(p: SearchResult): string {
-  if (p.total == null) return "Search results";
-  if (p.total === 0) return "No results";
-  return `${p.total} result${p.total === 1 ? "" : "s"}`;
-}
+// Inline search shows a curated top slice and links out for the rest,
+// rather than dumping a full 25-row page into the conversation.
+const SEARCH_CARD_LIMIT = 10;
 
-function searchFooterNote(p: SearchResult): string | undefined {
-  return p.pages && p.pages > 1
-    ? `Page ${p.page ?? 1} of ${p.pages}`
-    : undefined;
+function searchTitle(p: SearchResult): string {
+  return p.total === 0 ? "No results" : "Search results";
 }
 
 export function HoldsView({ payload }: { payload: HoldList }) {
@@ -50,16 +46,19 @@ export function LoansView({ payload }: { payload: LoanList }) {
 }
 
 export function SearchView({ payload }: { payload: SearchResult }) {
+  const total = payload.total ?? payload.results.length;
+  const shown = payload.results.slice(0, SEARCH_CARD_LIMIT);
+  // Only link out when there's genuinely more than we're showing.
+  const hasMore = total > shown.length;
   return (
     <CardFrame
       library={payload.library}
       title={searchTitle(payload)}
-      items={payload.results}
+      items={shown}
       emptyText="No matches."
       renderItem={(b, i) => <BibCard key={b.bib_id} bib={b} index={i} />}
-      footerNote={searchFooterNote(payload)}
-      moreUrl={payload.more_url}
-      moreLabel="See all results"
+      moreUrl={hasMore ? payload.more_url : undefined}
+      moreLabel={hasMore ? `See all ${total} results` : undefined}
     />
   );
 }

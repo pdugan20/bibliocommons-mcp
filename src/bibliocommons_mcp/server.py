@@ -15,7 +15,7 @@ import os
 import sys
 import time
 from typing import TYPE_CHECKING
-from urllib.parse import urlparse
+from urllib.parse import quote_plus, urlparse
 
 from mcp.server.auth.middleware.auth_context import get_access_token
 from mcp.server.fastmcp import FastMCP
@@ -522,6 +522,10 @@ def _extract_jacket(brief_info: dict) -> Jacket | None:
 
 def _bib_summary(bib: dict) -> BibSummary:
     bi = bib.get("briefInfo", {})
+    # Search responses carry a per-bib availability summary alongside
+    # briefInfo — no separate /availability call needed for the list view.
+    av = bib.get("availability")
+    av = av if isinstance(av, dict) else {}
     return BibSummary(
         bib_id=bib.get("id") or bi.get("metadataId") or "",
         title=bi.get("title"),
@@ -531,6 +535,10 @@ def _bib_summary(bib: dict) -> BibSummary:
         year=bi.get("publicationDate"),
         call_number=bi.get("callNumber"),
         jacket=_extract_jacket(bi),
+        availability_status=av.get("statusType") or av.get("status"),
+        available_copies=av.get("availableCopies"),
+        held_copies=av.get("heldCopies"),
+        total_copies=av.get("totalCopies"),
     )
 
 
@@ -639,10 +647,16 @@ def search(
     data = client.search(query, format=fmt, page=page, sort_by=sort_by)
     bibs = data.get("entities", {}).get("bibs", {})
     pag = data.get("catalogSearch", {}).get("pagination", {})
+    more_url = (
+        f"{client.catalog_origin}/v2/search"
+        f"?query={quote_plus(query)}&searchType=smart"
+    )
     return SearchResult(
         page=pag.get("page"),
         pages=pag.get("pages"),
         total=pag.get("count"),
+        library=_library_display(client.library),
+        more_url=more_url,
         results=[_bib_summary(bibs[bid]) for bid in bibs],
     )
 

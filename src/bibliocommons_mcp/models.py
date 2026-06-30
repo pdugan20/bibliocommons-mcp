@@ -54,6 +54,12 @@ class BibSummary(BaseModel):
     year: str | None = Field(default=None, description="Publication date as printed.")
     call_number: str | None = Field(default=None)
     jacket: Jacket | None = Field(default=None)
+    availability_status: str | None = Field(
+        default=None, description="Aggregate copy status, 'AVAILABLE' / 'UNAVAILABLE'."
+    )
+    available_copies: int | None = Field(default=None)
+    held_copies: int | None = Field(default=None)
+    total_copies: int | None = Field(default=None)
 
 
 class HoldRef(BaseModel):
@@ -72,6 +78,12 @@ class SearchResult(BaseModel):
     page: int | None = Field(default=None, description="1-indexed current page.")
     pages: int | None = Field(default=None, description="Total page count.")
     total: int | None = Field(default=None, description="Total matching bibs.")
+    library: str | None = Field(
+        default=None, description="Library display name, e.g. 'Seattle Public Library'."
+    )
+    more_url: str | None = Field(
+        default=None, description="Catalog search page URL for a 'see all' link."
+    )
     results: list[BibSummary] = Field(default_factory=list)
 
 

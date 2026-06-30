@@ -2023,6 +2023,31 @@
                 'title': 'Authors',
                 'type': 'array',
               }),
+              'availability_status': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': "Aggregate copy status, 'AVAILABLE' / 'UNAVAILABLE'.",
+                'title': 'Availability Status',
+              }),
+              'available_copies': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Available Copies',
+              }),
               'bib_id': dict({
                 'description': "BiblioCommons bib id, e.g. 'S30C3857930'.",
                 'title': 'Bib Id',
@@ -2052,6 +2077,18 @@
                 'default': None,
                 'description': "Format facet, e.g. 'MUSIC_CD', 'BK', 'EBOOK'.",
                 'title': 'Format',
+              }),
+              'held_copies': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Held Copies',
               }),
               'jacket': dict({
                 'anyOf': list([
@@ -2087,6 +2124,18 @@
                 ]),
                 'default': None,
                 'title': 'Title',
+              }),
+              'total_copies': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'integer',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'title': 'Total Copies',
               }),
               'year': dict({
                 'anyOf': list([
@@ -2173,6 +2222,32 @@
         }),
         'description': 'Paginated search results. Page size is fixed at 25 by the gateway.',
         'properties': dict({
+          'library': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Library display name, e.g. 'Seattle Public Library'.",
+            'title': 'Library',
+          }),
+          'more_url': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'description': "Catalog search page URL for a 'see all' link.",
+            'title': 'More Url',
+          }),
           'page': dict({
             'anyOf': list([
               dict({

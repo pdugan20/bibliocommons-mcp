@@ -15,8 +15,9 @@
  *   book glyph in a portrait-shaped box.
  * - Width is the responsive `--bc-cover-w` (see lib/responsive).
  */
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 
+import { isDiscFormat } from "./format.js";
 import type { Jacket } from "./jacket.js";
 
 export const COVER_WIDTH = 64;
@@ -78,23 +79,34 @@ function PlaceholderGlyph() {
 export function CoverImage({
   jacket,
   eager,
+  format,
 }: {
   jacket?: Jacket | null;
   /** True for the first few above-the-fold rows. */
   eager?: boolean;
+  /** Format facet — picks the placeholder's aspect (square for discs). */
+  format?: string | null;
 }) {
+  // A 404 or CSP-blocked cover loads to zero intrinsic size, which would
+  // collapse the box to a hairline; onError swaps in the placeholder.
+  const [failed, setFailed] = useState(false);
+
   // Prefer a library upload, then the high-res JPG, falling back to the
   // smaller GIFs so a partial jacket still renders something.
-  const src =
-    jacket?.local_url ??
-    jacket?.large ??
-    jacket?.medium ??
-    jacket?.small ??
-    null;
+  const src = failed
+    ? null
+    : (jacket?.local_url ??
+      jacket?.large ??
+      jacket?.medium ??
+      jacket?.small ??
+      null);
 
   if (!src) {
+    // Match the missing cover's footprint to its format so it doesn't tower
+    // over (or shrink beside) the real covers around it.
+    const aspectRatio = isDiscFormat(format) ? "1 / 1" : "2 / 3";
     return (
-      <div style={placeholderWrapStyle}>
+      <div style={{ ...placeholderWrapStyle, aspectRatio }}>
         <PlaceholderGlyph />
       </div>
     );
@@ -112,6 +124,7 @@ export function CoverImage({
         loading={eager ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={eager ? "high" : "low"}
+        onError={() => setFailed(true)}
       />
     </div>
   );
