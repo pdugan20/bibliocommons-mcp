@@ -85,11 +85,10 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
     .filter(Boolean)
     .join(" · ");
 
-  // The call number is shelf jargon for an OverDrive title, so skip it for
-  // digital; otherwise show branch · call number · renewal hint.
-  const digital = loan.material_type === "DIGITAL";
-  const callNumber = digital ? null : loan.call_number;
-  const meta = [loan.branch, callNumber, hint].filter(Boolean).join(" · ");
+  // No call number: it's shelf-finding jargon, and its cutter just repeats
+  // the author already shown above (e.g. "… CROSS" for "Cross, Charles R.")
+  // — useless for an item you already hold. The line is branch · renewal.
+  const meta = [loan.branch, hint].filter(Boolean).join(" · ");
 
   return (
     <>
