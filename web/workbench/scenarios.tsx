@@ -21,10 +21,21 @@ import { createRoot } from "react-dom/client";
 import {
   DEFAULT_HEADER_VARIANT,
   HEADER_VARIANTS,
-  HEADER_VARIANT_NOTES,
   HeaderVariantContext,
   type HeaderVariant,
 } from "../lib/card-header.js";
+import {
+  CTA_STYLE_IDS,
+  CTA_STYLE_NOTES,
+  CtaStyleContext,
+  DEFAULT_CTA_STYLE,
+  DEFAULT_FILTER_STYLE,
+  FILTER_STYLE_IDS,
+  FILTER_STYLE_NOTES,
+  FilterStyleContext,
+  type CtaStyleId,
+  type FilterStyleId,
+} from "../lib/controls.js";
 import { ResponsiveStyles } from "../lib/responsive.js";
 import { fixtures as holdsFixtures } from "../holds.fixtures.js";
 import { fixtures as loansFixtures } from "../loans.fixtures.js";
@@ -148,13 +159,22 @@ const switcherStyle: CSSProperties = {
   top: 0,
   zIndex: 10,
   display: "flex",
-  alignItems: "center",
-  gap: 8,
-  flexWrap: "wrap",
+  flexDirection: "column",
+  gap: 6,
   padding: "10px 0",
   background: HOST_BG,
   borderBottom:
     "1px solid light-dark(rgba(0,0,0,0.08), rgba(255,255,255,0.08))",
+};
+
+const switchLabelStyle: CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: 0.6,
+  opacity: 0.5,
+  width: 48,
+  flexShrink: 0,
 };
 
 const switchChip: CSSProperties = {
@@ -165,8 +185,8 @@ const switchChip: CSSProperties = {
   background: "transparent",
   color: "inherit",
   borderRadius: 6,
-  padding: "4px 10px",
-  fontSize: 13,
+  padding: "3px 9px",
+  fontSize: 12,
   fontWeight: 600,
 };
 
@@ -177,66 +197,96 @@ const switchActive: CSSProperties = {
   borderColor: "transparent",
 };
 
-function HeaderSwitcher({
+function SwitchGroup<T extends string>({
+  label,
+  options,
   value,
   onChange,
 }: {
-  value: HeaderVariant;
-  onChange: (v: HeaderVariant) => void;
+  label: string;
+  options: { id: T; btn: string }[];
+  value: T;
+  onChange: (v: T) => void;
 }) {
   return (
-    <div style={switcherStyle}>
-      <span
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: 0.6,
-          opacity: 0.5,
-        }}
-      >
-        Header
-      </span>
-      {HEADER_VARIANTS.map((v) => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        flexWrap: "wrap",
+      }}
+    >
+      <span style={switchLabelStyle}>{label}</span>
+      {options.map((o) => (
         <button
-          key={v}
+          key={o.id}
           type="button"
-          onClick={() => onChange(v)}
-          title={HEADER_VARIANT_NOTES[v]}
-          style={v === value ? switchActive : switchChip}
+          onClick={() => onChange(o.id)}
+          style={o.id === value ? switchActive : switchChip}
         >
-          {v}
+          {o.btn}
         </button>
       ))}
-      <span style={{ fontSize: 12, opacity: 0.6 }}>
-        {HEADER_VARIANT_NOTES[value]}
-      </span>
     </div>
   );
 }
 
 function Scenarios() {
-  const [variant, setVariant] = useState<HeaderVariant>(DEFAULT_HEADER_VARIANT);
+  const [header, setHeader] = useState<HeaderVariant>(DEFAULT_HEADER_VARIANT);
+  const [filterStyle, setFilterStyle] =
+    useState<FilterStyleId>(DEFAULT_FILTER_STYLE);
+  const [ctaStyle, setCtaStyle] = useState<CtaStyleId>(DEFAULT_CTA_STYLE);
   return (
-    <HeaderVariantContext.Provider value={variant}>
-      <div style={pageStyle}>
-        <div style={columnStyle}>
-          <header>
-            <h1 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 4px" }}>
-              bibliocommons-mcp — product scenarios
-            </h1>
-            <p style={{ margin: 0, fontSize: 13, opacity: 0.6 }}>
-              The three flows the cards are built for, framed as a conversation.
-              Switch the header lockup below; append <code>?theme=dark</code>{" "}
-              for dark mode.
-            </p>
-          </header>
-          <HeaderSwitcher value={variant} onChange={setVariant} />
-          {SCENARIOS.map((s) => (
-            <Scenario key={s.label} {...s} />
-          ))}
-        </div>
-      </div>
+    <HeaderVariantContext.Provider value={header}>
+      <FilterStyleContext.Provider value={filterStyle}>
+        <CtaStyleContext.Provider value={ctaStyle}>
+          <div style={pageStyle}>
+            <div style={columnStyle}>
+              <header>
+                <h1
+                  style={{ fontSize: 18, fontWeight: 700, margin: "0 0 4px" }}
+                >
+                  bibliocommons-mcp — product scenarios
+                </h1>
+                <p style={{ margin: 0, fontSize: 13, opacity: 0.6 }}>
+                  Switch the header / filter / CTA styles below; append{" "}
+                  <code>?theme=dark</code> for dark mode.
+                </p>
+              </header>
+              <div style={switcherStyle}>
+                <SwitchGroup
+                  label="Header"
+                  options={HEADER_VARIANTS.map((v) => ({ id: v, btn: v }))}
+                  value={header}
+                  onChange={setHeader}
+                />
+                <SwitchGroup
+                  label="Filter"
+                  options={FILTER_STYLE_IDS.map((id) => ({
+                    id,
+                    btn: FILTER_STYLE_NOTES[id],
+                  }))}
+                  value={filterStyle}
+                  onChange={setFilterStyle}
+                />
+                <SwitchGroup
+                  label="CTA"
+                  options={CTA_STYLE_IDS.map((id) => ({
+                    id,
+                    btn: CTA_STYLE_NOTES[id],
+                  }))}
+                  value={ctaStyle}
+                  onChange={setCtaStyle}
+                />
+              </div>
+              {SCENARIOS.map((s) => (
+                <Scenario key={s.label} {...s} />
+              ))}
+            </div>
+          </div>
+        </CtaStyleContext.Provider>
+      </FilterStyleContext.Provider>
     </HeaderVariantContext.Provider>
   );
 }

@@ -4,10 +4,7 @@
  *
  * Data shape mirrors `bibliocommons_mcp.models.BibSummary`.
  */
-import type { CSSProperties } from "react";
-
 import {
-  authorStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
@@ -41,17 +38,6 @@ export type SearchResult = {
 
 const BIB_TITLE_STYLE = titleStyle(2);
 
-const subtitleStyle: CSSProperties = {
-  fontSize: 12,
-  fontStyle: "italic",
-  opacity: 0.7,
-  margin: 0,
-  display: "-webkit-box",
-  WebkitBoxOrient: "vertical" as CSSProperties["WebkitBoxOrient"],
-  WebkitLineClamp: 1,
-  overflow: "hidden",
-};
-
 export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const author = (bib.authors ?? [])[0];
   const formatYear = [formatLabelLong(bib.format), bib.year]
@@ -65,8 +51,7 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
         <CoverImage jacket={bib.jacket} eager={index < 3} />
         <div style={metaStyle}>
           <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
-          {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
-          {author && <p style={authorStyle}>{cleanCreator(author)}</p>}
+          {author && <p style={lineStyle}>{cleanCreator(author)}</p>}
           {formatYear && <p style={lineStyle}>{formatYear}</p>}
         </div>
       </div>

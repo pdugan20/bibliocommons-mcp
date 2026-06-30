@@ -9,14 +9,13 @@
 import type { CSSProperties } from "react";
 
 import {
-  authorStyle,
+  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
   rowDividerStyle,
   rowStyle,
   spentChipStyle,
-  statusChipStyle,
   titleRowStyle,
   titleStyle,
 } from "../lib/card-style.js";
@@ -68,13 +67,13 @@ function statusForRender(hold: Hold): StatusLabel {
   const raw = hold.status ?? "";
   switch (raw) {
     case "READY_FOR_PICKUP":
-      return { text: "Ready", chip: statusChipStyle };
+      return { text: "Ready", chip: badgeStyle };
     case "EXPIRED":
       return { text: "Expired", chip: spentChipStyle };
     case "CANCELLED":
       return { text: "Cancelled", chip: spentChipStyle };
     case "IN_TRANSIT":
-      return { text: "In transit", chip: statusChipStyle };
+      return { text: "In transit", chip: badgeStyle };
     case "NOT_YET_AVAILABLE":
     default: {
       // Position spelled out as a place in line ("8th in line").
@@ -84,7 +83,7 @@ function statusForRender(hold: Hold): StatusLabel {
           : raw
             ? raw.replace(/_/g, " ").toLowerCase()
             : "Queued";
-      return { text, chip: statusChipStyle };
+      return { text, chip: badgeStyle };
     }
   }
 }
@@ -102,12 +101,13 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
   // shows when it was placed.
   const pickupBy = formatMonthDay(hold.pickup_by);
   const placed = formatMonthDay(hold.placed);
-  const metaLine =
+  const metaLine = (
     hold.status === "READY_FOR_PICKUP" && pickupBy
-      ? `Pick up by ${pickupBy}${hold.pickup_branch ? ` at ${hold.pickup_branch}` : ""}`
+      ? [`Pick up by ${pickupBy}`, hold.pickup_branch]
       : [placed ? `Placed ${placed}` : null, hold.pickup_branch]
-          .filter(Boolean)
-          .join(" · ");
+  )
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
@@ -127,9 +127,7 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
             </h3>
             <span style={{ ...status.chip, ...CHIP_RIGHT }}>{status.text}</span>
           </div>
-          {hold.author && (
-            <p style={authorStyle}>{cleanCreator(hold.author)}</p>
-          )}
+          {hold.author && <p style={lineStyle}>{cleanCreator(hold.author)}</p>}
           {formatYear && <p style={lineStyle}>{formatYear}</p>}
           {metaLine && <p style={lineStyle}>{metaLine}</p>}
         </div>

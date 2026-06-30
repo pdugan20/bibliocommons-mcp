@@ -1,42 +1,27 @@
 /**
- * Shared frame for a card list: the header, an optional format filter, and
- * the rows (or an empty state). Used by holds / checkouts / search so they
- * share one structure. The filter is client-side React state over the
- * already-returned items — no server round-trip — and only appears when the
- * list actually contains more than one format.
+ * Shared frame for a card list: the header, an optional format filter, the
+ * rows (or an empty state), and a footer with pagination + a catalog link.
+ * Used by holds / checkouts / search so they share one structure. The
+ * filter is client-side React state over the already-returned items — no
+ * server round-trip — and only appears when the list spans >1 format. The
+ * filter-pill and CTA-button styles come from contexts (see lib/controls).
  */
-import { useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useContext,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
 import { CardHeader } from "./card-header.js";
+import {
+  CtaStyleContext,
+  FilterStyleContext,
+  ctaStyle,
+  filterStyles,
+} from "./controls.js";
 import { formatLabel } from "./format.js";
 import { rootStyle } from "./root-style.js";
-
-const barStyle: CSSProperties = {
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 6,
-  marginTop: 12,
-};
-
-const filterChipBase: CSSProperties = {
-  appearance: "none",
-  fontFamily: "inherit",
-  border: "1px solid light-dark(#dcdcd7, #3a3a38)",
-  background: "transparent",
-  color: "inherit",
-  borderRadius: 999,
-  padding: "3px 11px",
-  fontSize: 12,
-  fontWeight: 500,
-  cursor: "pointer",
-};
-
-const filterChipActive: CSSProperties = {
-  ...filterChipBase,
-  background: "light-dark(#0f6dbf, #2f72ab)",
-  color: "#fff",
-  borderColor: "transparent",
-};
 
 const emptyStyle: CSSProperties = {
   margin: "12px 0 0",
@@ -57,13 +42,6 @@ const footerStyle: CSSProperties = {
 
 const footerNoteStyle: CSSProperties = { opacity: 0.6 };
 
-const linkStyle: CSSProperties = {
-  color: "light-dark(#0b5da6, #9ccbf0)",
-  textDecoration: "none",
-  fontWeight: 600,
-  whiteSpace: "nowrap",
-};
-
 function FilterBar({
   formats,
   value,
@@ -73,12 +51,17 @@ function FilterBar({
   value: string | null;
   onChange: (v: string | null) => void;
 }) {
+  const fs = filterStyles(useContext(FilterStyleContext));
   const options: { key: string | null; label: string }[] = [
     { key: null, label: "All" },
     ...formats.map((f) => ({ key: f, label: formatLabel(f) ?? f })),
   ];
   return (
-    <div style={barStyle} role="tablist" aria-label="Filter by format">
+    <div
+      style={{ ...fs.wrap, marginTop: 12 }}
+      role="tablist"
+      aria-label="Filter by format"
+    >
       {options.map((o) => {
         const active = o.key === value;
         return (
@@ -88,13 +71,28 @@ function FilterBar({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(o.key)}
-            style={active ? filterChipActive : filterChipBase}
+            style={active ? fs.active : fs.base}
           >
             {o.label}
           </button>
         );
       })}
     </div>
+  );
+}
+
+function FooterCta({ moreUrl, label }: { moreUrl: string; label: string }) {
+  const cta = ctaStyle(useContext(CtaStyleContext));
+  return (
+    <a
+      href={moreUrl}
+      target="_blank"
+      rel="noreferrer"
+      style={{ ...cta.style, whiteSpace: "nowrap" }}
+    >
+      {label}
+      {cta.arrow ? " →" : ""}
+    </a>
   );
 }
 
@@ -159,14 +157,10 @@ export function CardFrame<T extends WithFormat>({
         <div style={footerStyle}>
           <span style={footerNoteStyle}>{footerNote ?? ""}</span>
           {moreUrl && (
-            <a
-              href={moreUrl}
-              target="_blank"
-              rel="noreferrer"
-              style={linkStyle}
-            >
-              {moreLabel ?? "View in catalog"} →
-            </a>
+            <FooterCta
+              moreUrl={moreUrl}
+              label={moreLabel ?? "View in catalog"}
+            />
           )}
         </div>
       )}

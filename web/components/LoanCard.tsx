@@ -8,13 +8,12 @@
 import type { CSSProperties } from "react";
 
 import {
-  authorStyle,
+  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
   rowDividerStyle,
   rowStyle,
-  statusChipStyle,
   titleRowStyle,
   titleStyle,
 } from "../lib/card-style.js";
@@ -100,13 +99,11 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
         <div style={metaStyle}>
           <div style={titleRowStyle}>
             <h3 style={TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
-            <span style={{ ...statusChipStyle, ...CHIP_RIGHT }}>
+            <span style={{ ...badgeStyle, ...CHIP_RIGHT }}>
               {dueText(loan)}
             </span>
           </div>
-          {loan.author && (
-            <p style={authorStyle}>{cleanCreator(loan.author)}</p>
-          )}
+          {loan.author && <p style={lineStyle}>{cleanCreator(loan.author)}</p>}
           {formatYear && <p style={lineStyle}>{formatYear}</p>}
           {meta && <p style={lineStyle}>{meta}</p>}
         </div>
