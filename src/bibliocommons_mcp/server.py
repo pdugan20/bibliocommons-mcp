@@ -639,17 +639,26 @@ def search(
 ) -> SearchResult:
     """Search the catalog by keyword, optionally filtered by format.
 
-    Prefer a SINGLE call per user request. Results already span every
-    format, and the inline result card lets the user filter by format — so
-    for a request like "books and CDs about X", make ONE call with `format`
-    omitted rather than separate per-format searches. Only pass `format`
-    when the user explicitly wants just one medium.
+    Make ONE call per request — never follow one search with another just to
+    change the format. Pick `format` up front from what the user asked for:
+
+    - They name a single medium ("books about X", "find CDs", "a DVD of Y")
+      → pass that `format` (e.g. `BK` for books). An "or" in the *subject*
+      does NOT make it multi-format: "books about Nirvana or Kurt Cobain" is
+      still a books-only search, so `format="BK"`.
+    - They want several or any formats ("books and CDs about X", "anything
+      on Y") → omit `format`; results span all formats and the card lets the
+      user filter.
+
+    Omitting `format` relevance-ranks across all media, so a music-related
+    query can bury books under albums — when the user asked for one medium,
+    always pass it rather than omitting and re-searching.
 
     Args:
         query: Keyword search string.
         format: Format facet (e.g. `MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`,
-            `AUDIOBOOK_CD`, `DVD`). Omit to return all formats in one call
-            (the usual case). Defaults to `default_format` from config if set.
+            `AUDIOBOOK_CD`, `DVD`). Pass it when the user wants one medium;
+            omit for all formats. Defaults to `default_format` from config.
         page: 1-indexed page number. The gateway returns up to 25
             results per page; use the `pages` field in the response to
             page further.
