@@ -115,19 +115,19 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
     .filter(Boolean)
     .join(" · ");
 
-  // A ready hold leads with its pickup deadline + location; everything else
-  // shows when it was placed. While waiting, the branch is *where it'll be
-  // collected*, so label it "Pickup at …"; a ready hold already says
-  // "Pick up by …", so its branch stays plain to avoid the echo.
+  // The branch is the same fact in either state — where you collect it — so
+  // it reads identically ("Pickup at …") in both; the lead phrase carries
+  // the state (a deadline when ready, the placed date while waiting). Ready
+  // uses "Ready until" rather than "Pick up by" so it doesn't echo "Pickup".
   const pickupBy = formatMonthDay(hold.pickup_by);
   const placed = formatMonthDay(hold.placed);
+  const pickupAt = hold.pickup_branch
+    ? `Pickup at ${hold.pickup_branch}`
+    : null;
   const metaLine = (
     hold.status === "READY_FOR_PICKUP" && pickupBy
-      ? [`Pick up by ${pickupBy}`, hold.pickup_branch]
-      : [
-          placed ? `Placed ${placed}` : null,
-          hold.pickup_branch ? `Pickup at ${hold.pickup_branch}` : null,
-        ]
+      ? [`Ready until ${pickupBy}`, pickupAt]
+      : [placed ? `Placed ${placed}` : null, pickupAt]
   )
     .filter(Boolean)
     .join(" · ");

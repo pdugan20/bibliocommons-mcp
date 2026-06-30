@@ -276,3 +276,14 @@ export const fixtures: Fixture[] = [
     },
   },
 ];
+
+// Mirror prod: the server fills each item's catalog record URL from the bib
+// id, so the workbench cards are clickable too.
+const RECORD_ORIGIN = "https://seattle.bibliocommons.com";
+for (const fx of fixtures) {
+  for (const r of fx.structuredContent.results) {
+    if (!r.url && r.bib_id) {
+      r.url = `${RECORD_ORIGIN}/v2/record/${r.bib_id}`;
+    }
+  }
+}

@@ -19,6 +19,9 @@ export function ResponsiveStyles() {
         // on a narrow viewport so it doesn't tower over the cover. 400px to
         // also catch the 380px "Mobile" preset, not just the 320px iPhone.
         "@media (max-width:400px){:root{--bc-cd-title-lines:1}}",
+        // Clickable cover/title links: invisible until hover, then underline.
+        ".bc-link{color:inherit;text-decoration:none;cursor:pointer}",
+        ".bc-link:hover{text-decoration:underline}",
       ].join("")}
     </style>
   );

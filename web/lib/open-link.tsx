@@ -35,14 +35,11 @@ export function useLinkOpener(app: AppLike | null | undefined): void {
   }, [app]);
 }
 
-const linkStyle: CSSProperties = {
-  color: "inherit",
-  textDecoration: "none",
-  cursor: "pointer",
-};
-
 /** Wrap content in a click-to-open catalog-record link. With no url it's a
- * passthrough, so callers don't need their own conditional. */
+ * passthrough, so callers don't need their own conditional. Base styles
+ * (inherit colour, no underline, pointer) + the hover underline live in the
+ * `.bc-link` class (see lib/responsive) so `:hover` works — an inline style
+ * can't hold a pseudo-class. */
 export function RecordLink({
   url,
   style,
@@ -56,11 +53,12 @@ export function RecordLink({
   return (
     <a
       href={url}
+      className="bc-link"
       onClick={(e) => {
         e.preventDefault();
         openLink(url);
       }}
-      style={{ ...linkStyle, ...style }}
+      style={style}
     >
       {children}
     </a>
