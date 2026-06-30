@@ -63,6 +63,12 @@ const BIB_TITLE_STYLE = titleStyle(2);
 
 export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const author = (bib.authors ?? [])[0];
+  // Fold the subtitle into the title ("Kurt Cobain: Forever in Bloom"). Many
+  // bibs carry the distinguishing part in the subtitle (a cluster of books
+  // titled just "Kurt Cobain"), so combining keeps the bold line unique per
+  // result; the 2-line clamp bounds the length.
+  const fullTitle =
+    [bib.title, bib.subtitle].filter(Boolean).join(": ") || "(untitled)";
   // Format · year · availability on one line so the row stays compact next
   // to a short square CD cover.
   const formatLine = [
@@ -86,7 +92,7 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
         </RecordLink>
         <div style={metaStyle}>
           <h3 style={BIB_TITLE_STYLE}>
-            <RecordLink url={bib.url}>{bib.title ?? "(untitled)"}</RecordLink>
+            <RecordLink url={bib.url}>{fullTitle}</RecordLink>
           </h3>
           {author && <p style={lineStyle}>{cleanCreator(author)}</p>}
           {formatLine && <p style={lineStyle}>{formatLine}</p>}
