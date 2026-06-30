@@ -3,10 +3,15 @@ name: Deploy to Fly
 # Manual one-click production deploy of the remote connector (getbiblio-mcp).
 #
 # Runs on a GitHub runner, so it avoids the local-deploy gotchas: no laptop,
-# no interactive `fly auth login`, no local Docker, and a 6-hour job limit
-# instead of a short terminal timeout. It builds via the Fly *remote builder*
-# (`--depot=false`) rather than Depot, whose builder has hung indefinitely on
-# us. The image is built from `src/` (see Dockerfile) — decoupled from PyPI.
+# no interactive `fly auth login`, and a 6-hour job limit instead of a short
+# terminal timeout. The image is built from `src/` (see Dockerfile) —
+# decoupled from PyPI.
+#
+# Builds with `--local-only` (the runner's own Docker), NOT a remote builder.
+# An app-scoped `deploy` token (below) can push the app's image and deploy,
+# but it is NOT authorized for the org's shared remote builder machine
+# (`Failed to start remote builder heartbeat: unauthorized`) — and Depot has
+# hung on us. Building on the runner sidesteps both.
 #
 # Prerequisite (one time): a `FLY_API_TOKEN` repo secret —
 #   fly tokens create deploy -a getbiblio-mcp
@@ -32,6 +37,6 @@ jobs:
       - uses: actions/checkout@v7
       - uses: superfly/flyctl-actions/setup-flyctl@master
       - name: Deploy to getbiblio-mcp
-        run: flyctl deploy --remote-only --depot=false
+        run: flyctl deploy --local-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
