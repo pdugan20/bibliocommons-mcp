@@ -1,23 +1,25 @@
 /**
- * One row in the loans list. Mirrors HoldCard structurally but the
- * status chip encodes due-date urgency instead of queue position.
+ * One row in the loans list. Mirrors HoldCard: cover, then the title with a
+ * right-aligned due chip, author, format · year, and a detail line (branch,
+ * call number, renewal hint).
  *
  * Data shape mirrors `bibliocommons_mcp.models.Loan`.
  */
+import type { CSSProperties } from "react";
+
 import {
-  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
-  pillRowStyle,
   rowDividerStyle,
   rowStyle,
   statusChipStyle,
+  titleRowStyle,
   titleStyle,
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { formatLabel } from "../lib/format.js";
+import { formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type Loan = {
@@ -43,12 +45,10 @@ export type LoanList = {
   loans: Loan[];
 };
 
-const LOAN_TITLE_STYLE = titleStyle(3);
+const TITLE_STYLE: CSSProperties = { ...titleStyle(3), flex: 1, minWidth: 0 };
+const CHIP_RIGHT: CSSProperties = { flexShrink: 0 };
 
 function dueText(loan: Loan): string {
-  // Bucket into overdue / due-soon / normal relative to "today" (UTC
-  // midnight is fine — we're not chasing minute-level accuracy). The chip
-  // is a single tonal blue now; the text carries the urgency.
   const iso = loan.due;
   if (!iso) return "No due date";
   const dueDate = new Date(iso + "T00:00:00Z");
@@ -73,18 +73,20 @@ function renewalHint(loan: Loan): string | null {
     if (n > 0) return `Renewable · ${n}× renewed`;
     return "Renewable";
   }
-  // The format badge already conveys digital, so don't repeat it here.
   if (actions.includes("checkIn")) return "Return only";
   return null;
 }
 
 export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
-  const format = formatLabel(loan.format);
   const hint = renewalHint(loan);
   const baseRow = index === 0 ? firstRowStyle : rowStyle;
 
-  // Drop the call-number line for digital items — for an OverDrive title
-  // it's just "EBOOK OVERDRIVE", which the eBook badge already conveys.
+  const formatYear = [formatLabelLong(loan.format), loan.year]
+    .filter(Boolean)
+    .join(" · ");
+
+  // The call number is shelf jargon for an OverDrive title, so skip it for
+  // digital; otherwise show branch · call number · renewal hint.
   const digital = loan.material_type === "DIGITAL";
   const callNumber = digital ? null : loan.call_number;
   const meta = [loan.branch, callNumber, hint].filter(Boolean).join(" · ");
@@ -95,13 +97,14 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
       <div style={baseRow}>
         <CoverImage jacket={loan.jacket} eager={index < 3} />
         <div style={metaStyle}>
-          <h3 style={LOAN_TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
-          {loan.author && <p style={lineStyle}>by {loan.author}</p>}
-          <div style={pillRowStyle}>
-            <span style={statusChipStyle}>{dueText(loan)}</span>
-            {format && <span style={badgeStyle}>{format}</span>}
-            {loan.year && <span style={lineStyle}>{loan.year}</span>}
+          <div style={titleRowStyle}>
+            <h3 style={TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
+            <span style={{ ...statusChipStyle, ...CHIP_RIGHT }}>
+              {dueText(loan)}
+            </span>
           </div>
+          {loan.author && <p style={lineStyle}>{loan.author}</p>}
+          {formatYear && <p style={lineStyle}>{formatYear}</p>}
           {meta && <p style={lineStyle}>{meta}</p>}
         </div>
       </div>

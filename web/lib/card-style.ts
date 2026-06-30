@@ -53,6 +53,14 @@ export const pillRowStyle: CSSProperties = {
   marginTop: 3,
 };
 
+/** Title + a right-aligned status chip on one line: the title takes the
+ * space (and clamps), the chip stays at top-right. */
+export const titleRowStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 8,
+};
+
 // --- Chip family. Status and format now share one quiet, tonal shape so
 // the status reads as part of the same system as the Book/CD badge rather
 // than a loud solid pill. Variants differ only in tint.

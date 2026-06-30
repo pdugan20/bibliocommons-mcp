@@ -1,6 +1,7 @@
 /**
- * One row in the holds list. Cover image on the left, metadata on the
- * right (title, author, status chip, format, queue depth / pickup branch).
+ * One row in the holds list. Cover on the left; on the right the title with
+ * a right-aligned status chip, then author, format · year, and a
+ * status-aware line (pickup deadline for ready holds, else placed date).
  *
  * Data shape mirrors `bibliocommons_mcp.models.Hold` — keep field
  * names in sync if anything changes server-side.
@@ -8,20 +9,19 @@
 import type { CSSProperties } from "react";
 
 import {
-  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
-  pillRowStyle,
   rowDividerStyle,
   rowStyle,
   spentChipStyle,
   statusChipStyle,
+  titleRowStyle,
   titleStyle,
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { formatLabel } from "../lib/format.js";
+import { formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type Hold = {
@@ -51,7 +51,8 @@ export type HoldList = {
   holds: Hold[];
 };
 
-const HOLD_TITLE_STYLE = titleStyle(3);
+const TITLE_STYLE: CSSProperties = { ...titleStyle(3), flex: 1, minWidth: 0 };
+const CHIP_RIGHT: CSSProperties = { flexShrink: 0 };
 
 // 1 -> "1st", 2 -> "2nd", 54 -> "54th".
 function ordinal(n: number): string {
@@ -63,8 +64,6 @@ function ordinal(n: number): string {
 type StatusLabel = { text: string; chip: CSSProperties };
 
 function statusForRender(hold: Hold): StatusLabel {
-  // Status comes from the gateway as snake- / UPPER-cased strings; we
-  // surface the friendly label + chip pairing here.
   const raw = hold.status ?? "";
   switch (raw) {
     case "READY_FOR_PICKUP":
@@ -77,9 +76,8 @@ function statusForRender(hold: Hold): StatusLabel {
       return { text: "In transit", chip: statusChipStyle };
     case "NOT_YET_AVAILABLE":
     default: {
-      // Queued: spell it out — position alone ("#35") doesn't convey speed,
-      // but "54th in line on 12 copies" does. Fall back to the raw status if
-      // there's no position.
+      // Spell out the wait: "54th in line on 12 copies" conveys speed in a
+      // way a bare position never could.
       let text: string;
       if (hold.position != null) {
         const place = `${ordinal(hold.position)} in line`;
@@ -97,21 +95,23 @@ function statusForRender(hold: Hold): StatusLabel {
 
 export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
   const status = statusForRender(hold);
-  const format = formatLabel(hold.format);
   const spent = hold.status === "EXPIRED" || hold.status === "CANCELLED";
   const baseRow = index === 0 ? firstRowStyle : rowStyle;
 
-  // Bottom line is status-aware: a ready hold leads with its pickup deadline
-  // ("Pick up by Jul 6"); everything else shows when it was placed.
+  const formatYear = [formatLabelLong(hold.format), hold.year]
+    .filter(Boolean)
+    .join(" · ");
+
+  // A ready hold leads with its pickup deadline + location; everything else
+  // shows when it was placed.
   const pickupBy = formatMonthDay(hold.pickup_by);
   const placed = formatMonthDay(hold.placed);
-  const primary =
+  const metaLine =
     hold.status === "READY_FOR_PICKUP" && pickupBy
-      ? `Pick up by ${pickupBy}`
-      : placed
-        ? `Placed ${placed}`
-        : null;
-  const meta = [primary, hold.pickup_branch].filter(Boolean).join(" · ");
+      ? `Pick up by ${pickupBy}${hold.pickup_branch ? ` at ${hold.pickup_branch}` : ""}`
+      : [placed ? `Placed ${placed}` : null, hold.pickup_branch]
+          .filter(Boolean)
+          .join(" · ");
 
   return (
     <>
@@ -119,22 +119,21 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
       <div style={spent ? { ...baseRow, opacity: 0.55 } : baseRow}>
         <CoverImage jacket={hold.jacket} eager={index < 3} />
         <div style={metaStyle}>
-          <h3
-            style={
-              spent
-                ? { ...HOLD_TITLE_STYLE, textDecoration: "line-through" }
-                : HOLD_TITLE_STYLE
-            }
-          >
-            {hold.title ?? "(untitled)"}
-          </h3>
-          {hold.author && <p style={lineStyle}>by {hold.author}</p>}
-          <div style={pillRowStyle}>
-            <span style={status.chip}>{status.text}</span>
-            {format && <span style={badgeStyle}>{format}</span>}
-            {hold.year && <span style={lineStyle}>{hold.year}</span>}
+          <div style={titleRowStyle}>
+            <h3
+              style={
+                spent
+                  ? { ...TITLE_STYLE, textDecoration: "line-through" }
+                  : TITLE_STYLE
+              }
+            >
+              {hold.title ?? "(untitled)"}
+            </h3>
+            <span style={{ ...status.chip, ...CHIP_RIGHT }}>{status.text}</span>
           </div>
-          {meta && <p style={lineStyle}>{meta}</p>}
+          {hold.author && <p style={lineStyle}>{hold.author}</p>}
+          {formatYear && <p style={lineStyle}>{formatYear}</p>}
+          {metaLine && <p style={lineStyle}>{metaLine}</p>}
         </div>
       </div>
     </>

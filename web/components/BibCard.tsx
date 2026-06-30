@@ -1,23 +1,21 @@
 /**
- * One row in a search results list. Cover + title/subtitle + authors
- * + format badge + year. No status chip (catalog data is stateless).
+ * One row in a search results list. Cover + title/subtitle + author +
+ * format · year. No status chip (catalog data is stateless).
  *
  * Data shape mirrors `bibliocommons_mcp.models.BibSummary`.
  */
 import type { CSSProperties } from "react";
 
 import {
-  badgeStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
-  pillRowStyle,
   rowDividerStyle,
   rowStyle,
   titleStyle,
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
-import { formatLabel } from "../lib/format.js";
+import { formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type BibSummary = {
@@ -54,8 +52,10 @@ const subtitleStyle: CSSProperties = {
 };
 
 export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
-  const format = formatLabel(bib.format);
   const author = (bib.authors ?? [])[0];
+  const formatYear = [formatLabelLong(bib.format), bib.year]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
@@ -65,11 +65,8 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
         <div style={metaStyle}>
           <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
           {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
-          {author && <p style={lineStyle}>by {author}</p>}
-          <div style={pillRowStyle}>
-            {format && <span style={badgeStyle}>{format}</span>}
-            {bib.year && <span style={lineStyle}>{bib.year}</span>}
-          </div>
+          {author && <p style={lineStyle}>{author}</p>}
+          {formatYear && <p style={lineStyle}>{formatYear}</p>}
         </div>
       </div>
     </>

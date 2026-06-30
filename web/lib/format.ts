@@ -24,3 +24,10 @@ export function formatLabel(format?: string | null): string | null {
   if (!format) return null;
   return FORMAT_LABELS[format] ?? format;
 }
+
+/** Longer label for the in-row line (vs the short filter-chip label): a
+ * plain physical book reads "Physical Book", everything else as usual. */
+export function formatLabelLong(format?: string | null): string | null {
+  if (format === "BK") return "Physical Book";
+  return formatLabel(format);
+}
