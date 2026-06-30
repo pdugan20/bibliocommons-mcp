@@ -21,7 +21,7 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { cleanCreator, formatLabelLong } from "../lib/format.js";
+import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type Hold = {
@@ -52,6 +52,13 @@ export type HoldList = {
 };
 
 const TITLE_STYLE: CSSProperties = { ...titleStyle(3), flex: 1, minWidth: 0 };
+// CD titles clamp to one line on a narrow viewport (the var flips to 1 via
+// a media query) so the title doesn't overshoot the short square cover.
+const TITLE_STYLE_CD: CSSProperties = {
+  ...titleStyle("var(--bc-cd-title-lines, 3)"),
+  flex: 1,
+  minWidth: 0,
+};
 const CHIP_RIGHT: CSSProperties = { flexShrink: 0 };
 
 // 1 -> "1st", 2 -> "2nd", 54 -> "54th".
@@ -98,6 +105,8 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
   const spent = hold.status === "EXPIRED" || hold.status === "CANCELLED";
   const baseRow = index === 0 ? firstRowStyle : rowStyle;
 
+  const titleBase = isDiscFormat(hold.format) ? TITLE_STYLE_CD : TITLE_STYLE;
+
   const formatYear = [formatLabelLong(hold.format), hold.year]
     .filter(Boolean)
     .join(" · ");
@@ -124,8 +133,8 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
             <h3
               style={
                 spent
-                  ? { ...TITLE_STYLE, textDecoration: "line-through" }
-                  : TITLE_STYLE
+                  ? { ...titleBase, textDecoration: "line-through" }
+                  : titleBase
               }
             >
               {hold.title ?? "(untitled)"}

@@ -106,7 +106,9 @@ export const badgeStyle: CSSProperties = {
   color: "light-dark(#3a3a3a, #cfcfcf)",
 };
 
-export function titleStyle(lines: number): CSSProperties {
+// `lines` is usually a number, but may be a CSS var (e.g.
+// "var(--bc-cd-title-lines, 3)") so a media query can re-clamp it live.
+export function titleStyle(lines: number | string): CSSProperties {
   return {
     fontSize: 14,
     fontWeight: 600,

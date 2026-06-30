@@ -25,6 +25,13 @@ export function formatLabel(format?: string | null): string | null {
   return FORMAT_LABELS[format] ?? format;
 }
 
+/** Disc media (square cover art): music + audiobook CDs. Their covers are
+ * square, so a multi-line title overshoots the short cover and unbalances
+ * the row — callers clamp these titles harder on a narrow viewport. */
+export function isDiscFormat(format?: string | null): boolean {
+  return format === "MUSIC_CD" || format === "AUDIOBOOK_CD";
+}
+
 /** Longer label for the in-row line (vs the short filter-chip label): a
  * plain physical book reads "Physical Book", everything else as usual. */
 export function formatLabelLong(format?: string | null): string | null {

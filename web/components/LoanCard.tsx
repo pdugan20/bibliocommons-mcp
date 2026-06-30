@@ -19,7 +19,7 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { cleanCreator, formatLabelLong } from "../lib/format.js";
+import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type Loan = {
@@ -46,6 +46,13 @@ export type LoanList = {
 };
 
 const TITLE_STYLE: CSSProperties = { ...titleStyle(3), flex: 1, minWidth: 0 };
+// CD titles clamp to one line on a narrow viewport (var flips to 1 via a
+// media query) so the title doesn't overshoot the short square cover.
+const TITLE_STYLE_CD: CSSProperties = {
+  ...titleStyle("var(--bc-cd-title-lines, 3)"),
+  flex: 1,
+  minWidth: 0,
+};
 const CHIP_RIGHT: CSSProperties = { flexShrink: 0 };
 
 function dueText(loan: Loan): string {
@@ -95,7 +102,11 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
         <CoverImage jacket={loan.jacket} eager={index < 3} />
         <div style={metaStyle}>
           <div style={titleRowStyle}>
-            <h3 style={TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
+            <h3
+              style={isDiscFormat(loan.format) ? TITLE_STYLE_CD : TITLE_STYLE}
+            >
+              {loan.title ?? "(untitled)"}
+            </h3>
             <span style={{ ...badgeStyle, ...CHIP_RIGHT }}>
               {dueText(loan)}
             </span>
