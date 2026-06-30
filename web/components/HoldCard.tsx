@@ -9,6 +9,7 @@
 import type { CSSProperties } from "react";
 
 import {
+  authorStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
@@ -21,7 +22,7 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { formatLabelLong } from "../lib/format.js";
+import { cleanCreator, formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type Hold = {
@@ -76,18 +77,13 @@ function statusForRender(hold: Hold): StatusLabel {
       return { text: "In transit", chip: statusChipStyle };
     case "NOT_YET_AVAILABLE":
     default: {
-      // Spell out the wait: "54th in line on 12 copies" conveys speed in a
-      // way a bare position never could.
-      let text: string;
-      if (hold.position != null) {
-        const place = `${ordinal(hold.position)} in line`;
-        text =
-          hold.copies != null
-            ? `${place} on ${hold.copies} ${hold.copies === 1 ? "copy" : "copies"}`
-            : place;
-      } else {
-        text = raw ? raw.replace(/_/g, " ").toLowerCase() : "Queued";
-      }
+      // Position spelled out as a place in line ("8th in line").
+      const text =
+        hold.position != null
+          ? `${ordinal(hold.position)} in line`
+          : raw
+            ? raw.replace(/_/g, " ").toLowerCase()
+            : "Queued";
       return { text, chip: statusChipStyle };
     }
   }
@@ -131,7 +127,9 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
             </h3>
             <span style={{ ...status.chip, ...CHIP_RIGHT }}>{status.text}</span>
           </div>
-          {hold.author && <p style={lineStyle}>{hold.author}</p>}
+          {hold.author && (
+            <p style={authorStyle}>{cleanCreator(hold.author)}</p>
+          )}
           {formatYear && <p style={lineStyle}>{formatYear}</p>}
           {metaLine && <p style={lineStyle}>{metaLine}</p>}
         </div>

@@ -31,3 +31,11 @@ export function formatLabelLong(format?: string | null): string | null {
   if (format === "BK") return "Physical Book";
   return formatLabel(format);
 }
+
+/** Strip a trailing authority qualifier from a creator name —
+ * "Mudhoney (Musical group)" -> "Mudhoney" — keeping personal names
+ * ("Cross, Charles R.") untouched. */
+export function cleanCreator(name?: string | null): string | null {
+  if (!name) return null;
+  return name.replace(/\s*\([^)]*\)\s*$/, "").trim() || name;
+}

@@ -8,6 +8,7 @@
 import type { CSSProperties } from "react";
 
 import {
+  authorStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
@@ -19,7 +20,7 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { formatLabelLong } from "../lib/format.js";
+import { cleanCreator, formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type Loan = {
@@ -103,7 +104,9 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
               {dueText(loan)}
             </span>
           </div>
-          {loan.author && <p style={lineStyle}>{loan.author}</p>}
+          {loan.author && (
+            <p style={authorStyle}>{cleanCreator(loan.author)}</p>
+          )}
           {formatYear && <p style={lineStyle}>{formatYear}</p>}
           {meta && <p style={lineStyle}>{meta}</p>}
         </div>

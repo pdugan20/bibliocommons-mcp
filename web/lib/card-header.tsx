@@ -6,9 +6,17 @@
  */
 import { createContext, useContext, type CSSProperties } from "react";
 
-export type HeaderVariant = "A" | "B" | "C" | "D" | "E" | "F";
+export type HeaderVariant = "A" | "B" | "C" | "D" | "E" | "F" | "G";
 
-export const HEADER_VARIANTS: HeaderVariant[] = ["A", "B", "C", "D", "E", "F"];
+export const HEADER_VARIANTS: HeaderVariant[] = [
+  "A",
+  "B",
+  "C",
+  "D",
+  "E",
+  "F",
+  "G",
+];
 
 export const HEADER_VARIANT_NOTES: Record<HeaderVariant, string> = {
   A: "Uppercase eyebrow above (current)",
@@ -17,6 +25,7 @@ export const HEADER_VARIANT_NOTES: Record<HeaderVariant, string> = {
   D: "Title-dominant",
   E: "Library-forward",
   F: "One line",
+  G: "One line, library right-aligned",
 };
 
 export const DEFAULT_HEADER_VARIANT: HeaderVariant = "C";
@@ -139,6 +148,22 @@ export function HeaderLockup({
           <h2 style={ttl({ fontSize: 17, fontWeight: 700 })}>{title}</h2>
           <span style={lib({ fontSize: 12, fontWeight: 500, opacity: 0.5 })}>
             · {library}
+          </span>
+        </header>
+      );
+    case "G":
+      return (
+        <header
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
+          <h2 style={ttl({ fontSize: 17, fontWeight: 700 })}>{title}</h2>
+          <span style={lib({ fontSize: 12, fontWeight: 500, opacity: 0.5 })}>
+            {library}
           </span>
         </header>
       );

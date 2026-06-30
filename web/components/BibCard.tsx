@@ -7,6 +7,7 @@
 import type { CSSProperties } from "react";
 
 import {
+  authorStyle,
   firstRowStyle,
   lineStyle,
   metaStyle,
@@ -15,7 +16,7 @@ import {
   titleStyle,
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
-import { formatLabelLong } from "../lib/format.js";
+import { cleanCreator, formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 
 export type BibSummary = {
@@ -65,7 +66,7 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
         <div style={metaStyle}>
           <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
           {bib.subtitle && <p style={subtitleStyle}>{bib.subtitle}</p>}
-          {author && <p style={lineStyle}>{author}</p>}
+          {author && <p style={authorStyle}>{cleanCreator(author)}</p>}
           {formatYear && <p style={lineStyle}>{formatYear}</p>}
         </div>
       </div>

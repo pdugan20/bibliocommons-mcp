@@ -8,9 +8,8 @@ import type { CSSProperties } from "react";
 
 export const rowStyle: CSSProperties = {
   display: "flex",
-  // Center the meta block against the cover so short cards (a single
-  // ready hold) don't leave the cover hanging in dead space.
-  alignItems: "center",
+  // Top-align the text with the cover (like the catalog row), not centered.
+  alignItems: "flex-start",
   gap: 12,
   paddingTop: 10,
   paddingBottom: 10,
@@ -33,14 +32,24 @@ export const rowDividerStyle: CSSProperties = {
 export const metaStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 4,
+  gap: 2, // tight: keep author/details close under the title
   minWidth: 0, // lets long titles wrap/clamp inside the flex row
   flex: 1,
 };
 
+/** Author/creator line — a step more prominent than the muted detail lines
+ * so the hierarchy reads title > author > details. */
+export const authorStyle: CSSProperties = {
+  fontSize: 12.5,
+  opacity: 0.85,
+  margin: 0,
+  marginTop: 1,
+  overflowWrap: "anywhere",
+};
+
 export const lineStyle: CSSProperties = {
   fontSize: 12,
-  opacity: 0.75,
+  opacity: 0.62,
   margin: 0,
   overflowWrap: "anywhere", // defensive: no overflow on a long unbroken token
 };
