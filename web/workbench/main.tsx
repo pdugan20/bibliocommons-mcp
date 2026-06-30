@@ -70,6 +70,30 @@ const VIEWPORT_WIDTHS: Record<Viewport, number> = {
   desktop: 720,
 };
 
+// Initial state can be seeded from the URL so a specific bundle / fixture /
+// viewport / theme can be deep-linked and screenshotted, e.g.
+//   ?bundle=holds&fixture=In%20transit%20(CD)&viewport=mobile&theme=light
+const INIT = (() => {
+  const p = new URLSearchParams(location.search);
+  const bundle = bundles.find((b) => b.slug === p.get("bundle")) ?? bundles[0];
+  const fixture =
+    bundle.fixtures.find((f) => f.name === p.get("fixture")) ??
+    bundle.fixtures[0];
+  const vp = p.get("viewport");
+  const viewport: Viewport =
+    vp === "narrow" || vp === "mobile" || vp === "tablet" || vp === "desktop"
+      ? vp
+      : "desktop";
+  const th = p.get("theme");
+  const theme: Theme =
+    th === "light" || th === "dark"
+      ? th
+      : matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+  return { bundle, fixture, viewport, theme };
+})();
+
 function ToggleGroup({
   label,
   options,
@@ -140,14 +164,12 @@ const asideStyle: CSSProperties = {
 };
 
 function Workbench() {
-  const [bundle, setBundle] = useState<Bundle>(bundles[0]);
-  const [fixture, setFixture] = useState<Fixture>(bundles[0].fixtures[0]);
+  const [bundle, setBundle] = useState<Bundle>(INIT.bundle);
+  const [fixture, setFixture] = useState<Fixture>(INIT.fixture);
   const [reloadKey, setReloadKey] = useState(0);
   const [status, setStatus] = useState<Status>("mounting");
-  const [viewport, setViewport] = useState<Viewport>("desktop");
-  const [theme, setTheme] = useState<Theme>(
-    matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
-  );
+  const [viewport, setViewport] = useState<Viewport>(INIT.viewport);
+  const [theme, setTheme] = useState<Theme>(INIT.theme);
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
