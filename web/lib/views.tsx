@@ -32,11 +32,19 @@ export function HoldsView({ payload }: { payload: HoldList }) {
 }
 
 export function LoansView({ payload }: { payload: LoanList }) {
+  // Lead with what's due soonest (return-first); no due date sorts last.
+  // The server already orders prod data this way; this covers the workbench
+  // fixtures (and is a no-op when the data is already sorted).
+  const loans = [...payload.loans].sort((a, b) => {
+    if (!a.due) return b.due ? 1 : 0;
+    if (!b.due) return -1;
+    return a.due < b.due ? -1 : a.due > b.due ? 1 : 0;
+  });
   return (
     <CardFrame
       library={payload.library}
       title="Your checkouts"
-      items={payload.loans}
+      items={loans}
       emptyText="Nothing currently checked out."
       renderItem={(l, i) => <LoanCard key={l.checkout_id} loan={l} index={i} />}
       moreUrl={payload.more_url}

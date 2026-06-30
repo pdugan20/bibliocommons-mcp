@@ -1085,6 +1085,9 @@ def list_loans() -> LoanList:
         _loan_from_entity(cid, c, data, client.catalog_origin)
         for cid, c in checkouts.items()
     ]
+    # Lead with what's due soonest (return-first); items lacking a due date
+    # sort last. ISO date strings sort chronologically.
+    out.sort(key=lambda loan: (loan.due is None, loan.due or ""))
     return LoanList(
         count=len(out),
         library=_library_display(client.library),
