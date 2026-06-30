@@ -24,7 +24,9 @@ import { formatLabel } from "./format.js";
 import { rootStyle } from "./root-style.js";
 
 const emptyStyle: CSSProperties = {
-  margin: "12px 0 0",
+  // Bottom margin gives the empty message room above the footer divider,
+  // which otherwise sits tight against it (footerStyle marginTop is small).
+  margin: "12px 0 16px",
   fontSize: 13,
   opacity: 0.7,
 };

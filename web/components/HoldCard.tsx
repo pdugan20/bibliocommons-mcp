@@ -74,15 +74,20 @@ function statusForRender(hold: Hold): StatusLabel {
       return { text: "Cancelled", chip: spentChipStyle };
     case "IN_TRANSIT":
       return { text: "In transit", chip: badgeStyle };
-    case "NOT_YET_AVAILABLE":
-    default: {
-      // Position spelled out as a place in line ("8th in line").
+    case "NOT_YET_AVAILABLE": {
+      // Position spelled out as a place in line ("8th in line"); when the
+      // gateway omits a position, fall back to a plain "Not available".
       const text =
         hold.position != null
           ? `${ordinal(hold.position)} in line`
-          : raw
-            ? raw.replace(/_/g, " ").toLowerCase()
-            : "Queued";
+          : "Not available";
+      return { text, chip: badgeStyle };
+    }
+    default: {
+      // Unknown status: title-case the raw enum so it reads as a label.
+      const text = raw
+        ? raw.charAt(0) + raw.slice(1).toLowerCase().replace(/_/g, " ")
+        : "Queued";
       return { text, chip: badgeStyle };
     }
   }
