@@ -27,7 +27,11 @@ const wrapStyle: CSSProperties = {
   flexShrink: 0,
   width: "var(--bc-cover-w, 64px)",
   borderRadius: 4,
-  border: "1px solid light-dark(rgba(0,0,0,0.08), rgba(255,255,255,0.10))",
+  // A faint hairline just to seat a light cover against the card; kept low
+  // because on a retina phone a 1px border lands on 2-3 device px and reads
+  // heavier than in the workbench, and on dark covers it compounds with the
+  // art's own edge.
+  border: "1px solid light-dark(rgba(0,0,0,0.05), rgba(255,255,255,0.08))",
   boxSizing: "border-box",
   overflow: "hidden",
   background: COVER_FALLBACK_BG,
