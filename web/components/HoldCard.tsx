@@ -29,6 +29,7 @@ export type Hold = {
   metadata_id?: string | null;
   title?: string | null;
   author?: string | null;
+  year?: string | null;
   material_type?: "PHYSICAL" | "DIGITAL" | null;
   format?: string | null;
   status?: string | null;
@@ -52,6 +53,13 @@ export type HoldList = {
 
 const HOLD_TITLE_STYLE = titleStyle(3);
 
+// 1 -> "1st", 2 -> "2nd", 54 -> "54th".
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
+
 type StatusLabel = { text: string; chip: CSSProperties };
 
 function statusForRender(hold: Hold): StatusLabel {
@@ -69,15 +77,16 @@ function statusForRender(hold: Hold): StatusLabel {
       return { text: "In transit", chip: statusChipStyle };
     case "NOT_YET_AVAILABLE":
     default: {
-      // Queued: lead with position, and pair it with the copy count when we
-      // have it — position alone ("#35") doesn't convey speed; "#35 · 4
-      // copies" does. Fall back to the raw status if there's no position.
+      // Queued: spell it out — position alone ("#35") doesn't convey speed,
+      // but "54th in line on 12 copies" does. Fall back to the raw status if
+      // there's no position.
       let text: string;
       if (hold.position != null) {
+        const place = `${ordinal(hold.position)} in line`;
         text =
           hold.copies != null
-            ? `#${hold.position} · ${hold.copies} ${hold.copies === 1 ? "copy" : "copies"}`
-            : `#${hold.position} in queue`;
+            ? `${place} on ${hold.copies} ${hold.copies === 1 ? "copy" : "copies"}`
+            : place;
       } else {
         text = raw ? raw.replace(/_/g, " ").toLowerCase() : "Queued";
       }
@@ -123,6 +132,7 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
           <div style={pillRowStyle}>
             <span style={status.chip}>{status.text}</span>
             {format && <span style={badgeStyle}>{format}</span>}
+            {hold.year && <span style={lineStyle}>{hold.year}</span>}
           </div>
           {meta && <p style={lineStyle}>{meta}</p>}
         </div>

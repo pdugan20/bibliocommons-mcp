@@ -24,6 +24,8 @@ export type Loan = {
   checkout_id: string;
   metadata_id?: string | null;
   title?: string | null;
+  author?: string | null;
+  year?: string | null;
   material_type?: "PHYSICAL" | "DIGITAL" | null;
   format?: string | null;
   due?: string | null;
@@ -94,9 +96,11 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
         <CoverImage jacket={loan.jacket} eager={index < 3} />
         <div style={metaStyle}>
           <h3 style={LOAN_TITLE_STYLE}>{loan.title ?? "(untitled)"}</h3>
+          {loan.author && <p style={lineStyle}>by {loan.author}</p>}
           <div style={pillRowStyle}>
             <span style={statusChipStyle}>{dueText(loan)}</span>
             {format && <span style={badgeStyle}>{format}</span>}
+            {loan.year && <span style={lineStyle}>{loan.year}</span>}
           </div>
           {meta && <p style={lineStyle}>{meta}</p>}
         </div>
