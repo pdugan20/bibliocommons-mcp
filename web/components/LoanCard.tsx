@@ -45,11 +45,11 @@ export type LoanList = {
   loans: Loan[];
 };
 
-const TITLE_STYLE: CSSProperties = { ...titleStyle(3), flex: 1, minWidth: 0 };
+const TITLE_STYLE: CSSProperties = { ...titleStyle(2), flex: 1, minWidth: 0 };
 // CD titles clamp to one line on a narrow viewport (var flips to 1 via a
 // media query) so the title doesn't overshoot the short square cover.
 const TITLE_STYLE_CD: CSSProperties = {
-  ...titleStyle("var(--bc-cd-title-lines, 3)"),
+  ...titleStyle("var(--bc-cd-title-lines, 2)"),
   flex: 1,
   minWidth: 0,
 };
@@ -90,10 +90,10 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
     .filter(Boolean)
     .join(" · ");
 
-  // No call number: it's shelf-finding jargon, and its cutter just repeats
-  // the author already shown above (e.g. "… CROSS" for "Cross, Charles R.")
-  // — useless for an item you already hold. The line is branch · renewal.
-  const meta = [loan.branch, hint].filter(Boolean).join(" · ");
+  // Just the renewal state. No branch (a checkout returns to any branch, so
+  // its owning branch is noise) and no call number (shelf-finding jargon for
+  // an item you already hold).
+  const meta = hint ?? "";
 
   return (
     <>

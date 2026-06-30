@@ -51,11 +51,11 @@ export type HoldList = {
   holds: Hold[];
 };
 
-const TITLE_STYLE: CSSProperties = { ...titleStyle(3), flex: 1, minWidth: 0 };
+const TITLE_STYLE: CSSProperties = { ...titleStyle(2), flex: 1, minWidth: 0 };
 // CD titles clamp to one line on a narrow viewport (the var flips to 1 via
 // a media query) so the title doesn't overshoot the short square cover.
 const TITLE_STYLE_CD: CSSProperties = {
-  ...titleStyle("var(--bc-cd-title-lines, 3)"),
+  ...titleStyle("var(--bc-cd-title-lines, 2)"),
   flex: 1,
   minWidth: 0,
 };
@@ -112,13 +112,18 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
     .join(" · ");
 
   // A ready hold leads with its pickup deadline + location; everything else
-  // shows when it was placed.
+  // shows when it was placed. While waiting, the branch is *where it'll be
+  // collected*, so label it "Pickup at …"; a ready hold already says
+  // "Pick up by …", so its branch stays plain to avoid the echo.
   const pickupBy = formatMonthDay(hold.pickup_by);
   const placed = formatMonthDay(hold.placed);
   const metaLine = (
     hold.status === "READY_FOR_PICKUP" && pickupBy
       ? [`Pick up by ${pickupBy}`, hold.pickup_branch]
-      : [placed ? `Placed ${placed}` : null, hold.pickup_branch]
+      : [
+          placed ? `Placed ${placed}` : null,
+          hold.pickup_branch ? `Pickup at ${hold.pickup_branch}` : null,
+        ]
   )
     .filter(Boolean)
     .join(" · ");
