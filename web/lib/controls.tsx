@@ -28,7 +28,7 @@ export const FILTER_STYLE_NOTES: Record<FilterStyleId, string> = {
   underline: "Underline",
   tonal: "Tonal",
 };
-export const DEFAULT_FILTER_STYLE: FilterStyleId = "outlined";
+export const DEFAULT_FILTER_STYLE: FilterStyleId = "segmented";
 export const FilterStyleContext =
   createContext<FilterStyleId>(DEFAULT_FILTER_STYLE);
 
@@ -272,7 +272,14 @@ export function ctaStyle(id: CtaStyleId): {
     case "link":
     default:
       return {
-        style: { color: LINK, textDecoration: "none", fontWeight: 600 },
+        style: {
+          display: "inline-block",
+          color: LINK,
+          textDecoration: "none",
+          fontWeight: 600,
+          fontSize: 14,
+          padding: "8px 10px",
+        },
         arrow: true,
       };
   }

@@ -32,10 +32,11 @@ const emptyStyle: CSSProperties = {
 const footerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
-  justifyContent: "space-between",
   gap: 8,
-  marginTop: 12,
-  paddingTop: 10,
+  // Sit the divider close under the last row; the CTA's own padding
+  // supplies the breathing room below the line.
+  marginTop: 6,
+  paddingTop: 4,
   borderTop: "1px solid light-dark(#ececec, #2e2e2e)",
   fontSize: 12,
 };
@@ -136,7 +137,7 @@ export function CardFrame<T extends WithFormat>({
       {empty ? (
         <p style={emptyStyle}>{empty}</p>
       ) : (
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginTop: formats.length > 1 ? 16 : 10 }}>
           {shown.map((it, i) => renderItem(it, i))}
         </div>
       )}
@@ -165,8 +166,13 @@ export function CardFrame<T extends WithFormat>({
             </a>
           </div>
         ) : (
-          <div style={footerStyle}>
-            <span style={footerNoteStyle}>{footerNote ?? ""}</span>
+          <div
+            style={{
+              ...footerStyle,
+              justifyContent: footerNote ? "space-between" : "center",
+            }}
+          >
+            {footerNote && <span style={footerNoteStyle}>{footerNote}</span>}
             {moreUrl && (
               <a
                 href={moreUrl}

@@ -28,7 +28,7 @@ export const HEADER_VARIANT_NOTES: Record<HeaderVariant, string> = {
   G: "One line, library right-aligned",
 };
 
-export const DEFAULT_HEADER_VARIANT: HeaderVariant = "C";
+export const DEFAULT_HEADER_VARIANT: HeaderVariant = "G";
 
 export const HeaderVariantContext = createContext<HeaderVariant>(
   DEFAULT_HEADER_VARIANT,
