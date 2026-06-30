@@ -21,7 +21,12 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
+import {
+  cleanCreator,
+  cleanTitle,
+  formatLabelLong,
+  isDiscFormat,
+} from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 import { RecordLink } from "../lib/open-link.js";
 
@@ -153,7 +158,7 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
               }
             >
               <RecordLink url={hold.url}>
-                {hold.title ?? "(untitled)"}
+                {cleanTitle(hold.title) ?? "(untitled)"}
               </RecordLink>
             </h3>
             <span style={{ ...status.chip, ...CHIP_RIGHT }}>{status.text}</span>

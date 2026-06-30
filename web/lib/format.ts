@@ -46,3 +46,23 @@ export function cleanCreator(name?: string | null): string | null {
   if (!name) return null;
   return name.replace(/\s*\([^)]*\)\s*$/, "").trim() || name;
 }
+
+// A trailing, redundant format tag we already show on the format line.
+const FORMAT_SUFFIX_RE =
+  /\s*\((?:CD|DVD|LP|VINYL|BLU-?RAY|AUDIOBOOK|E-?BOOK|E-?AUDIOBOOK)\)\s*$/i;
+
+/** Tidy a catalog title for display: drop a redundant trailing format tag
+ * ("Pearl Jam (CD)" -> "Pearl Jam") and title-case an ALL-CAPS multi-word
+ * title (a cataloging artifact: "RIOT ACT" -> "Riot Act"). Mixed-case titles
+ * and short all-caps tokens (AC/DC, U2) are left untouched. */
+export function cleanTitle(title?: string | null): string | null {
+  if (!title) return null;
+  let t = title.replace(FORMAT_SUFFIX_RE, "").trim();
+  if (t.includes(" ") && /[A-Za-z]/.test(t) && t === t.toUpperCase()) {
+    t = t
+      .split(" ")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  }
+  return t || title;
+}
