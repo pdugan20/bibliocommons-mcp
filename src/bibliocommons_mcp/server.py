@@ -630,11 +630,17 @@ def search(
 ) -> SearchResult:
     """Search the catalog by keyword, optionally filtered by format.
 
+    Prefer a SINGLE call per user request. Results already span every
+    format, and the inline result card lets the user filter by format — so
+    for a request like "books and CDs about X", make ONE call with `format`
+    omitted rather than separate per-format searches. Only pass `format`
+    when the user explicitly wants just one medium.
+
     Args:
         query: Keyword search string.
         format: Format facet (e.g. `MUSIC_CD`, `BK`, `EBOOK`, `EAUDIOBOOK`,
-            `AUDIOBOOK_CD`, `DVD`). Omit for any format. Defaults to
-            `default_format` from config if set.
+            `AUDIOBOOK_CD`, `DVD`). Omit to return all formats in one call
+            (the usual case). Defaults to `default_format` from config if set.
         page: 1-indexed page number. The gateway returns up to 25
             results per page; use the `pages` field in the response to
             page further.

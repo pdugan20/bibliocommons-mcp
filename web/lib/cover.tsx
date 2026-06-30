@@ -55,8 +55,9 @@ const placeholderStyle: CSSProperties = {
   color: "light-dark(#b6b2ac, #6b6b6b)",
 };
 
-function PlaceholderGlyph() {
-  // Lucide "book" — a quiet thematic stand-in for "no cover available".
+function PlaceholderGlyph({ disc }: { disc?: boolean }) {
+  // Lucide "disc" for CDs, "book" otherwise — a quiet thematic stand-in
+  // for "no cover available" that matches the item's medium.
   return (
     <div style={placeholderStyle} aria-hidden="true">
       <svg
@@ -69,8 +70,17 @@ function PlaceholderGlyph() {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        {disc ? (
+          <>
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="12" r="2.2" />
+          </>
+        ) : (
+          <>
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </>
+        )}
       </svg>
     </div>
   );
@@ -102,12 +112,13 @@ export function CoverImage({
       null);
 
   if (!src) {
-    // Match the missing cover's footprint to its format so it doesn't tower
-    // over (or shrink beside) the real covers around it.
-    const aspectRatio = isDiscFormat(format) ? "1 / 1" : "2 / 3";
+    // Match the missing cover's footprint + glyph to its format so it
+    // doesn't tower over (or shrink beside) the real covers around it.
+    const disc = isDiscFormat(format);
+    const aspectRatio = disc ? "1 / 1" : "2 / 3";
     return (
       <div style={{ ...placeholderWrapStyle, aspectRatio }}>
-        <PlaceholderGlyph />
+        <PlaceholderGlyph disc={disc} />
       </div>
     );
   }

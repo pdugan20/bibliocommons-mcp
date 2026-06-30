@@ -31,23 +31,17 @@ export type BibSummary = {
   total_copies?: number | null;
 };
 
-/** "Available" / "All copies in use", with a holds tally when copies are
- * held. Plain text (no red/green) — the status is the signal, not colour. */
-function availabilityText(b: BibSummary): string | null {
-  const avail = b.available_copies ?? null;
+/** A one-word availability label folded onto the format line. Plain text
+ * (no red/green) — the status word is the signal, not colour. The wait-time
+ * detail (holds on copies) lives in the dedicated `availability` tool. */
+function availabilityLabel(b: BibSummary): string | null {
   const status = b.availability_status ?? null;
-  if (avail == null && status == null) return null;
-  const base = (avail != null ? avail > 0 : status === "AVAILABLE")
-    ? "Available"
-    : "All copies in use";
-  const held = b.held_copies ?? 0;
-  const total = b.total_copies ?? null;
-  if (held > 0 && total) {
-    const h = `${held} hold${held === 1 ? "" : "s"}`;
-    const c = `${total} cop${total === 1 ? "y" : "ies"}`;
-    return `${base} · ${h} on ${c}`;
-  }
-  return base;
+  const avail = b.available_copies ?? null;
+  if (status === "ON_ORDER") return "On order";
+  if (avail != null && avail > 0) return "Available";
+  if (status === "AVAILABLE") return "Available";
+  if (avail === 0 || status === "UNAVAILABLE") return "All copies in use";
+  return null;
 }
 
 export type SearchResult = {
@@ -63,10 +57,15 @@ const BIB_TITLE_STYLE = titleStyle(2);
 
 export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   const author = (bib.authors ?? [])[0];
-  const formatYear = [formatLabelLong(bib.format), bib.year]
+  // Format · year · availability on one line so the row stays compact next
+  // to a short square CD cover.
+  const formatLine = [
+    formatLabelLong(bib.format),
+    bib.year,
+    availabilityLabel(bib),
+  ]
     .filter(Boolean)
     .join(" · ");
-  const availability = availabilityText(bib);
 
   return (
     <>
@@ -76,8 +75,7 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
         <div style={metaStyle}>
           <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
           {author && <p style={lineStyle}>{cleanCreator(author)}</p>}
-          {formatYear && <p style={lineStyle}>{formatYear}</p>}
-          {availability && <p style={lineStyle}>{availability}</p>}
+          {formatLine && <p style={lineStyle}>{formatLine}</p>}
         </div>
       </div>
     </>
