@@ -13,7 +13,7 @@ import {
   titleStyle,
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
-import { cleanCreator, formatLabelLong } from "../lib/format.js";
+import { cleanCreator, cleanTitle, formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 import { RecordLink } from "../lib/open-link.js";
 
@@ -68,7 +68,9 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
   // titled just "Kurt Cobain"), so combining keeps the bold line unique per
   // result; the 2-line clamp bounds the length.
   const fullTitle =
-    [bib.title, bib.subtitle].filter(Boolean).join(": ") || "(untitled)";
+    [cleanTitle(bib.title), cleanTitle(bib.subtitle)]
+      .filter(Boolean)
+      .join(": ") || "(untitled)";
   // Format · year · availability on one line so the row stays compact next
   // to a short square CD cover.
   const formatLine = [

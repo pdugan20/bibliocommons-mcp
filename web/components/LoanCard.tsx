@@ -19,7 +19,12 @@ import {
 } from "../lib/card-style.js";
 import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
-import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
+import {
+  cleanCreator,
+  cleanTitle,
+  formatLabelLong,
+  isDiscFormat,
+} from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
 import { RecordLink } from "../lib/open-link.js";
 
@@ -116,7 +121,7 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
               style={isDiscFormat(loan.format) ? TITLE_STYLE_CD : TITLE_STYLE}
             >
               <RecordLink url={loan.url}>
-                {loan.title ?? "(untitled)"}
+                {cleanTitle(loan.title) ?? "(untitled)"}
               </RecordLink>
             </h3>
             <span style={{ ...badgeStyle, ...CHIP_RIGHT }}>
