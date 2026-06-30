@@ -14,6 +14,9 @@ export function ResponsiveStyles() {
     <style>
       {[
         ":root{--bc-pad-x:20px;--bc-cover-w:64px;--bc-cover-h:88px;--bc-cd-title-lines:2}",
+        // Kill the iOS WebKit tap-highlight (a dark flash overlaid on tap) so
+        // tapping a filter pill / link doesn't briefly darken on mobile.
+        "*{-webkit-tap-highlight-color:transparent}",
         "@media (max-width:360px){:root{--bc-pad-x:14px;--bc-cover-w:54px;--bc-cover-h:74px}}",
         // Square CD covers are short, so cap their (only) title to one line
         // on a narrow viewport so it doesn't tower over the cover. 400px to

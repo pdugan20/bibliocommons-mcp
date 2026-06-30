@@ -16,6 +16,24 @@ import {
   CARD_BORDER_LIGHT,
 } from "./palette.js";
 
+// On iOS, Claude wraps the card iframe in its OWN rounded WKWebView
+// container. If we also round + border the card, the two masks fight at the
+// corners and ours get clipped square (and the border leaves a hairline gap
+// against the host mask). So on iOS we go edge-to-edge — no radius, no border
+// — and let the host's container be the only thing rounding the corners.
+// (Same fix the rewind MCP server uses.) Everywhere else, keep our chrome.
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return (
+    "standalone" in navigator ||
+    /iPad|iPhone|iPod/.test(ua) ||
+    (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
+  );
+}
+
+const ON_IOS = isIOS();
+
 export const rootStyle: CSSProperties = {
   fontFamily:
     'var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
@@ -28,8 +46,10 @@ export const rootStyle: CSSProperties = {
   // (a symmetric 20px read as too much dead space). Horizontal padding is a
   // responsive var (lib/responsive) — tighter on a narrow iOS bubble.
   padding: "16px var(--bc-pad-x, 20px) 8px",
-  borderRadius: 12,
-  border: `1px solid light-dark(${CARD_BORDER_LIGHT}, ${CARD_BORDER_DARK})`,
+  borderRadius: ON_IOS ? 0 : 12,
+  border: ON_IOS
+    ? "none"
+    : `1px solid light-dark(${CARD_BORDER_LIGHT}, ${CARD_BORDER_DARK})`,
   boxSizing: "border-box",
 };
 
