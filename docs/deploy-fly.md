@@ -87,6 +87,37 @@ connector → `https://getbiblio.app/mcp`. It then syncs to the iOS app. Complet
 the WorkOS login, then confirm `list_holds` returns your holds (single-user
 mode uses the configured card automatically — no `/account` step).
 
+## Deploying updates
+
+The image builds from `src/` (see the `Dockerfile`), so a deploy ships
+whatever is in the checkout — it is **decoupled from the PyPI release**. You do
+not need to cut a release to update the phone; you need a deploy.
+
+**Preferred — GitHub Actions (`Deploy to Fly`).** A `workflow_dispatch`
+workflow (`.github/workflows/fly-deploy.yml`) deploys from a runner: no laptop,
+no interactive auth, no local Docker, no terminal timeout. Trigger it from the
+repo's **Actions** tab → *Deploy to Fly* → *Run workflow* (pick the branch to
+ship, usually `main`). One-time setup — create a deploy token and add it as a
+repo secret:
+
+```bash
+fly tokens create deploy -a getbiblio-mcp
+# → paste under Settings → Secrets and variables → Actions → FLY_API_TOKEN
+```
+
+**Local fallback.** From a checkout with the changes:
+
+```bash
+fly deploy --depot=false
+```
+
+`--depot=false` is load-bearing: the default **Depot** remote builder has hung
+indefinitely at `Waiting for depot builder…`; `--depot=false` uses the Fly
+remote builder machine instead. The build + bluegreen rollout can take several
+minutes, so run it detached (or in `tmux`) if your shell has a short timeout.
+Verify after: `fly releases | head`, `fly status`, and
+`curl -s https://getbiblio.app/healthz`.
+
 ## Operations
 
 - Logs: `fly logs`
