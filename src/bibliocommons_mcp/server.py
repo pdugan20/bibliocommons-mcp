@@ -536,29 +536,73 @@ def _bib_summary(bib: dict) -> BibSummary:
 
 def _loan_from_entity(checkout_id: str, c: dict, data: dict) -> Loan:
     """Project a `entities.checkouts[id]` dict into a `Loan` model."""
+    mid = c.get("metadataId")
+    bi = _brief_for(data, mid)
     branch_obj = c.get("branch") or {}
     return Loan(
         checkout_id=checkout_id,
-        metadata_id=c.get("metadataId"),
+        metadata_id=mid,
         title=c.get("bibTitle") or c.get("title"),
+        author=_first_author(bi),
         material_type=c.get("materialType"),
+        format=bi.get("format"),
+        year=bi.get("publicationDate"),
         due=c.get("dueDate"),
         call_number=c.get("callNumber"),
-        branch=branch_obj.get("code") if branch_obj else None,
-        jacket=_jacket_for(data, c.get("metadataId")),
+        branch=_clean_branch(branch_obj.get("name")) or branch_obj.get("code"),
+        jacket=_extract_jacket(bi),
         actions=list(c.get("actions") or []),
         times_renewed=c.get("timesRenewed") or 0,
     )
 
 
+def _brief_for(data: dict, metadata_id: str | None) -> dict:
+    """Bib `briefInfo` joined from `entities.bibs[metadata_id]`.
+
+    The hold/checkout entities are thin (title + status); the rich metadata
+    (author, format, year, jacket) lives in a sibling `entities.bibs` map
+    keyed by bib id — the same block search reads. Empty dict when absent.
+    """
+    if not metadata_id:
+        return {}
+    bib = data.get("entities", {}).get("bibs", {}).get(metadata_id)
+    if not isinstance(bib, dict):
+        return {}
+    brief = bib.get("briefInfo")
+    return brief if isinstance(brief, dict) else {}
+
+
 def _jacket_for(data: dict, metadata_id: str | None) -> Jacket | None:
     """Look up jacket via `entities.bibs[metadata_id].briefInfo.jacket`."""
-    if not metadata_id:
+    return _extract_jacket(_brief_for(data, metadata_id))
+
+
+def _first_author(brief_info: dict) -> str | None:
+    """Primary creator from a briefInfo dict (its `authors` is a list)."""
+    authors = brief_info.get("authors") or []
+    return authors[0] if authors else None
+
+
+def _clean_branch(name: str | None) -> str | None:
+    """Trim the gateway's trailing ' Branch' so a branch reads cleanly
+    ('Lake City Branch' -> 'Lake City'). None passes through."""
+    if not name:
         return None
-    bib = data.get("entities", {}).get("bibs", {}).get(metadata_id)
-    if not bib:
+    return name.removesuffix(" Branch").strip() or name
+
+
+# Friendly library names for the card header. The gateway JSON doesn't carry
+# one; fall back to a title-cased subdomain for libraries not listed here.
+_LIBRARY_NAMES = {
+    "seattle": "Seattle Public Library",
+    "sfpl": "San Francisco Public Library",
+}
+
+
+def _library_display(subdomain: str | None) -> str | None:
+    if not subdomain:
         return None
-    return _extract_jacket(bib.get("briefInfo", {}))
+    return _LIBRARY_NAMES.get(subdomain) or subdomain.replace("-", " ").title()
 
 
 # ─────────────────────────────── tools ───────────────────────────────
@@ -857,21 +901,29 @@ def _holds_from_response(data: dict) -> list[Hold]:
     jacket cover-art alongside each hold.
     """
     holds_ents = data.get("entities", {}).get("holds", {})
-    return [
-        Hold(
-            hold_id=hid,
-            metadata_id=h.get("metadataId"),
-            title=h.get("bibTitle"),
-            material_type=h.get("materialType"),
-            status=h.get("status"),
-            position=h.get("holdsPosition"),
-            pickup_branch=(h.get("pickupLocation") or {}).get("code"),
-            placed=h.get("holdPlacedDate"),
-            expiry=h.get("expiryDate"),
-            jacket=_jacket_for(data, h.get("metadataId")),
+    out: list[Hold] = []
+    for hid, h in holds_ents.items():
+        mid = h.get("metadataId")
+        bi = _brief_for(data, mid)
+        pickup = h.get("pickupLocation") or {}
+        out.append(
+            Hold(
+                hold_id=hid,
+                metadata_id=mid,
+                title=h.get("bibTitle"),
+                author=_first_author(bi),
+                material_type=h.get("materialType"),
+                format=bi.get("format"),
+                year=bi.get("publicationDate"),
+                status=h.get("status"),
+                position=h.get("holdsPosition"),
+                pickup_branch=_clean_branch(pickup.get("name")) or pickup.get("code"),
+                placed=h.get("holdPlacedDate"),
+                expiry=h.get("expiryDate"),
+                jacket=_extract_jacket(bi),
+            )
         )
-        for hid, h in holds_ents.items()
-    ]
+    return out
 
 
 @mcp.tool(
@@ -885,7 +937,12 @@ def list_holds() -> HoldList:
     client = _ensure_client()
     data = client.list_holds()
     out = _holds_from_response(data)
-    return HoldList(count=len(out), holds=out)
+    return HoldList(
+        count=len(out),
+        library=_library_display(client.library),
+        more_url=f"{client.catalog_origin}/v2/holds",
+        holds=out,
+    )
 
 
 @mcp.tool(
@@ -906,7 +963,12 @@ def ready_for_pickup() -> HoldList:
     data = client.list_holds()
     all_holds = _holds_from_response(data)
     ready = [h for h in all_holds if h.status == "READY_FOR_PICKUP"]
-    return HoldList(count=len(ready), holds=ready)
+    return HoldList(
+        count=len(ready),
+        library=_library_display(client.library),
+        more_url=f"{client.catalog_origin}/v2/holds",
+        holds=ready,
+    )
 
 
 @mcp.tool(title="Cancel holds", annotations=DESTRUCTIVE)
@@ -981,7 +1043,12 @@ def list_loans() -> LoanList:
     data = client.list_loans()
     checkouts = data.get("entities", {}).get("checkouts", {})
     out = [_loan_from_entity(cid, c, data) for cid, c in checkouts.items()]
-    return LoanList(count=len(out), loans=out)
+    return LoanList(
+        count=len(out),
+        library=_library_display(client.library),
+        more_url=f"{client.catalog_origin}/checkedout",
+        loans=out,
+    )
 
 
 def _lookup_checkout(client: Client, checkout_id: str) -> dict | None:

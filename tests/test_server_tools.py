@@ -21,6 +21,7 @@ def mock_client(monkeypatch):
     """Replace the module's lazy client + config with mocks."""
     client = MagicMock()
     client.library = "seattle"
+    client.catalog_origin = "https://seattle.bibliocommons.com"
     client.account_id = 1142365318
 
     cfg = MagicMock()
@@ -336,16 +337,39 @@ def test_list_holds_shape(mock_client):
                     "materialType": "PHYSICAL",
                     "status": "NOT_YET_AVAILABLE",
                     "holdsPosition": 1,
-                    "pickupLocation": {"code": "LCY"},
+                    "pickupLocation": {"code": "LCY", "name": "Lake City Branch"},
                     "holdPlacedDate": "2026-05-27",
                     "expiryDate": "2027-03-03",
                 }
-            }
+            },
+            # Rich bib metadata is joined from the sibling bibs map.
+            "bibs": {
+                "S30C1": {
+                    "id": "S30C1",
+                    "briefInfo": {
+                        "title": "x",
+                        "authors": ["Cross, Charles R."],
+                        "format": "BK",
+                        "publicationDate": "2019",
+                        "jacket": {"small": "s", "medium": "m", "large": "l"},
+                    },
+                }
+            },
         }
     }
     out = srv.list_holds()
     assert out.count == 1
-    assert out.holds[0].pickup_branch == "LCY"
+    h = out.holds[0]
+    # Branch name resolved from pickupLocation, " Branch" trimmed.
+    assert h.pickup_branch == "Lake City"
+    # Enrichment joined from entities.bibs[...].briefInfo.
+    assert h.author == "Cross, Charles R."
+    assert h.format == "BK"
+    assert h.year == "2019"
+    assert h.jacket is not None and h.jacket.large == "l"
+    # List-level fields for the card header + footer link.
+    assert out.library == "Seattle Public Library"
+    assert out.more_url == "https://seattle.bibliocommons.com/v2/holds"
 
 
 def test_cancel_hold_single_item(mock_client):
@@ -430,7 +454,25 @@ def test_list_loans_shape(mock_client):
                     "timesRenewed": 1,
                     "branch": {"code": "LCY", "name": "Lake City Branch"},
                 },
-            }
+            },
+            "bibs": {
+                "S30C1": {
+                    "id": "S30C1",
+                    "briefInfo": {
+                        "authors": ["Yarm, Mark"],
+                        "format": "EBOOK",
+                        "publicationDate": "2011",
+                    },
+                },
+                "S30C2": {
+                    "id": "S30C2",
+                    "briefInfo": {
+                        "authors": ["Doe, Jane"],
+                        "format": "BK",
+                        "publicationDate": "2005",
+                    },
+                },
+            },
         }
     }
     out = srv.list_loans()
@@ -441,10 +483,18 @@ def test_list_loans_shape(mock_client):
     # calling renew_loan.
     assert "renew" not in by_id["C1"].actions
     assert by_id["C1"].times_renewed == 0
-    # Physical item: renewable, branch code lifted from the nested object.
+    # Enrichment joined from entities.bibs; digital item has no branch.
+    assert by_id["C1"].author == "Yarm, Mark"
+    assert by_id["C1"].format == "EBOOK"
+    assert by_id["C1"].year == "2011"
+    assert by_id["C1"].branch is None
+    # Physical item: renewable, branch name resolved + " Branch" trimmed.
     assert "renew" in by_id["C2"].actions
     assert by_id["C2"].times_renewed == 1
-    assert by_id["C2"].branch == "LCY"
+    assert by_id["C2"].branch == "Lake City"
+    assert by_id["C2"].format == "BK"
+    assert out.library == "Seattle Public Library"
+    assert out.more_url == "https://seattle.bibliocommons.com/checkedout"
 
 
 def test_place_digital_hold_single_item(mock_client, monkeypatch):

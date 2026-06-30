@@ -117,9 +117,16 @@ class Hold(BaseModel):
     hold_id: str
     metadata_id: str | None = Field(default=None, description="Bib id.")
     title: str | None = Field(default=None)
+    author: str | None = Field(
+        default=None, description="Primary creator, from the joined bib record."
+    )
     material_type: str | None = Field(
         default=None, description="'PHYSICAL' or 'DIGITAL'."
     )
+    format: str | None = Field(
+        default=None, description="Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'."
+    )
+    year: str | None = Field(default=None, description="Publication date as printed.")
     status: str | None = Field(
         default=None, description="'NOT_YET_AVAILABLE', 'READY_FOR_PICKUP', etc."
     )
@@ -138,6 +145,12 @@ class Hold(BaseModel):
 
 class HoldList(BaseModel):
     count: int
+    library: str | None = Field(
+        default=None, description="Library display name, e.g. 'Seattle Public Library'."
+    )
+    more_url: str | None = Field(
+        default=None, description="Catalog holds page URL for a 'view all' link."
+    )
     holds: list[Hold] = Field(default_factory=list)
 
 
@@ -147,7 +160,14 @@ class Loan(BaseModel):
     checkout_id: str
     metadata_id: str | None = Field(default=None)
     title: str | None = Field(default=None)
+    author: str | None = Field(
+        default=None, description="Primary creator, from the joined bib record."
+    )
     material_type: str | None = Field(default=None)
+    format: str | None = Field(
+        default=None, description="Format facet, e.g. 'BK', 'MUSIC_CD', 'EBOOK'."
+    )
+    year: str | None = Field(default=None, description="Publication date as printed.")
     due: str | None = Field(default=None, description="ISO date due back.")
     call_number: str | None = Field(default=None)
     branch: str | None = Field(default=None)
@@ -170,6 +190,12 @@ class Loan(BaseModel):
 
 class LoanList(BaseModel):
     count: int
+    library: str | None = Field(
+        default=None, description="Library display name, e.g. 'Seattle Public Library'."
+    )
+    more_url: str | None = Field(
+        default=None, description="Catalog checkouts page URL for a 'view all' link."
+    )
     loans: list[Loan] = Field(default_factory=list)
 
 
