@@ -151,6 +151,31 @@ function Workbench() {
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
+  // Auto-size the iframe to its content so the card is never clipped.
+  // Same-origin (localhost), so we can read the bundle document. We
+  // observe <body> (auto-height, so it shrinks too) rather than
+  // documentElement (which fills the frame and would get stuck tall),
+  // and use a ResizeObserver because the card renders *after* the
+  // postMessage handshake and reflows when the viewport toggle changes.
+  const [frameHeight, setFrameHeight] = useState(280);
+  const frameObsRef = useRef<ResizeObserver | null>(null);
+
+  const handleFrameLoad = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc?.body) return;
+    const measure = () => {
+      const h = Math.ceil(doc.body.scrollHeight);
+      if (h > 0) setFrameHeight(Math.max(h + 2, 120));
+    };
+    measure();
+    frameObsRef.current?.disconnect();
+    const ro = new ResizeObserver(measure);
+    ro.observe(doc.body);
+    frameObsRef.current = ro;
+  }, []);
+
+  useEffect(() => () => frameObsRef.current?.disconnect(), []);
+
   // Apply theme to the workbench chrome (host doc).
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -394,11 +419,13 @@ function Workbench() {
             ref={iframeRef}
             src={bundle.entryUrl}
             title={bundle.label}
+            onLoad={handleFrameLoad}
+            scrolling="no"
             style={{
               display: "block",
               width: "100%",
               maxWidth: VIEWPORT_WIDTHS[viewport],
-              minHeight: 280,
+              height: frameHeight,
               border: "none",
               background: "transparent",
               transition: "max-width 200ms ease",
