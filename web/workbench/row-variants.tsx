@@ -41,7 +41,7 @@ const ITEM = {
   year: "2026",
   due: "Due in 4 days",
   dueExact: "until Jul 3",
-  hint: "Return only",
+  hint: "Not renewable",
 };
 
 const TITLE = titleStyle(3);

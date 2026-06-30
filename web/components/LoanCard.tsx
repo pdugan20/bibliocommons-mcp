@@ -78,7 +78,7 @@ function renewalHint(loan: Loan): string | null {
   // Just whether it's renewable — the renewal count (times_renewed) is
   // more detail than a "can I keep this longer?" glance needs.
   if (actions.includes("renew")) return "Renewable";
-  if (actions.includes("checkIn")) return "Return only";
+  if (actions.includes("checkIn")) return "Not renewable";
   return null;
 }
 
