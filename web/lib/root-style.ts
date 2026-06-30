@@ -32,3 +32,11 @@ export const rootStyle: CSSProperties = {
   border: `1px solid light-dark(${CARD_BORDER_LIGHT}, ${CARD_BORDER_DARK})`,
   boxSizing: "border-box",
 };
+
+// Single-line status states (loading / error). The list rootStyle keeps a
+// tight 8px bottom because the last row carries its own padding; a lone
+// message has no row, so it needs symmetric breathing room top and bottom.
+export const messageRootStyle: CSSProperties = {
+  ...rootStyle,
+  padding: "16px var(--bc-pad-x, 20px)",
+};

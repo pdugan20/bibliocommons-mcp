@@ -25,9 +25,9 @@ import { openLink } from "./open-link.js";
 import { rootStyle } from "./root-style.js";
 
 const emptyStyle: CSSProperties = {
-  // Bottom margin gives the empty message room above the footer divider,
-  // which otherwise sits tight against it (footerStyle marginTop is small).
-  margin: "12px 0 16px",
+  // Top margin separates the message from the header (no filter sits between
+  // them here); bottom margin keeps it off the footer divider.
+  margin: "14px 0 16px",
   fontSize: 13,
   opacity: 0.7,
 };
@@ -140,7 +140,7 @@ export function CardFrame<T extends WithFormat>({
       {empty ? (
         <p style={emptyStyle}>{empty}</p>
       ) : (
-        <div style={{ marginTop: formats.length > 1 ? 16 : 10 }}>
+        <div style={{ marginTop: formats.length > 1 ? 16 : 14 }}>
           {shown.map((it, i) => renderItem(it, i))}
         </div>
       )}

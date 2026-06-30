@@ -9,7 +9,7 @@ import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 import { type LoanList } from "./components/LoanCard.js";
 import { useLinkOpener } from "./lib/open-link.js";
 import { ResponsiveStyles } from "./lib/responsive.js";
-import { rootStyle } from "./lib/root-style.js";
+import { messageRootStyle } from "./lib/root-style.js";
 import { LoansView } from "./lib/views.js";
 
 function LoansApp() {
@@ -31,11 +31,11 @@ function LoansApp() {
   useLinkOpener(app);
 
   if (error) {
-    return <div style={rootStyle}>Error: {error.message}</div>;
+    return <div style={messageRootStyle}>Error: {error.message}</div>;
   }
   if (!isConnected) return null;
   if (payload === null) {
-    return <div style={rootStyle}>Waiting for loans…</div>;
+    return <div style={messageRootStyle}>Waiting for loans…</div>;
   }
 
   return <LoansView payload={payload} />;

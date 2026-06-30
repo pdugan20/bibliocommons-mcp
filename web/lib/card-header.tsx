@@ -161,7 +161,7 @@ export function HeaderLockup({
             gap: 8,
           }}
         >
-          <h2 style={ttl({ fontSize: 17, fontWeight: 700 })}>{title}</h2>
+          <h2 style={ttl({ fontSize: 17, fontWeight: 600 })}>{title}</h2>
           <span style={lib({ fontSize: 12, fontWeight: 500, opacity: 0.5 })}>
             {library}
           </span>

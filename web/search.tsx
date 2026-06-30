@@ -9,7 +9,7 @@ import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 import { type SearchResult } from "./components/BibCard.js";
 import { useLinkOpener } from "./lib/open-link.js";
 import { ResponsiveStyles } from "./lib/responsive.js";
-import { rootStyle } from "./lib/root-style.js";
+import { messageRootStyle } from "./lib/root-style.js";
 import { SearchView } from "./lib/views.js";
 
 function SearchApp() {
@@ -31,11 +31,11 @@ function SearchApp() {
   useLinkOpener(app);
 
   if (error) {
-    return <div style={rootStyle}>Error: {error.message}</div>;
+    return <div style={messageRootStyle}>Error: {error.message}</div>;
   }
   if (!isConnected) return null;
   if (payload === null) {
-    return <div style={rootStyle}>Waiting for search results…</div>;
+    return <div style={messageRootStyle}>Waiting for search results…</div>;
   }
 
   return <SearchView payload={payload} />;

@@ -13,7 +13,7 @@ import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 import { type HoldList } from "./components/HoldCard.js";
 import { useLinkOpener } from "./lib/open-link.js";
 import { ResponsiveStyles } from "./lib/responsive.js";
-import { rootStyle } from "./lib/root-style.js";
+import { messageRootStyle } from "./lib/root-style.js";
 import { HoldsView } from "./lib/views.js";
 
 function HoldsApp() {
@@ -36,11 +36,11 @@ function HoldsApp() {
   useLinkOpener(app);
 
   if (error) {
-    return <div style={rootStyle}>Error: {error.message}</div>;
+    return <div style={messageRootStyle}>Error: {error.message}</div>;
   }
   if (!isConnected) return null;
   if (payload === null) {
-    return <div style={rootStyle}>Waiting for holds…</div>;
+    return <div style={messageRootStyle}>Waiting for holds…</div>;
   }
 
   return <HoldsView payload={payload} />;
