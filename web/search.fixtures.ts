@@ -88,6 +88,7 @@ export const fixtures: Fixture[] = [
           available_copies: 3,
           held_copies: 0,
           total_copies: 5,
+          url: "https://seattle.bibliocommons.com/v2/record/S30C3453854",
         },
         {
           bib_id: "S30C3637382",
@@ -102,6 +103,7 @@ export const fixtures: Fixture[] = [
           available_copies: 0,
           held_copies: 4,
           total_copies: 6,
+          url: "https://seattle.bibliocommons.com/v2/record/S30C3637382",
         },
         {
           bib_id: "S30C3857930",
@@ -116,6 +118,7 @@ export const fixtures: Fixture[] = [
           available_copies: 1,
           held_copies: 0,
           total_copies: 1,
+          url: "https://seattle.bibliocommons.com/v2/record/S30C3857930",
         },
       ],
     },

@@ -15,6 +15,11 @@ import {
 import { CoverImage } from "../lib/cover.js";
 import { cleanCreator, formatLabelLong } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
+import { RecordLink } from "../lib/open-link.js";
+
+import type { CSSProperties } from "react";
+
+const COVER_LINK_STYLE: CSSProperties = { display: "block", flexShrink: 0 };
 
 export type BibSummary = {
   bib_id: string;
@@ -29,6 +34,7 @@ export type BibSummary = {
   available_copies?: number | null;
   held_copies?: number | null;
   total_copies?: number | null;
+  url?: string | null;
 };
 
 /** A one-word availability label folded onto the format line. Plain text
@@ -71,9 +77,17 @@ export function BibCard({ bib, index }: { bib: BibSummary; index: number }) {
     <>
       {index > 0 && <div style={rowDividerStyle} />}
       <div style={index === 0 ? firstRowStyle : rowStyle}>
-        <CoverImage jacket={bib.jacket} eager={index < 3} format={bib.format} />
+        <RecordLink url={bib.url} style={COVER_LINK_STYLE}>
+          <CoverImage
+            jacket={bib.jacket}
+            eager={index < 3}
+            format={bib.format}
+          />
+        </RecordLink>
         <div style={metaStyle}>
-          <h3 style={BIB_TITLE_STYLE}>{bib.title ?? "(untitled)"}</h3>
+          <h3 style={BIB_TITLE_STYLE}>
+            <RecordLink url={bib.url}>{bib.title ?? "(untitled)"}</RecordLink>
+          </h3>
           {author && <p style={lineStyle}>{cleanCreator(author)}</p>}
           {formatLine && <p style={lineStyle}>{formatLine}</p>}
         </div>

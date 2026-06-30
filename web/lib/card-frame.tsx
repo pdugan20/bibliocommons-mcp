@@ -21,6 +21,7 @@ import {
   filterStyles,
 } from "./controls.js";
 import { formatLabel } from "./format.js";
+import { openLink } from "./open-link.js";
 import { rootStyle } from "./root-style.js";
 
 const emptyStyle: CSSProperties = {
@@ -162,6 +163,10 @@ export function CardFrame<T extends WithFormat>({
               href={moreUrl}
               target="_blank"
               rel="noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                openLink(moreUrl);
+              }}
               style={cta.style}
             >
               {ctaLabel}
@@ -180,6 +185,10 @@ export function CardFrame<T extends WithFormat>({
                 href={moreUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  openLink(moreUrl);
+                }}
                 style={{ ...cta.style, whiteSpace: "nowrap" }}
               >
                 {ctaLabel}

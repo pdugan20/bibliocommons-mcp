@@ -385,6 +385,7 @@ def test_list_holds_shape(mock_client):
     assert h.format == "BK"
     assert h.year == "2019"
     assert h.jacket is not None and h.jacket.large == "l"
+    assert h.url == "https://seattle.bibliocommons.com/v2/record/S30C1"
     # List-level fields for the card header + footer link.
     assert out.library == "Seattle Public Library"
     assert out.more_url == "https://seattle.bibliocommons.com/v2/holds"
@@ -511,6 +512,8 @@ def test_list_loans_shape(mock_client):
     assert by_id["C2"].times_renewed == 1
     assert by_id["C2"].branch == "Lake City"
     assert by_id["C2"].format == "BK"
+    assert by_id["C1"].url == "https://seattle.bibliocommons.com/v2/record/S30C1"
+    assert by_id["C2"].url == "https://seattle.bibliocommons.com/v2/record/S30C2"
     assert out.library == "Seattle Public Library"
     assert out.more_url == "https://seattle.bibliocommons.com/checkedout"
 

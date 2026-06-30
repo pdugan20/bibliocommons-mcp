@@ -21,6 +21,9 @@ import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
 import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
+import { RecordLink } from "../lib/open-link.js";
+
+const COVER_LINK_STYLE: CSSProperties = { display: "block", flexShrink: 0 };
 
 export type Loan = {
   checkout_id: string;
@@ -36,6 +39,7 @@ export type Loan = {
   jacket?: Jacket | null;
   actions?: string[];
   times_renewed?: number;
+  url?: string | null;
 };
 
 export type LoanList = {
@@ -99,13 +103,21 @@ export function LoanCard({ loan, index }: { loan: Loan; index: number }) {
     <>
       {index > 0 && <div style={rowDividerStyle} />}
       <div style={baseRow}>
-        <CoverImage jacket={loan.jacket} eager={index < 3} />
+        <RecordLink url={loan.url} style={COVER_LINK_STYLE}>
+          <CoverImage
+            jacket={loan.jacket}
+            eager={index < 3}
+            format={loan.format}
+          />
+        </RecordLink>
         <div style={metaStyle}>
           <div style={titleRowStyle}>
             <h3
               style={isDiscFormat(loan.format) ? TITLE_STYLE_CD : TITLE_STYLE}
             >
-              {loan.title ?? "(untitled)"}
+              <RecordLink url={loan.url}>
+                {loan.title ?? "(untitled)"}
+              </RecordLink>
             </h3>
             <span style={{ ...badgeStyle, ...CHIP_RIGHT }}>
               {dueText(loan)}

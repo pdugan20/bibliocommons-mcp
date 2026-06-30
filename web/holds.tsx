@@ -11,6 +11,7 @@ import { createRoot } from "react-dom/client";
 import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { type HoldList } from "./components/HoldCard.js";
+import { useLinkOpener } from "./lib/open-link.js";
 import { ResponsiveStyles } from "./lib/responsive.js";
 import { rootStyle } from "./lib/root-style.js";
 import { HoldsView } from "./lib/views.js";
@@ -32,6 +33,7 @@ function HoldsApp() {
   // Pass the initial host context so the host's theme + style vars apply on
   // mount, not just on later host-context-changed notifications.
   useHostStyles(app, app?.getHostContext());
+  useLinkOpener(app);
 
   if (error) {
     return <div style={rootStyle}>Error: {error.message}</div>;

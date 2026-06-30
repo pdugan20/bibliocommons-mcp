@@ -23,6 +23,9 @@ import { CoverImage } from "../lib/cover.js";
 import { formatMonthDay } from "../lib/date.js";
 import { cleanCreator, formatLabelLong, isDiscFormat } from "../lib/format.js";
 import type { Jacket } from "../lib/jacket.js";
+import { RecordLink } from "../lib/open-link.js";
+
+const COVER_LINK_STYLE: CSSProperties = { display: "block", flexShrink: 0 };
 
 export type Hold = {
   hold_id: string;
@@ -42,6 +45,7 @@ export type Hold = {
   pickup_by?: string | null;
   expiry?: string | null;
   jacket?: Jacket | null;
+  url?: string | null;
 };
 
 export type HoldList = {
@@ -132,7 +136,13 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
     <>
       {index > 0 && <div style={rowDividerStyle} />}
       <div style={spent ? { ...baseRow, opacity: 0.55 } : baseRow}>
-        <CoverImage jacket={hold.jacket} eager={index < 3} />
+        <RecordLink url={hold.url} style={COVER_LINK_STYLE}>
+          <CoverImage
+            jacket={hold.jacket}
+            eager={index < 3}
+            format={hold.format}
+          />
+        </RecordLink>
         <div style={metaStyle}>
           <div style={titleRowStyle}>
             <h3
@@ -142,7 +152,9 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
                   : titleBase
               }
             >
-              {hold.title ?? "(untitled)"}
+              <RecordLink url={hold.url}>
+                {hold.title ?? "(untitled)"}
+              </RecordLink>
             </h3>
             <span style={{ ...status.chip, ...CHIP_RIGHT }}>{status.text}</span>
           </div>

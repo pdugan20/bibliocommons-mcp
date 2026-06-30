@@ -60,6 +60,9 @@ class BibSummary(BaseModel):
     available_copies: int | None = Field(default=None)
     held_copies: int | None = Field(default=None)
     total_copies: int | None = Field(default=None)
+    url: str | None = Field(
+        default=None, description="Catalog record page URL for this title."
+    )
 
 
 class HoldRef(BaseModel):
@@ -153,6 +156,9 @@ class Hold(BaseModel):
     )
     expiry: str | None = Field(default=None)
     jacket: Jacket | None = Field(default=None)
+    url: str | None = Field(
+        default=None, description="Catalog record page URL for this title."
+    )
 
 
 class HoldList(BaseModel):
@@ -197,6 +203,9 @@ class Loan(BaseModel):
     times_renewed: int = Field(
         default=0,
         description="How many times this checkout has already been renewed.",
+    )
+    url: str | None = Field(
+        default=None, description="Catalog record page URL for this title."
     )
 
 

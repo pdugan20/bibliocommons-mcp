@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import { useApp, useHostStyles } from "@modelcontextprotocol/ext-apps/react";
 
 import { type SearchResult } from "./components/BibCard.js";
+import { useLinkOpener } from "./lib/open-link.js";
 import { ResponsiveStyles } from "./lib/responsive.js";
 import { rootStyle } from "./lib/root-style.js";
 import { SearchView } from "./lib/views.js";
@@ -27,6 +28,7 @@ function SearchApp() {
 
   // See holds.tsx — pass initial host context so theme applies on mount.
   useHostStyles(app, app?.getHostContext());
+  useLinkOpener(app);
 
   if (error) {
     return <div style={rootStyle}>Error: {error.message}</div>;

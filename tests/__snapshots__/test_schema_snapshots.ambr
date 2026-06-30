@@ -864,6 +864,19 @@
                 'default': None,
                 'title': 'Title',
               }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
+              }),
               'year': dict({
                 'anyOf': list([
                   dict({
@@ -1202,6 +1215,19 @@
                 ]),
                 'default': None,
                 'title': 'Title',
+              }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
               }),
               'year': dict({
                 'anyOf': list([
@@ -1764,6 +1790,19 @@
                 'default': None,
                 'title': 'Title',
               }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
+              }),
               'year': dict({
                 'anyOf': list([
                   dict({
@@ -2136,6 +2175,19 @@
                 ]),
                 'default': None,
                 'title': 'Total Copies',
+              }),
+              'url': dict({
+                'anyOf': list([
+                  dict({
+                    'type': 'string',
+                  }),
+                  dict({
+                    'type': 'null',
+                  }),
+                ]),
+                'default': None,
+                'description': 'Catalog record page URL for this title.',
+                'title': 'Url',
               }),
               'year': dict({
                 'anyOf': list([

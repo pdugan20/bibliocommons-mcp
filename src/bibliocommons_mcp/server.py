@@ -520,14 +520,15 @@ def _extract_jacket(brief_info: dict) -> Jacket | None:
     )
 
 
-def _bib_summary(bib: dict) -> BibSummary:
+def _bib_summary(bib: dict, origin: str) -> BibSummary:
     bi = bib.get("briefInfo", {})
     # Search responses carry a per-bib availability summary alongside
     # briefInfo — no separate /availability call needed for the list view.
     av = bib.get("availability")
     av = av if isinstance(av, dict) else {}
+    bib_id = bib.get("id") or bi.get("metadataId") or ""
     return BibSummary(
-        bib_id=bib.get("id") or bi.get("metadataId") or "",
+        bib_id=bib_id,
         title=bi.get("title"),
         subtitle=bi.get("subtitle"),
         authors=list(bi.get("authors") or []),
@@ -539,10 +540,11 @@ def _bib_summary(bib: dict) -> BibSummary:
         available_copies=av.get("availableCopies"),
         held_copies=av.get("heldCopies"),
         total_copies=av.get("totalCopies"),
+        url=_record_url(origin, bib_id or None),
     )
 
 
-def _loan_from_entity(checkout_id: str, c: dict, data: dict) -> Loan:
+def _loan_from_entity(checkout_id: str, c: dict, data: dict, origin: str) -> Loan:
     """Project a `entities.checkouts[id]` dict into a `Loan` model."""
     mid = c.get("metadataId")
     bi = _brief_for(data, mid)
@@ -561,6 +563,7 @@ def _loan_from_entity(checkout_id: str, c: dict, data: dict) -> Loan:
         jacket=_extract_jacket(bi),
         actions=list(c.get("actions") or []),
         times_renewed=c.get("timesRenewed") or 0,
+        url=_record_url(origin, mid),
     )
 
 
@@ -613,6 +616,12 @@ def _library_display(subdomain: str | None) -> str | None:
     return _LIBRARY_NAMES.get(subdomain) or subdomain.replace("-", " ").title()
 
 
+def _record_url(origin: str, bib_id: str | None) -> str | None:
+    """Catalog record page URL for a bib, e.g.
+    https://seattle.bibliocommons.com/v2/record/S30C3857930."""
+    return f"{origin}/v2/record/{bib_id}" if bib_id else None
+
+
 # ─────────────────────────────── tools ───────────────────────────────
 
 
@@ -663,7 +672,7 @@ def search(
         total=pag.get("count"),
         library=_library_display(client.library),
         more_url=more_url,
-        results=[_bib_summary(bibs[bid]) for bid in bibs],
+        results=[_bib_summary(bibs[bid], client.catalog_origin) for bid in bibs],
     )
 
 
@@ -914,7 +923,7 @@ def place_digital_hold(
     return BulkPlaceDigitalHoldResult(placed=placed, failures=failures)
 
 
-def _holds_from_response(data: dict) -> list[Hold]:
+def _holds_from_response(data: dict, origin: str) -> list[Hold]:
     """Build a list of Hold models from a raw gateway holds response.
 
     Joins `entities.holds` with `entities.bibs[metadataId]` to populate
@@ -941,6 +950,7 @@ def _holds_from_response(data: dict) -> list[Hold]:
                 placed=h.get("holdPlacedDate"),
                 expiry=h.get("expiryDate"),
                 jacket=_extract_jacket(bi),
+                url=_record_url(origin, mid),
             )
         )
     return out
@@ -956,7 +966,7 @@ def list_holds() -> HoldList:
     """Show current holds (physical + digital) with queue positions."""
     client = _ensure_client()
     data = client.list_holds()
-    out = _holds_from_response(data)
+    out = _holds_from_response(data, client.catalog_origin)
     return HoldList(
         count=len(out),
         library=_library_display(client.library),
@@ -981,7 +991,7 @@ def ready_for_pickup() -> HoldList:
     """
     client = _ensure_client()
     data = client.list_holds()
-    all_holds = _holds_from_response(data)
+    all_holds = _holds_from_response(data, client.catalog_origin)
     ready = [h for h in all_holds if h.status == "READY_FOR_PICKUP"]
     return HoldList(
         count=len(ready),
@@ -1062,7 +1072,10 @@ def list_loans() -> LoanList:
     client = _ensure_client()
     data = client.list_loans()
     checkouts = data.get("entities", {}).get("checkouts", {})
-    out = [_loan_from_entity(cid, c, data) for cid, c in checkouts.items()]
+    out = [
+        _loan_from_entity(cid, c, data, client.catalog_origin)
+        for cid, c in checkouts.items()
+    ]
     return LoanList(
         count=len(out),
         library=_library_display(client.library),
