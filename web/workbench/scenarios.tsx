@@ -233,10 +233,16 @@ function SwitchGroup<T extends string>({
 }
 
 function Scenarios() {
-  const [header, setHeader] = useState<HeaderVariant>(DEFAULT_HEADER_VARIANT);
-  const [filterStyle, setFilterStyle] =
-    useState<FilterStyleId>(DEFAULT_FILTER_STYLE);
-  const [ctaStyle, setCtaStyle] = useState<CtaStyleId>(DEFAULT_CTA_STYLE);
+  const params = new URLSearchParams(location.search);
+  const [header, setHeader] = useState<HeaderVariant>(
+    (params.get("header") as HeaderVariant) || DEFAULT_HEADER_VARIANT,
+  );
+  const [filterStyle, setFilterStyle] = useState<FilterStyleId>(
+    (params.get("filter") as FilterStyleId) || DEFAULT_FILTER_STYLE,
+  );
+  const [ctaStyle, setCtaStyle] = useState<CtaStyleId>(
+    (params.get("cta") as CtaStyleId) || DEFAULT_CTA_STYLE,
+  );
   return (
     <HeaderVariantContext.Provider value={header}>
       <FilterStyleContext.Provider value={filterStyle}>

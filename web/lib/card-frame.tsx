@@ -81,21 +81,6 @@ function FilterBar({
   );
 }
 
-function FooterCta({ moreUrl, label }: { moreUrl: string; label: string }) {
-  const cta = ctaStyle(useContext(CtaStyleContext));
-  return (
-    <a
-      href={moreUrl}
-      target="_blank"
-      rel="noreferrer"
-      style={{ ...cta.style, whiteSpace: "nowrap" }}
-    >
-      {label}
-      {cta.arrow ? " →" : ""}
-    </a>
-  );
-}
-
 type WithFormat = { format?: string | null };
 
 export function CardFrame<T extends WithFormat>({
@@ -120,6 +105,8 @@ export function CardFrame<T extends WithFormat>({
   moreLabel?: string;
 }) {
   const [filter, setFilter] = useState<string | null>(null);
+  const cta = ctaStyle(useContext(CtaStyleContext));
+  const ctaLabel = `${moreLabel ?? "View in catalog"}${cta.arrow ? " →" : ""}`;
 
   // Distinct format codes present, in first-seen order, for the filter.
   const formats: string[] = [];
@@ -153,17 +140,45 @@ export function CardFrame<T extends WithFormat>({
           {shown.map((it, i) => renderItem(it, i))}
         </div>
       )}
-      {(moreUrl || footerNote) && (
-        <div style={footerStyle}>
-          <span style={footerNoteStyle}>{footerNote ?? ""}</span>
-          {moreUrl && (
-            <FooterCta
-              moreUrl={moreUrl}
-              label={moreLabel ?? "View in catalog"}
-            />
-          )}
-        </div>
-      )}
+      {(moreUrl || footerNote) &&
+        (cta.full && moreUrl ? (
+          <div
+            style={{
+              marginTop: 14,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+            }}
+          >
+            {footerNote && (
+              <span style={{ ...footerNoteStyle, textAlign: "center" }}>
+                {footerNote}
+              </span>
+            )}
+            <a
+              href={moreUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={cta.style}
+            >
+              {ctaLabel}
+            </a>
+          </div>
+        ) : (
+          <div style={footerStyle}>
+            <span style={footerNoteStyle}>{footerNote ?? ""}</span>
+            {moreUrl && (
+              <a
+                href={moreUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ ...cta.style, whiteSpace: "nowrap" }}
+              >
+                {ctaLabel}
+              </a>
+            )}
+          </div>
+        ))}
     </div>
   );
 }

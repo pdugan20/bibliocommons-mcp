@@ -144,27 +144,91 @@ export function filterStyles(id: FilterStyleId): {
 }
 
 // ---------- Footer CTA ----------
-export type CtaStyleId = "link" | "outlined" | "filled" | "tonal";
+export type CtaStyleId =
+  | "link"
+  | "outlined"
+  | "filled"
+  | "tonal"
+  | "fullFilled"
+  | "fullOutlined"
+  | "fullTonal";
 export const CTA_STYLE_IDS: CtaStyleId[] = [
   "link",
   "outlined",
   "filled",
   "tonal",
+  "fullFilled",
+  "fullOutlined",
+  "fullTonal",
 ];
 export const CTA_STYLE_NOTES: Record<CtaStyleId, string> = {
   link: "Link",
   outlined: "Outlined",
   filled: "Filled",
   tonal: "Tonal",
+  fullFilled: "Full filled",
+  fullOutlined: "Full outlined",
+  fullTonal: "Full tonal",
 };
 export const DEFAULT_CTA_STYLE: CtaStyleId = "link";
 export const CtaStyleContext = createContext<CtaStyleId>(DEFAULT_CTA_STYLE);
 
+const fullBase: CSSProperties = {
+  display: "block",
+  textAlign: "center",
+  width: "100%",
+  boxSizing: "border-box",
+  borderRadius: 8,
+  textDecoration: "none",
+};
+
 export function ctaStyle(id: CtaStyleId): {
   style: CSSProperties;
   arrow: boolean;
+  /** Full-width: render under the content with no top divider. */
+  full?: boolean;
 } {
   switch (id) {
+    case "fullFilled":
+      return {
+        style: {
+          ...fullBase,
+          border: "none",
+          background: BLUE,
+          color: "#fff",
+          padding: "11px 16px",
+          fontWeight: 600,
+        },
+        arrow: false,
+        full: true,
+      };
+    case "fullOutlined":
+      return {
+        style: {
+          ...fullBase,
+          border: "1px solid light-dark(#cdd6df, #3a4654)",
+          background: "transparent",
+          color: LINK,
+          padding: "10px 16px",
+          fontWeight: 600,
+        },
+        arrow: false,
+        full: true,
+      };
+    case "fullTonal":
+      return {
+        style: {
+          ...fullBase,
+          border: "none",
+          background:
+            "light-dark(rgba(15,109,191,0.12), rgba(77,159,232,0.22))",
+          color: LINK,
+          padding: "11px 16px",
+          fontWeight: 700,
+        },
+        arrow: true,
+        full: true,
+      };
     case "outlined":
       return {
         style: {
