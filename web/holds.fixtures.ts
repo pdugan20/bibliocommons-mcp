@@ -79,8 +79,8 @@ export const fixtures: Fixture[] = [
           position: null,
           pickup_branch: "Lake City",
           placed: "2026-05-20",
-          pickup_by: "2026-06-03",
-          expiry: "2027-03-03",
+          // For a ready hold, expiry is the collect-by deadline (short window).
+          expiry: "2026-06-03",
           jacket: COVER_HEAVIER,
         },
         {
@@ -150,9 +150,35 @@ export const fixtures: Fixture[] = [
           position: null,
           pickup_branch: "Lake City",
           placed: "2026-05-20",
-          pickup_by: "2026-06-03",
-          expiry: "2027-03-03",
+          expiry: "2026-06-03",
           jacket: COVER_HEAVIER,
+        },
+      ],
+    },
+  },
+  {
+    name: "Digital hold ready to borrow",
+    description:
+      "A ready DIGITAL hold (like the real Steve Jobs one): no pickup branch, so the line is just 'Ready until <date>' where the date is expiryDate (the borrow-by deadline).",
+    structuredContent: {
+      count: 1,
+      library: "Seattle Public Library",
+      more_url: "https://seattle.bibliocommons.com/v2/holds",
+      holds: [
+        {
+          hold_id: "A81AE857",
+          metadata_id: "S30C4144014",
+          title: "Steve Jobs in Exile",
+          author: "Cain, Geoffrey",
+          year: "2026",
+          material_type: "DIGITAL",
+          format: "EAUDIOBOOK",
+          status: "READY_FOR_PICKUP",
+          position: null,
+          pickup_branch: null,
+          placed: "2026-05-23",
+          expiry: "2026-07-04",
+          jacket: null,
         },
       ],
     },

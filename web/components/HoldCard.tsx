@@ -46,8 +46,8 @@ export type Hold = {
   copies?: number | null;
   pickup_branch?: string | null;
   placed?: string | null;
-  /** For a ready hold: the last day to collect it. */
-  pickup_by?: string | null;
+  /** Gateway expiryDate. For a ready hold it's the collect/borrow-by
+   * deadline; for a waiting hold it's the auto-cancel date. */
   expiry?: string | null;
   jacket?: Jacket | null;
   url?: string | null;
@@ -120,18 +120,19 @@ export function HoldCard({ hold, index }: { hold: Hold; index: number }) {
     .filter(Boolean)
     .join(" · ");
 
-  // The branch is the same fact in either state — where you collect it — so
-  // it reads identically ("Pickup at …") in both; the lead phrase carries
-  // the state (a deadline when ready, the placed date while waiting). Ready
-  // uses "Ready until" rather than "Pick up by" so it doesn't echo "Pickup".
-  const pickupBy = formatMonthDay(hold.pickup_by);
+  // For a READY hold, `expiry` (the gateway's expiryDate) is the collect/
+  // borrow-by deadline; for a waiting hold it's the auto-cancel date, so we
+  // only surface it in the ready case. The branch is the same fact in either
+  // state — where you collect it — so it reads identically ("Pickup at …");
+  // digital holds have no branch, so it just drops off.
+  const readyBy = formatMonthDay(hold.expiry);
   const placed = formatMonthDay(hold.placed);
   const pickupAt = hold.pickup_branch
     ? `Pickup at ${hold.pickup_branch}`
     : null;
   const metaLine = (
-    hold.status === "READY_FOR_PICKUP" && pickupBy
-      ? [`Ready until ${pickupBy}`, pickupAt]
+    hold.status === "READY_FOR_PICKUP" && readyBy
+      ? [`Ready until ${readyBy}`, pickupAt]
       : [placed ? `Placed ${placed}` : null, pickupAt]
   )
     .filter(Boolean)
