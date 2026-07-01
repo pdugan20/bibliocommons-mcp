@@ -20,7 +20,7 @@ import {
   ctaStyle,
   filterStyles,
 } from "./controls.js";
-import { formatLabel } from "./format.js";
+import { compareFormats, formatLabel } from "./format.js";
 import { openLink } from "./open-link.js";
 import { rootStyle } from "./root-style.js";
 
@@ -112,12 +112,15 @@ export function CardFrame<T extends WithFormat>({
   const cta = ctaStyle(useContext(CtaStyleContext));
   const ctaLabel = `${moreLabel ?? "View in catalog"}${cta.arrow ? " →" : ""}`;
 
-  // Distinct format codes present, in first-seen order, for the filter.
+  // Distinct format codes present, in a fixed canonical order so the filter
+  // pills read the same across cards regardless of item order (which varies
+  // with sorting).
   const formats: string[] = [];
   for (const it of items) {
     const f = it.format ?? null;
     if (f && !formats.includes(f)) formats.push(f);
   }
+  formats.sort(compareFormats);
 
   const shown =
     filter == null

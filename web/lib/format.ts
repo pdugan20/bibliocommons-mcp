@@ -25,6 +25,21 @@ export function formatLabel(format?: string | null): string | null {
   return FORMAT_LABELS[format] ?? format;
 }
 
+// Canonical order for the format filter pills, so they read the same across
+// cards regardless of the (variable, sort-dependent) order items arrive in.
+// Uses the FORMAT_LABELS declaration order; unknown codes sort last.
+const FORMAT_ORDER = Object.keys(FORMAT_LABELS);
+
+/** Sort comparator for format codes into their canonical pill order. */
+export function compareFormats(a: string, b: string): number {
+  const ia = FORMAT_ORDER.indexOf(a);
+  const ib = FORMAT_ORDER.indexOf(b);
+  return (
+    (ia === -1 ? FORMAT_ORDER.length : ia) -
+      (ib === -1 ? FORMAT_ORDER.length : ib) || a.localeCompare(b)
+  );
+}
+
 /** Disc media (square cover art): music + audiobook CDs. Their covers are
  * square, so a multi-line title overshoots the short cover and unbalances
  * the row — callers clamp these titles harder on a narrow viewport. */
