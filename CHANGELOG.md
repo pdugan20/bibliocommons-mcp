@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.6.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.5.0...v0.6.0) (2026-07-01)
+
+
+### Features
+
+* **preview-cards:** enrich holds/loans/search cards, clickable links, due-sorted checkouts ([#37](https://github.com/pdugan20/bibliocommons-mcp/issues/37)) ([1bac840](https://github.com/pdugan20/bibliocommons-mcp/commit/1bac8402d763cf7df342863d6b48f1a38fa7d59b))
+* **preview-cards:** sanitize catalog titles for display ([#41](https://github.com/pdugan20/bibliocommons-mcp/issues/41)) ([7257215](https://github.com/pdugan20/bibliocommons-mcp/commit/7257215830cbfc50a5c9780c17f940a0cd1ae93c))
+* **search:** fold subtitle into the title for context ([#40](https://github.com/pdugan20/bibliocommons-mcp/issues/40)) ([7974d33](https://github.com/pdugan20/bibliocommons-mcp/commit/7974d3329fa8ee1c8db59a9dcd4acebb48f93087))
+
+
+### Bug Fixes
+
+* **holds:** show the ready deadline from expiryDate ([#42](https://github.com/pdugan20/bibliocommons-mcp/issues/42)) ([ea9202f](https://github.com/pdugan20/bibliocommons-mcp/commit/ea9202f04ef3f5ffc707224c8daeb74ed896aabb))
+* **http:** transparent favicon everywhere; drop apple-touch icon ([#32](https://github.com/pdugan20/bibliocommons-mcp/issues/32)) ([fda6e03](https://github.com/pdugan20/bibliocommons-mcp/commit/fda6e03b22a2f5feb5a3ff96a6f3e835759e11a8))
+* make the served favicon square ([#34](https://github.com/pdugan20/bibliocommons-mcp/issues/34)) ([f9f63b7](https://github.com/pdugan20/bibliocommons-mcp/commit/f9f63b71af08bde2ed50e1396e0fa4d546358122))
+* **preview-cards:** mobile polish — iOS corners, tap-highlight, lighter cover border ([#39](https://github.com/pdugan20/bibliocommons-mcp/issues/39)) ([eebe515](https://github.com/pdugan20/bibliocommons-mcp/commit/eebe515b4233e1efbf02049eb7880ed3898e100a))
+* use an opaque square favicon source ([#33](https://github.com/pdugan20/bibliocommons-mcp/issues/33)) ([4091929](https://github.com/pdugan20/bibliocommons-mcp/commit/40919296ea34fd2d31d243bf3916873d7f957a76))
+
+
+### Documentation
+
+* house-style review pass (IA, voice, icons, brand) ([#27](https://github.com/pdugan20/bibliocommons-mcp/issues/27)) ([21d0669](https://github.com/pdugan20/bibliocommons-mcp/commit/21d0669942c2c1ddc50fb332221534fd46d9cfe3))
+* **projects:** correct v1.2 briefs to shipped status ([#26](https://github.com/pdugan20/bibliocommons-mcp/issues/26)) ([44b5e99](https://github.com/pdugan20/bibliocommons-mcp/commit/44b5e999af452bcfdd140049fe2d803a01752bfd))
+* **projects:** reconcile briefs to v0.5.0 state ([#24](https://github.com/pdugan20/bibliocommons-mcp/issues/24)) ([cf3f28e](https://github.com/pdugan20/bibliocommons-mcp/commit/cf3f28eb19171de65898614df8fcb5bb389ee46a))
+
 ## [0.5.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.4.0...v0.5.0) (2026-05-30)
 
 
