@@ -192,6 +192,19 @@ class Client:
         sort_by: str | None = None,
         available_only: bool = False,
     ) -> dict:
+        """Search the catalog via the gateway API.
+
+        Delegates to python-bibliocommons' ``search_gateway()`` when
+        the base library supports it (versions >= 2026.1) and we're
+        authenticated. Falls back to the inline gateway call otherwise,
+        preserving backward compatibility with older base library versions
+        and read-only mode (no credentials).
+        """
+        if self._authed and hasattr(self._bc, "search_gateway"):
+            return self._bc.search_gateway(
+                query, format=format, page=page, sort_by=sort_by
+            )
+        # Inline fallback for read-only mode or old base library
         params: dict[str, Any] = {
             "query": query,
             "searchType": "keyword",
@@ -202,13 +215,19 @@ class Client:
         if sort_by:
             params["sortBy"] = sort_by
         if available_only:
-            # facet for available-now items
-            params["f_NEWLY_ACQUIRED"] = (
-                "AVAILABLE"  # best-guess; harmless if unsupported
-            )
+            params["f_NEWLY_ACQUIRED"] = "AVAILABLE"
         return self._get("/bibs/search", params)
 
     def availability(self, bib_id: str) -> dict:
+        """Get branch-level availability for a bib.
+
+        Delegates to python-bibliocommons' ``get_availability_raw()``
+        when the base library supports it (versions >= 2026.1) and
+        we're authenticated. Falls back to the inline implementation
+        for read-only mode or older base library versions.
+        """
+        if self._authed and hasattr(self._bc, "get_availability_raw"):
+            return self._bc.get_availability_raw(bib_id)
         return self._get(f"/bibs/{bib_id}/availability")
 
     def list_holds(self) -> dict:
