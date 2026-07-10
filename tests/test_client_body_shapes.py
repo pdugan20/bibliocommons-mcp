@@ -275,6 +275,24 @@ def test_search_uses_format_facet_and_page(client):
     _mock_response(
         client, body={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
     )
+    # When the base library exposes search_gateway, Client delegates to it.
+    client._bc.search_gateway = MagicMock(
+        return_value={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
+    )
+    client.search("weezer", format="MUSIC_CD", page=2, sort_by="newly_acquired")
+    call = client._bc.search_gateway.call_args
+    assert call.args[0] == "weezer"
+    assert call.kwargs["format"] == "MUSIC_CD"
+    assert call.kwargs["page"] == 2
+    assert call.kwargs["sort_by"] == "newly_acquired"
+
+
+def test_search_falls_back_when_base_library_lacks_gateway(client):
+    _mock_response(
+        client, body={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
+    )
+    # Simulate an older python-bibliocommons without search_gateway.
+    del client._bc.search_gateway
     client.search("weezer", format="MUSIC_CD", page=2, sort_by="newly_acquired")
     call = client.http.get.call_args
     assert (
