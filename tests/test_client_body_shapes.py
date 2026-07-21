@@ -271,11 +271,14 @@ def test_gateway_422_surfaces_message(client):
     assert exc.value.classification == "ValidationError"
 
 
-def test_search_uses_format_facet_and_page(client):
+def test_search_delegates_to_base_library_when_supported(client, monkeypatch):
+    """When python-bibliocommons >= 2026.1, search() delegates to search_gateway."""
+    monkeypatch.setattr(
+        "bibliocommons_mcp.client._base_supports_gateway", lambda: True
+    )
     _mock_response(
         client, body={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
     )
-    # When the base library exposes search_gateway, Client delegates to it.
     client._bc.search_gateway = MagicMock(
         return_value={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
     )
@@ -287,12 +290,14 @@ def test_search_uses_format_facet_and_page(client):
     assert call.kwargs["sort_by"] == "newly_acquired"
 
 
-def test_search_falls_back_when_base_library_lacks_gateway(client):
+def test_search_falls_back_when_base_library_too_old(client, monkeypatch):
+    """Older python-bibliocommons uses the inline gateway call."""
+    monkeypatch.setattr(
+        "bibliocommons_mcp.client._base_supports_gateway", lambda: False
+    )
     _mock_response(
         client, body={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
     )
-    # Simulate an older python-bibliocommons without search_gateway.
-    del client._bc.search_gateway
     client.search("weezer", format="MUSIC_CD", page=2, sort_by="newly_acquired")
     call = client.http.get.call_args
     assert (
@@ -305,3 +310,45 @@ def test_search_falls_back_when_base_library_lacks_gateway(client):
     assert params["f_FORMAT"] == "MUSIC_CD"
     assert params["page"] == 2
     assert params["sortBy"] == "newly_acquired"
+
+
+def test_search_available_only_always_uses_inline(client, monkeypatch):
+    """available_only is not supported by search_gateway; always use inline."""
+    monkeypatch.setattr(
+        "bibliocommons_mcp.client._base_supports_gateway", lambda: True
+    )
+    _mock_response(
+        client, body={"entities": {"bibs": {}}, "catalogSearch": {"pagination": {}}}
+    )
+    client._bc.search_gateway = MagicMock()
+    client.search("weezer", available_only=True)
+    # Must NOT have called search_gateway
+    assert not client._bc.search_gateway.called
+    call = client.http.get.call_args
+    assert "f_NEWLY_ACQUIRED" in call.kwargs["params"]
+
+
+def test_availability_delegates_to_base_library_when_supported(client, monkeypatch):
+    """When python-bibliocommons >= 2026.1, availability() delegates."""
+    monkeypatch.setattr(
+        "bibliocommons_mcp.client._base_supports_gateway", lambda: True
+    )
+    client._bc.get_availability_raw = MagicMock(
+        return_value={"entities": {"bibs": {}}}
+    )
+    client.availability("S126C1872927")
+    client._bc.get_availability_raw.assert_called_once_with("S126C1872927")
+
+
+def test_availability_falls_back_when_base_library_too_old(client, monkeypatch):
+    """Older python-bibliocommons uses the inline gateway call."""
+    monkeypatch.setattr(
+        "bibliocommons_mcp.client._base_supports_gateway", lambda: False
+    )
+    _mock_response(client, body={"entities": {"bibs": {}}})
+    client.availability("S126C1872927")
+    call = client.http.get.call_args
+    assert call.args[0] == (
+        "https://gateway.bibliocommons.com/v2/libraries/seattle"
+        "/bibs/S126C1872927/availability"
+    )
