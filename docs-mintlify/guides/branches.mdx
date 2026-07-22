@@ -9,15 +9,16 @@ icon: building-columns
 > What branches does my library have?
 
 [`list_branches`](/reference/mcp-tools) returns the library's branches with their
-names and **3-letter codes** (e.g. `LCY` = Lake City, `CEN` = Central). The list
-is cached in memory for the life of the server.
+names and codes. Codes vary by library—for example, Seattle uses `LCY` for Lake
+City while Chicago uses `56` for Northtown. The list is cached in memory for the
+life of the server.
 
 ## Branch names vs codes
 
 Anywhere a branch is accepted (e.g. `place_hold`'s `pickup_branch`), you can pass
 a **name or a code**; the resolver matches case-insensitive substrings.
 
-Some branches have **locker variants**, names like "Lake City Branch: SPL
+Some Seattle branches have **locker variants**, names like "Lake City Branch: SPL
 Lockers" with codes starting `LOCK…`. When a name is ambiguous, the resolver
 **prefers the regular branch** over the locker variant.
 
