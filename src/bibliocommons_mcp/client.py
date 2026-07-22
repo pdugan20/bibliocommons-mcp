@@ -96,8 +96,31 @@ class Client:
     def authenticate(self, card: str, pin: str) -> None:
         if self._authed:
             return
-        self._bc.authenticate(username=card, password=pin)
+        try:
+            self._bc.authenticate(username=card, password=pin)
+        except httpx.CookieConflict:
+            self._finish_auth_from_cookie_jar()
         self._authed = True
+
+    def _finish_auth_from_cookie_jar(self) -> None:
+        """Finish auth when SSO sets duplicate cookies across domains."""
+        values: dict[str, str] = {}
+        expected = {"bc_access_token", "session_id"}
+        for cookie in self.http.cookies.jar:
+            if cookie.name in expected and cookie.value:
+                values.setdefault(cookie.name, cookie.value)
+
+        access_token = values.get("bc_access_token")
+        session_id = values.get("session_id")
+        if not access_token:
+            raise RuntimeError("Authentication failed: no access-token cookie")
+        if not session_id:
+            raise RuntimeError("Authentication failed: no session cookie")
+
+        self.http.headers.update(
+            {"X-Access-Token": access_token, "X-Session-Id": session_id}
+        )
+        self._bc.account_id = int(session_id.rsplit("-", 1)[-1]) + 1
 
     @property
     def account_id(self) -> int:
