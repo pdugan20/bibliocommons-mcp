@@ -21,10 +21,12 @@
 ### Task 1: Duplicate-cookie authentication fallback
 
 **Files:**
+
 - Create: `tests/test_client_auth.py`
 - Modify: `src/bibliocommons_mcp/client.py:96-101`
 
 **Interfaces:**
+
 - Consumes: `Client.authenticate(card: str, pin: str) -> None` and the upstream client's `httpx_client`, `authenticate`, and `account_id` attributes.
 - Produces: `Client._finish_auth_from_cookie_jar() -> None`, a private compatibility path used only after `httpx.CookieConflict`.
 
@@ -130,6 +132,7 @@ git commit -m "fix(auth): handle duplicate SSO cookies"
 ### Task 2: Library-agnostic branch-code contract
 
 **Files:**
+
 - Modify: `tests/test_branches.py`
 - Modify: `src/bibliocommons_mcp/branches.py`
 - Modify: `src/bibliocommons_mcp/models.py`
@@ -147,6 +150,7 @@ git commit -m "fix(auth): handle duplicate SSO cookies"
 - Modify: `tests/__snapshots__/test_schema_snapshots.ambr`
 
 **Interfaces:**
+
 - Consumes: gateway branch maps whose keys are arbitrary strings.
 - Produces: unchanged `Branches.resolve(name_or_code: str) -> Branch` behavior plus accurate public descriptions such as `"Branch code, e.g. 'LCY' or '56'."`.
 
@@ -201,9 +205,11 @@ git commit -m "docs(branches): support library-specific codes"
 ### Task 3: Full verification and publication
 
 **Files:**
+
 - Verify all files changed by Tasks 1 and 2.
 
 **Interfaces:**
+
 - Consumes: the completed compatibility branch.
 - Produces: a verified draft pull request referencing issue #46.
 
