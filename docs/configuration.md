@@ -20,7 +20,7 @@ The rest of this page is for people who'd rather hand-edit, or set things via en
 # Required: your BiblioCommons subdomain (`{name}.bibliocommons.com`)
 library = "seattle"
 
-# Optional: default pickup branch for place_hold. Branch name or 3-letter code.
+# Optional: default pickup branch for place_hold. Branch name or code.
 # When set, you can call place_hold(bib_id) without a pickup_branch arg.
 default_pickup_branch = "Lake City"
 
@@ -66,12 +66,15 @@ If you visit `{name}.bibliocommons.com` and see the catalog interface, you've go
 
 ## Branches
 
-`default_pickup_branch` accepts either a name or a 3-letter code. The resolver is case-insensitive and matches substrings:
+`default_pickup_branch` accepts either a name or a library-specific code. The resolver is case-insensitive and matches substrings:
 
 - `"Lake City"` → `LCY`
 - `"lake city"` → `LCY`
 - `"LCY"` → `LCY`
 - `"Ballard"` → `BAL` (prefers the regular branch over `LOCK7`, its locker variant)
+
+Codes vary by library: Seattle uses values such as `LCY`, while Chicago uses
+numeric values such as `56`. Run `list_branches` to see the valid codes.
 
 Get the full branch list for your library via `list_branches`.
 

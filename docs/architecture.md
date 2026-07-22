@@ -24,7 +24,7 @@ MCP client (Claude Code, Claude Desktop, Cursor, ...)
 ## Module layout
 
 - `src/bibliocommons_mcp/config.py` — TOML config loader, env-var overrides
-- `src/bibliocommons_mcp/branches.py` — branch name ↔ 3-letter code resolver with in-memory cache
+- `src/bibliocommons_mcp/branches.py` — branch name ↔ code resolver with in-memory cache
 - `src/bibliocommons_mcp/client.py` — the gateway client. Wraps `python-bibliocommons` for the login flow, layers everything else.
 - `src/bibliocommons_mcp/server.py` — FastMCP server + tool registrations
 
@@ -66,7 +66,7 @@ The trick is **`errorMessageLocale` inside `materialParams`**. Without it, the g
 | **Digital vs. physical have separate endpoints.** | Available digital items → `POST /v2/libraries/{library}/checkouts` (immediate borrow). Physical → `POST /holds`. Unavailable digital (Libby waitlist) → `POST /holds` with `materialType: "DIGITAL"`, but this needs a `format` enum field we haven't fully exercised yet (deferred to v1.1 — see [`format-codes.md`](format-codes.md) for the leaked enum). The Libby app handles digital waitlists fine in the meantime. |
 | **DELETE /holds is bulk.**                        | Body is `{accountId, metadataIds: [...], holdIds: [...], errorMessageLocale}` — plural and arrays even when canceling one.                                                                                                                                                                                                                                                                                                 |
 | **Search pagination is fixed at 25 per page.**    | The `size` param is silently ignored. Use `page=N` (1-indexed).                                                                                                                                                                                                                                                                                                                                                            |
-| **Branch IDs are 3-letter codes.**                | LCY = Lake City. Branches can have locker variants (`LOCK1`–`LOCK7`); the resolver prefers the regular branch when a query is ambiguous.                                                                                                                                                                                                                                                                                   |
+| **Branch codes vary by library.**                 | Seattle uses alphabetic codes such as `LCY`; Chicago uses numeric codes such as `56`. Branches can have locker variants; the resolver prefers the regular branch when a name is ambiguous.                                                                                                                                                                                                                                |
 | **Locale matters.**                               | All POSTs need `?locale=en-US` on the URL _and_ `errorMessageLocale: "en-US"` in the body. The MCP server hardcodes both.                                                                                                                                                                                                                                                                                                  |
 
 ## Testing strategy

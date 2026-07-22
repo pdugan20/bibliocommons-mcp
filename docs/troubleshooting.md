@@ -36,7 +36,7 @@ That's the gateway's fixed page size. Use `page=2`, `page=3`, etc. to walk furth
 
 ## "ambiguous branch 'XYZ'"
 
-The branch resolver matched more than one branch by substring. Be more specific, or pass the 3-letter code (`list_branches` shows them). For SPL: `"Lake City"` resolves to `LCY` (the regular branch) over `LOCK7` (its locker variant) — the resolver prefers non-locker matches automatically when ambiguous.
+The branch resolver matched more than one branch by substring. Be more specific, or pass the branch code (`list_branches` shows them). For SPL: `"Lake City"` resolves to `LCY` (the regular branch) over `LOCK7` (its locker variant) — the resolver prefers non-locker matches automatically when ambiguous.
 
 ## Tools work locally but not from my MCP client
 

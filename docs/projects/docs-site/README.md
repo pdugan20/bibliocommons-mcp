@@ -49,7 +49,7 @@ built docs-as-code with anti-staleness guarantees — mirroring the sibling
   deeplink **badges**.
 - _How-to:_ search the catalog (formats, sort, paging) · place & manage holds ·
   borrow/return digital + Libby waitlist · manage loans (renew / check-in) ·
-  branches & availability (3-letter + locker codes) · **recipes** ("what to ask
+  branches & availability (library-specific + locker codes) · **recipes** ("what to ask
   Claude") · **self-host the remote connector** (Fly + WorkOS, single-user;
   multi-user as an advanced subsection).
 - _Concepts:_ architecture (gateway client, single-library-per-server) · local
