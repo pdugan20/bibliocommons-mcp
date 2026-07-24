@@ -4,15 +4,16 @@ name: Publish to TestPyPI
 # Catches packaging-time errors (bad classifiers, missing wheel files,
 # trusted-publisher misconfig) before they hit prod PyPI.
 #
-# One-time setup before this works:
+# One-time setup before publishing:
 #   1. Create a TestPyPI account at https://test.pypi.org
 #   2. Configure a "pending publisher" on TestPyPI for project
 #      `bibliocommons-mcp` pointing at this workflow filename
 #      (`publish-testpypi.yml`) and the `testpypi` environment below.
 #   3. Create a `testpypi` environment in the repo settings.
+#   4. Set repository variable `TESTPYPI_TRUSTED_PUBLISHING_ENABLED=true`.
 #
-# Until then this workflow will fail on the publish step — that's expected.
-# CI on `main` is unaffected.
+# Until then the package is still built on every release-please update, but
+# publication is skipped instead of creating a known-failing release check.
 #
 # `skip-existing: true` handles the case where release-please updates the
 # same release PR multiple times (TestPyPI rejects duplicate versions).
@@ -28,7 +29,7 @@ permissions:
 
 jobs:
   publish-testpypi:
-    name: Build and publish to TestPyPI
+    name: Build and optionally publish to TestPyPI
     runs-on: ubuntu-latest
     environment: testpypi
     steps:
@@ -41,6 +42,7 @@ jobs:
       - name: Build package
         run: python -m build
       - name: Publish to TestPyPI
+        if: ${{ vars.TESTPYPI_TRUSTED_PUBLISHING_ENABLED == 'true' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
