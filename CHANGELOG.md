@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.1](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.0...v0.6.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* **auth:** support Chicago multi-domain SSO ([#58](https://github.com/pdugan20/bibliocommons-mcp/issues/58)) ([38a396e](https://github.com/pdugan20/bibliocommons-mcp/commit/38a396ea3ad4429618497978c2b79a61b5f40dba))
+* **deps:** bridge Vite security updates on v6 ([#57](https://github.com/pdugan20/bibliocommons-mcp/issues/57)) ([9503a34](https://github.com/pdugan20/bibliocommons-mcp/commit/9503a34dd5d0e3e581cc84d523a55f56c4493fbc))
+* **preview-cards:** stable format-filter pill order ([#43](https://github.com/pdugan20/bibliocommons-mcp/issues/43)) ([c5ca1ca](https://github.com/pdugan20/bibliocommons-mcp/commit/c5ca1cabf0f1f96364c29ef2258ba05f1662053b))
+
 ## [0.6.0](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.5.0...v0.6.0) (2026-07-01)
 
 
