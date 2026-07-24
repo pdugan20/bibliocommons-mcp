@@ -18,6 +18,7 @@ _FAKE_BRANCHES_JSON = {
             "LCY": {"code": "LCY", "name": "Lake City Branch"},
             "MGM": {"code": "MGM", "name": "Madrona-Sally Goldmark Branch"},
             "MAG": {"code": "MAG", "name": "Magnolia Branch"},
+            "56": {"code": "56", "name": "Northtown Branch"},
         }
     }
 }
@@ -59,6 +60,10 @@ def test_resolve_by_lowercase_code(branches):
     assert branches.resolve("lcy").code == "LCY"
 
 
+def test_resolve_by_numeric_code(branches):
+    assert branches.resolve("56").name == "Northtown Branch"
+
+
 def test_resolve_by_full_name(branches):
     assert branches.resolve("Lake City Branch").code == "LCY"
 
@@ -86,7 +91,7 @@ def test_resolve_raises_when_truly_ambiguous(branches):
 
 def test_all_returns_full_list(branches):
     all_b = branches.all()
-    assert len(all_b) == 7
+    assert len(all_b) == 8
     codes = {b.code for b in all_b}
     assert "LCY" in codes
     assert "LOCK7" in codes

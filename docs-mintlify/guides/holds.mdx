@@ -12,7 +12,7 @@ For **physical** items (books, CDs, DVDs). For digital titles see
 > Place a hold on _Plastic Eternity_ at Central.
 
 [`place_hold`](/reference/mcp-tools) takes `bib_ids` (a list; pass one for the
-common case) and an optional `pickup_branch` (name or 3-letter code; falls back
+common case) and an optional `pickup_branch` (name or branch code; falls back
 to your `default_pickup_branch`). There's no batch endpoint, so multiple holds
 are placed sequentially with a small `delay_seconds` between each; per-item
 failures don't stop the run, and the result splits `placed` vs `failures`.

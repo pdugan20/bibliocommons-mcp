@@ -106,9 +106,10 @@ Important constraints:
   Libby waitlist).
 - Format codes are BiblioCommons facets like `MUSIC_CD`, `BK`,
   `EBOOK`, `EAUDIOBOOK`, `AUDIOBOOK_CD`, `DVD`.
-- Branch IDs are 3-letter codes (e.g. `LCY` = Lake City). `place_hold`
-  accepts names or codes; the resolver matches case-insensitive
-  substrings and prefers regular branches over locker variants.
+- Branch codes are library-specific strings (e.g. `LCY` = Lake City or
+  `56` = Northtown). `place_hold` accepts names or codes; the resolver
+  matches case-insensitive substrings and prefers regular branches over
+  locker variants.
 """
 
 
@@ -768,7 +769,7 @@ def place_hold(
     Args:
         bib_ids: List of bib IDs. Pass `[id]` for a single hold. Order
             is preserved during placement (first attempted first).
-        pickup_branch: Branch name or 3-letter code applied to every
+        pickup_branch: Branch name or code applied to every
             hold. Defaults to `default_pickup_branch` from config.
             Names are matched case-insensitively; locker variants are
             de-prioritized when the query is ambiguous.
@@ -1278,7 +1279,7 @@ def check_in_loan(
 @mcp.tool(title="List branches at your library", annotations=READ_ONLY)
 @_safe
 def list_branches() -> BranchList:
-    """List every branch with its 3-letter pickup code."""
+    """List every branch with its library-specific pickup code."""
     client = _ensure_client()
     return BranchList(
         library=client.library,

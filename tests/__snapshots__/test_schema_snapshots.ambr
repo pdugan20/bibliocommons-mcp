@@ -662,7 +662,7 @@
             'description': 'One branch at the configured library.',
             'properties': dict({
               'code': dict({
-                'description': "Three-letter branch code, e.g. 'LCY'.",
+                'description': "Branch code, e.g. 'LCY' or '56'.",
                 'title': 'Code',
                 'type': 'string',
               }),
@@ -810,7 +810,7 @@
                   }),
                 ]),
                 'default': None,
-                'description': 'Three-letter branch code; null for digital holds.',
+                'description': 'Branch code; null for digital holds.',
                 'title': 'Pickup Branch',
               }),
               'placed': dict({
@@ -1736,7 +1736,7 @@
                   }),
                 ]),
                 'default': None,
-                'description': 'Three-letter branch code; null for digital holds.',
+                'description': 'Branch code; null for digital holds.',
                 'title': 'Pickup Branch',
               }),
               'placed': dict({

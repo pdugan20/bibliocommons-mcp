@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 class Branch(BaseModel):
     """One branch at the configured library."""
 
-    code: str = Field(description="Three-letter branch code, e.g. 'LCY'.")
+    code: str = Field(description="Branch code, e.g. 'LCY' or '56'.")
     name: str = Field(description="Display name, e.g. 'Lake City Branch'.")
 
 
@@ -149,7 +149,7 @@ class Hold(BaseModel):
         default=None, description="Position in the holds queue (1 = front)."
     )
     pickup_branch: str | None = Field(
-        default=None, description="Three-letter branch code; null for digital holds."
+        default=None, description="Branch code; null for digital holds."
     )
     placed: str | None = Field(
         default=None, description="ISO date the hold was placed."

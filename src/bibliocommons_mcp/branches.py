@@ -1,7 +1,8 @@
 """Resolve branch names ↔ codes for any BiblioCommons library.
 
-Branches are 3-letter codes (e.g. LCY = Lake City). The mapping is fetched
-once from the gateway and cached in memory for the lifetime of the process.
+Branch codes are library-specific strings (e.g. LCY = Lake City, 56 =
+Northtown). The mapping is fetched once from the gateway and cached in memory
+for the lifetime of the process.
 """
 
 from __future__ import annotations
