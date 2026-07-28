@@ -1,6 +1,6 @@
 """OAuth 2.1 Resource Server auth for the remote/HTTP transport.
 
-bibliocommons-mcp acts as a **Resource Server** (MCP auth spec 2025-06-18):
+bibliocommons-mcp acts as an OAuth 2.1 **Resource Server** for MCP:
 it validates bearer tokens issued by an external Authorization Server
 (WorkOS AuthKit) and never runs its own OAuth endpoints. Validation is
 JWKS/JWT only — the server holds *no* WorkOS secret, just WorkOS's public
@@ -31,16 +31,12 @@ WORKOS_JWKS_TEMPLATE = "https://api.workos.com/sso/jwks/{client_id}"
 
 
 class WorkOSAccessToken(AccessToken):
-    """`AccessToken` plus the user identity we key per-user state on.
+    """WorkOS-specific marker for the SDK's identity-bearing access token.
 
-    The base SDK model only carries token/client_id/scopes/expires_at/resource,
-    so we extend it with the JWT `sub` (the stable user id) and the raw claims.
-    The auth middleware stores the verifier's returned object as-is, so tools
-    read `get_access_token().subject`.
+    MCP SDK v2 carries ``subject`` and ``claims`` on the base model. Keeping a
+    named subtype preserves the verifier's public return type without
+    duplicating those fields or introducing a shared mutable default.
     """
-
-    subject: str
-    claims: dict = {}
 
 
 class WorkOSTokenVerifier(TokenVerifier):

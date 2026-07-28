@@ -16,6 +16,7 @@ from __future__ import annotations
 import time as _time
 from collections import OrderedDict
 from collections.abc import Callable
+from threading import RLock
 from typing import Generic, TypeVar
 
 V = TypeVar("V")
@@ -34,36 +35,41 @@ class TTLCache(Generic[V]):
         self._ttl = ttl
         self._maxsize = maxsize
         self._clock = clock
+        self._lock = RLock()
         # key -> (last_used, value); ordered by recency (LRU at the front).
         self._data: OrderedDict[str, tuple[float, V]] = OrderedDict()
 
     def get(self, key: str) -> V | None:
-        entry = self._data.get(key)
-        if entry is None:
-            return None
-        last_used, value = entry
-        now = self._clock()
-        if now - last_used > self._ttl:
-            del self._data[key]
-            return None
-        # Refresh recency + idle timer on access.
-        self._data[key] = (now, value)
-        self._data.move_to_end(key)
-        return value
+        with self._lock:
+            entry = self._data.get(key)
+            if entry is None:
+                return None
+            last_used, value = entry
+            now = self._clock()
+            if now - last_used > self._ttl:
+                del self._data[key]
+                return None
+            # Refresh recency + idle timer on access.
+            self._data[key] = (now, value)
+            self._data.move_to_end(key)
+            return value
 
     def put(self, key: str, value: V) -> None:
-        now = self._clock()
-        self._data[key] = (now, value)
-        self._data.move_to_end(key)
-        self._evict_expired(now)
-        while len(self._data) > self._maxsize:
-            self._data.popitem(last=False)  # drop least-recently-used
+        with self._lock:
+            now = self._clock()
+            self._data[key] = (now, value)
+            self._data.move_to_end(key)
+            self._evict_expired(now)
+            while len(self._data) > self._maxsize:
+                self._data.popitem(last=False)  # drop least-recently-used
 
     def pop(self, key: str) -> None:
-        self._data.pop(key, None)
+        with self._lock:
+            self._data.pop(key, None)
 
     def clear(self) -> None:
-        self._data.clear()
+        with self._lock:
+            self._data.clear()
 
     def _evict_expired(self, now: float) -> None:
         expired = [k for k, (ts, _) in self._data.items() if now - ts > self._ttl]
@@ -71,7 +77,8 @@ class TTLCache(Generic[V]):
             del self._data[k]
 
     def __len__(self) -> int:
-        return len(self._data)
+        with self._lock:
+            return len(self._data)
 
     def __contains__(self, key: str) -> bool:
         return self.get(key) is not None

@@ -8,6 +8,7 @@ for the lifetime of the process.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from threading import RLock
 
 GATEWAY = "https://gateway.bibliocommons.com"
 
@@ -23,18 +24,20 @@ class Branches:
         self._library = library
         self._http = http
         self._by_code: dict[str, Branch] | None = None
+        self._lock = RLock()
 
     def _load(self) -> dict[str, Branch]:
-        if self._by_code is not None:
+        with self._lock:
+            if self._by_code is not None:
+                return self._by_code
+            r = self._http.get(f"{GATEWAY}/v2/libraries/{self._library}/branches")
+            r.raise_for_status()
+            ents = r.json().get("entities", {}).get("branches", {})
+            self._by_code = {
+                code: Branch(code=code, name=b.get("name") or code)
+                for code, b in ents.items()
+            }
             return self._by_code
-        r = self._http.get(f"{GATEWAY}/v2/libraries/{self._library}/branches")
-        r.raise_for_status()
-        ents = r.json().get("entities", {}).get("branches", {})
-        self._by_code = {
-            code: Branch(code=code, name=b.get("name") or code)
-            for code, b in ents.items()
-        }
-        return self._by_code
 
     def all(self) -> list[Branch]:
         return list(self._load().values())

@@ -152,9 +152,7 @@ def _pick_branch(branches: list[Branch]) -> str | None:
         _say(f"  {choice} isn't in range, skipping.")
         return None
     # name/code via the resolver
-    name_to_branch = Branches.__new__(Branches)
-    name_to_branch._library = ""
-    name_to_branch._http = None
+    name_to_branch = Branches("", None)
     name_to_branch._by_code = {b.code: b for b in branches}
     try:
         return name_to_branch.resolve(choice).code

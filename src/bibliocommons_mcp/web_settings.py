@@ -148,11 +148,13 @@ class AccountSettings:
         *,
         exchange_code=None,
         validate_credentials=None,
+        on_credentials_changed=None,
     ) -> None:
         self.cfg = cfg
         self.store = store
         self._exchange = exchange_code or self._default_exchange
         self._validate = validate_credentials or self._default_validate
+        self._on_credentials_changed = on_credentials_changed
 
     @property
     def routes(self) -> list[Route]:
@@ -299,6 +301,8 @@ class AccountSettings:
                     ),
                 ),
             )
+            if self._on_credentials_changed is not None:
+                self._on_credentials_changed(subject)
             return HTMLResponse(_page(saved=True))
 
         return HTMLResponse(_page(configured=self.store.get(subject) is not None))
@@ -354,7 +358,7 @@ for this session and never written to disk.</p>
 
 
 def register_account_routes(mcp, cfg: WebSettingsConfig, store: CredentialStore, **kw):
-    """Register the /account routes on a FastMCP instance's HTTP app."""
+    """Register the /account routes on an MCPServer instance's HTTP app."""
     app = AccountSettings(cfg, store, **kw)
     for route in app.routes:
         mcp.custom_route(route.path, methods=list(route.methods or ["GET"]))(

@@ -2,7 +2,7 @@
 
 A real documentation site for bibliocommons-mcp at **`docs.getbiblio.app`**,
 built docs-as-code with anti-staleness guarantees — mirroring the sibling
-**clickwheel** docs site (near-identical shape: Python CLI + FastMCP server).
+**clickwheel** docs site (near-identical shape: Python CLI + MCP server).
 
 - **[TRACKER.md](TRACKER.md)** — phased task list (status, owner, blockers).
 - **[DEFERRED.md](DEFERRED.md)** — explicitly parked / out-of-scope items.
@@ -13,7 +13,7 @@ built docs-as-code with anti-staleness guarantees — mirroring the sibling
    and MCP server that works against **any BiblioCommons library** (Seattle,
    SFPL, …), usable **locally (stdio)** or as a **remote/mobile connector**.
 2. **Docs that can't silently rot.** The tool reference is generated from the
-   live FastMCP instance and drift-checked in CI; links are validated in CI.
+   live MCPServer instance and drift-checked in CI; links are validated in CI.
 3. Authoring consistent with `rewind` / `clickwheel` (same Mintlify flow).
 
 ## Decisions (settled — don't re-litigate without new info)
@@ -61,7 +61,7 @@ built docs-as-code with anti-staleness guarantees — mirroring the sibling
 ### Reference tab
 
 - `cli` (generated from the console-script) · `mcp-tools` (**generated** from the
-  FastMCP instance, with **read-only / writes / destructive** badges from each
+  MCPServer instance, with **read-only / writes / destructive** badges from each
   tool's annotations) · `configuration` (hand-written: `config.toml` + every
   env var, incl. the remote/WorkOS/single-user vars).
 
@@ -89,14 +89,14 @@ bibliocommons-mcp repo
 │   ├── concepts/*.mdx             # EXPLANATION (architecture, local-vs-remote, security)
 │   ├── reference/
 │   │   ├── cli.mdx                # GENERATED from the console-script
-│   │   ├── mcp-tools.mdx          # GENERATED from the FastMCP instance (+ annotation badges)
+│   │   ├── mcp-tools.mdx          # GENERATED from the MCPServer instance (+ annotation badges)
 │   │   └── configuration.mdx      # config.toml / env vars
 │   ├── troubleshooting.mdx
 │   ├── logo/ + favicon.svg
 │   └── changelog.mdx
 └── scripts/
     ├── gen_cli_reference.py        # console-script -> reference/cli.mdx
-    └── gen_mcp_reference.py        # FastMCP        -> reference/mcp-tools.mdx
+    └── gen_mcp_reference.py        # MCPServer      -> reference/mcp-tools.mdx
 ```
 
 ## Anti-staleness strategy

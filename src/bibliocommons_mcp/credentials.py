@@ -16,6 +16,7 @@ call sites.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from threading import RLock
 from typing import Protocol
 
 
@@ -55,12 +56,16 @@ class InMemoryCredentialStore:
 
     def __init__(self) -> None:
         self._by_subject: dict[str, UserCredentials] = {}
+        self._lock = RLock()
 
     def get(self, subject: str) -> UserCredentials | None:
-        return self._by_subject.get(subject)
+        with self._lock:
+            return self._by_subject.get(subject)
 
     def put(self, subject: str, creds: UserCredentials) -> None:
-        self._by_subject[subject] = creds
+        with self._lock:
+            self._by_subject[subject] = creds
 
     def delete(self, subject: str) -> None:
-        self._by_subject.pop(subject, None)
+        with self._lock:
+            self._by_subject.pop(subject, None)

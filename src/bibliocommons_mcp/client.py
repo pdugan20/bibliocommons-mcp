@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from threading import RLock
 from typing import Any
 
 import httpx
@@ -66,6 +67,10 @@ class Client:
         self.library = library
         self._bc = BiblioCommonsClient(library_subdomain=library)
         self._authed = False
+        # MCP SDK v2 executes synchronous tools concurrently in worker threads.
+        # Serialize this client's cookie jar and BiblioCommons session traffic;
+        # separate users still run concurrently because each gets a Client.
+        self._lock = RLock()
         self._catalog_origin = f"https://{library}.bibliocommons.com"
         self.branches = Branches(library, self._http_lazy())
 
@@ -77,10 +82,12 @@ class Client:
 
         class _Proxy:
             def get(self, *a, **kw):
-                return outer.http.get(*a, **kw)
+                with outer._lock:
+                    return outer.http.get(*a, **kw)
 
             def post(self, *a, **kw):
-                return outer.http.post(*a, **kw)
+                with outer._lock:
+                    return outer.http.post(*a, **kw)
 
         return _Proxy()
 
@@ -94,13 +101,14 @@ class Client:
         return self._catalog_origin
 
     def authenticate(self, card: str, pin: str) -> None:
-        if self._authed:
-            return
-        try:
-            self._bc.authenticate(username=card, password=pin)
-        except httpx.CookieConflict:
-            self._finish_auth_from_cookie_jar()
-        self._authed = True
+        with self._lock:
+            if self._authed:
+                return
+            try:
+                self._bc.authenticate(username=card, password=pin)
+            except httpx.CookieConflict:
+                self._finish_auth_from_cookie_jar()
+            self._authed = True
 
     def _finish_auth_from_cookie_jar(self) -> None:
         """Finish auth when SSO sets duplicate cookies across domains."""
@@ -137,13 +145,17 @@ class Client:
 
     def _post(self, path: str, body: dict, locale: str = "en-US") -> dict:
         url = f"{self._base()}{path}?locale={locale}"
-        r = self.http.post(url, json=body, headers=self._post_headers())
-        return self._unwrap(r)
+        with self._lock:
+            r = self.http.post(url, json=body, headers=self._post_headers())
+            return self._unwrap(r)
 
     def _delete(self, path: str, body: dict, locale: str = "en-US") -> dict:
         url = f"{self._base()}{path}?locale={locale}"
-        r = self.http.request("DELETE", url, json=body, headers=self._post_headers())
-        return self._unwrap(r)
+        with self._lock:
+            r = self.http.request(
+                "DELETE", url, json=body, headers=self._post_headers()
+            )
+            return self._unwrap(r)
 
     def _patch(self, path: str, body: dict, locale: str = "en-US") -> dict:
         # PATCH on the checkouts collection does NOT need `errorMessageLocale`
@@ -151,13 +163,15 @@ class Client:
         # gateway accepts without it. Don't add it back "defensively" — BC
         # has rejected unknown fields in the past.
         url = f"{self._base()}{path}?locale={locale}"
-        r = self.http.request("PATCH", url, json=body, headers=self._post_headers())
-        return self._unwrap(r)
+        with self._lock:
+            r = self.http.request("PATCH", url, json=body, headers=self._post_headers())
+            return self._unwrap(r)
 
     def _get(self, path: str, params: dict | None = None) -> dict:
         url = f"{self._base()}{path}"
-        r = self.http.get(url, params=params or {})
-        return self._unwrap(r)
+        with self._lock:
+            r = self.http.get(url, params=params or {})
+            return self._unwrap(r)
 
     def _post_headers(self) -> dict:
         return {
@@ -337,8 +351,11 @@ class Client:
         # _post/_delete layer for holds; for /checkouts here we
         # deliberately omit it because the captured wire didn't carry it.
         url = f"{self._base()}{path}?locale=en-US"
-        r = self.http.request("DELETE", url, json=body, headers=self._post_headers())
-        return self._unwrap(r)
+        with self._lock:
+            r = self.http.request(
+                "DELETE", url, json=body, headers=self._post_headers()
+            )
+            return self._unwrap(r)
 
     def renew_checkouts(self, checkout_ids: list[str]) -> dict:
         """Renew one or more checkouts in a single PATCH.
@@ -366,6 +383,7 @@ class Client:
         accountId). Kept for diagnostic purposes — python-bibliocommons's
         account_id (+1 offset) is the borrowing-side accountId we use for POSTs.
         """
-        r = self.http.get(f"{self._catalog_origin}/v2/holds")
-        m = re.search(r'"currentUserId":\s*(\d+)', r.text)
-        return int(m.group(1)) if m else None
+        with self._lock:
+            r = self.http.get(f"{self._catalog_origin}/v2/holds")
+            m = re.search(r'"currentUserId":\s*(\d+)', r.text)
+            return int(m.group(1)) if m else None
