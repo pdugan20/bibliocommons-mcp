@@ -14,12 +14,28 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from importlib.metadata import version as _pkg_version
 from typing import Any
 
 import httpx
 from bibliocommons import BiblioCommonsClient
 
 from .branches import Branches
+
+# Minimum python-bibliocommons version that exposes search_gateway() and
+# get_availability_raw().  Older versions only have the high-level
+# BiblioCommonsClient wrapper, so we fall back to inline gateway calls.
+_BASE_MIN_MAJOR, _BASE_MIN_MINOR = 2026, 1
+
+
+def _base_supports_gateway() -> bool:
+    """Return True if the installed python-bibliocommons is new enough."""
+    try:
+        v = _pkg_version("bibliocommons")
+        major, minor = (int(x) for x in v.split(".")[:2])
+        return (major, minor) >= (_BASE_MIN_MAJOR, _BASE_MIN_MINOR)
+    except Exception:
+        return False
 
 GATEWAY = "https://gateway.bibliocommons.com"
 
@@ -169,6 +185,24 @@ class Client:
         sort_by: str | None = None,
         available_only: bool = False,
     ) -> dict:
+        """Search the catalog via the gateway API.
+
+        Delegates to python-bibliocommons' ``search_gateway()`` when the
+        installed base library is new enough (>= 2026.1) and we're
+        authenticated. Falls back to the inline gateway call otherwise,
+        preserving backward compatibility with older base library versions
+        and read-only mode (no credentials).
+        """
+        if (
+            self._authed
+            and _base_supports_gateway()
+            and not available_only  # search_gateway doesn't support this filter yet
+        ):
+            return self._bc.search_gateway(
+                query, format=format, page=page, sort_by=sort_by
+            )
+        # Inline fallback for read-only mode, old base library,
+        # or available_only filter (not yet supported upstream)
         params: dict[str, Any] = {
             "query": query,
             "searchType": "keyword",
@@ -179,13 +213,19 @@ class Client:
         if sort_by:
             params["sortBy"] = sort_by
         if available_only:
-            # facet for available-now items
-            params["f_NEWLY_ACQUIRED"] = (
-                "AVAILABLE"  # best-guess; harmless if unsupported
-            )
+            params["f_NEWLY_ACQUIRED"] = "AVAILABLE"
         return self._get("/bibs/search", params)
 
     def availability(self, bib_id: str) -> dict:
+        """Get branch-level availability for a bib.
+
+        Delegates to python-bibliocommons' ``get_availability_raw()``
+        when the installed base library is new enough (>= 2026.1) and
+        we're authenticated. Falls back to the inline implementation
+        for read-only mode or older base library versions.
+        """
+        if self._authed and _base_supports_gateway():
+            return self._bc.get_availability_raw(bib_id)
         return self._get(f"/bibs/{bib_id}/availability")
 
     def list_holds(self) -> dict:
