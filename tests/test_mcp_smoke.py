@@ -64,12 +64,15 @@ def test_server_boots_and_lists_expected_tools():
     init, tools = asyncio.run(_handshake_and_list())
 
     # Handshake
-    assert init.serverInfo.name == "bibliocommons-mcp"
+    # ClientSession exercises the SDK's compatibility path while the modern
+    # Client tests in test_mcp_v2 negotiate 2026-07-28.
+    assert init.protocol_version == "2025-11-25"
+    assert init.server_info.name == "bibliocommons-mcp"
     # Instructions should be advertised to the client
     assert init.instructions
     assert "BiblioCommons" in init.instructions
 
-    # All 9 expected tools registered
+    # All expected tools registered
     names = {t.name for t in tools.tools}
     assert names == EXPECTED_TOOLS, f"missing or extra tools: {names ^ EXPECTED_TOOLS}"
 
@@ -79,8 +82,8 @@ def test_every_tool_has_title_and_output_schema():
     _, tools = asyncio.run(_handshake_and_list())
     for t in tools.tools:
         assert t.title, f"tool {t.name!r} has no title"
-        assert t.inputSchema, f"tool {t.name!r} has no inputSchema"
-        assert t.outputSchema, f"tool {t.name!r} has no outputSchema"
+        assert t.input_schema, f"tool {t.name!r} has no inputSchema"
+        assert t.output_schema, f"tool {t.name!r} has no outputSchema"
 
 
 @pytest.mark.timeout(30)
@@ -102,16 +105,16 @@ def test_annotations_advertise_safety_correctly():
     for name in read_only:
         ann = by_name[name].annotations
         assert ann is not None, f"{name} missing annotations"
-        assert ann.readOnlyHint is True, f"{name} should be readOnlyHint=True"
+        assert ann.read_only_hint is True, f"{name} should be readOnlyHint=True"
 
     for name in ("cancel_hold",):
         ann = by_name[name].annotations
         assert ann is not None
-        assert ann.destructiveHint is True, f"{name} must be destructiveHint=True"
+        assert ann.destructive_hint is True, f"{name} must be destructiveHint=True"
 
     # Mutations are neither read-only nor destructive
     for name in ("place_hold", "borrow_digital"):
         ann = by_name[name].annotations
         assert ann is not None, f"{name} missing annotations"
-        assert ann.readOnlyHint is not True, f"{name} must not be read-only"
-        assert ann.destructiveHint is not True, f"{name} must not be destructive"
+        assert ann.read_only_hint is not True, f"{name} must not be read-only"
+        assert ann.destructive_hint is not True, f"{name} must not be destructive"

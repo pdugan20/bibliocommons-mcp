@@ -83,7 +83,9 @@ See [`projects/public-readiness-ci.md`](projects/public-readiness-ci.md) for the
 
 ## Build / distribution
 
-- **Standalone `fastmcp` 3.x upgrade.** Deliberately skipped — bundled FastMCP is enough for 9 tools.
+- **Standalone `fastmcp` 3.x migration.** Deliberately skipped — the official
+  `mcp` SDK v2 server covers the current 13 tools, OAuth Resource Server, and
+  MCP Apps requirements without a second server framework.
 - **Beta / pre-release channel** (`bibliocommons-mcp==0.3.0a1`). None.
 - **Docker image.**
 - **Homebrew formula.**

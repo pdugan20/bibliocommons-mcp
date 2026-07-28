@@ -29,7 +29,7 @@ CFG = WebSettingsConfig(
 )
 
 
-def _make(store, *, exchange=None, validate=None, validate_raises=False):
+def _make(store, *, exchange=None, validate=None, validate_raises=False, changed=None):
     async def _ex(code):
         return "user_42"
 
@@ -39,7 +39,11 @@ def _make(store, *, exchange=None, validate=None, validate_raises=False):
         return None
 
     app = AccountSettings(
-        CFG, store, exchange_code=exchange or _ex, validate_credentials=validate or _val
+        CFG,
+        store,
+        exchange_code=exchange or _ex,
+        validate_credentials=validate or _val,
+        on_credentials_changed=changed,
     )
     return TestClient(Starlette(routes=app.routes), base_url="https://testserver")
 
@@ -95,7 +99,8 @@ def test_callback_then_form_renders():
 
 def test_save_validates_and_stores():
     store = InMemoryCredentialStore()
-    tc = _make(store)
+    changed = []
+    tc = _make(store, changed=changed.append)
     _authenticate(tc)
     r = tc.post(
         "/account",
@@ -112,6 +117,7 @@ def test_save_validates_and_stores():
     assert creds.library == "seattle"
     assert creds.card == "12345" and creds.pin == "6789"
     assert creds.default_pickup_branch == "Central"
+    assert changed == ["user_42"]
 
 
 def test_save_rejects_bad_credentials():
