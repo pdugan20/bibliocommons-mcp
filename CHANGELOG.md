@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.1...v0.6.2) (2026-07-28)
+
+
+### Bug Fixes
+
+* support MCP 2026-07-28 ([22ed821](https://github.com/pdugan20/bibliocommons-mcp/commit/22ed821aa61198a16334a1c2c50b53c22dcd1f62))
+
 ## [0.6.1](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.0...v0.6.1) (2026-07-24)
 
 
