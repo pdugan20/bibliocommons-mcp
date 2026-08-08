@@ -23,9 +23,9 @@ dependencies = [
     "bibliocommons>=2025.3",
     "httpx>=0.28",
     "lxml>=5",
-    # mcp>=1.27 = MCP spec 2025-11-25 (tool annotations, structured output,
-    # elicitation, ToolError). Anything older lacks features we depend on.
-    "mcp>=1.27",
+    # MCP SDK v2 implements MCP 2026-07-28 while retaining compatibility with
+    # earlier protocol revisions. Cap the major so future SDK breaks are opt-in.
+    "mcp>=2,<3",
     # JWKS/JWT validation for the remote OAuth Resource-Server transport
     # (auth.py). The `crypto` extra pulls in `cryptography` for RS256.
     "pyjwt[crypto]>=2.9",

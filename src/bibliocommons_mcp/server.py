@@ -1,4 +1,4 @@
-"""FastMCP server for bibliocommons-mcp.
+"""MCP server for bibliocommons-mcp.
 
 Single library per server, configured via
 ``~/.config/bibliocommons-mcp/config.toml``. See ``docs/architecture.md``
@@ -14,17 +14,20 @@ import logging
 import os
 import sys
 import time
+from threading import RLock
 from typing import TYPE_CHECKING
 from urllib.parse import quote_plus, urlparse
 
+from mcp.server import CacheHint, MCPServer
+from mcp.server.apps import Apps
 from mcp.server.auth.middleware.auth_context import get_access_token
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
 
+from . import __version__, ui_resources
 from .auth import workos_auth_from_env
 from .branches import BranchNotFound
 from .cache import TTLCache
@@ -56,6 +59,7 @@ from .models import (
     SearchResult,
 )
 from .models import Branch as BranchModel
+from .ui import ui_tool_meta
 from .web_settings import (
     WebSettingsConfigError,
     register_account_routes,
@@ -106,9 +110,10 @@ Important constraints:
   Libby waitlist).
 - Format codes are BiblioCommons facets like `MUSIC_CD`, `BK`,
   `EBOOK`, `EAUDIOBOOK`, `AUDIOBOOK_CD`, `DVD`.
-- Branch IDs are 3-letter codes (e.g. `LCY` = Lake City). `place_hold`
-  accepts names or codes; the resolver matches case-insensitive
-  substrings and prefers regular branches over locker variants.
+- Branch codes are library-specific strings (e.g. `LCY` = Lake City or
+  `56` = Northtown). `place_hold` accepts names or codes; the resolver
+  matches case-insensitive substrings and prefers regular branches over
+  locker variants.
 """
 
 
@@ -117,27 +122,31 @@ Important constraints:
 # Reads from the catalog or the user's own account. Safe to call freely;
 # clients should not require confirmation. `openWorldHint=True` because
 # the underlying data (catalog, account state) changes over time.
-READ_ONLY = ToolAnnotations(readOnlyHint=True, idempotentHint=True, openWorldHint=True)
+READ_ONLY = ToolAnnotations(
+    read_only_hint=True,
+    idempotent_hint=True,
+    open_world_hint=True,
+)
 
 # Creates new account-side state (a hold, a checkout). Not idempotent —
 # calling twice with the same args may 409 ("already on holds list") or
 # create a second entry. Not destructive: place_hold can be cancelled,
 # borrow_digital can be returned.
 MUTATION = ToolAnnotations(
-    readOnlyHint=False,
-    destructiveHint=False,
-    idempotentHint=False,
-    openWorldHint=True,
+    read_only_hint=False,
+    destructive_hint=False,
+    idempotent_hint=False,
+    open_world_hint=True,
 )
 
 # Removes existing account-side state in a way the user can't trivially
 # reverse — cancelling a hold loses queue position. Clients should
 # surface a confirmation prompt before calling.
 DESTRUCTIVE = ToolAnnotations(
-    readOnlyHint=False,
-    destructiveHint=True,
-    idempotentHint=False,
-    openWorldHint=True,
+    read_only_hint=False,
+    destructive_hint=True,
+    idempotent_hint=False,
+    open_world_hint=True,
 )
 
 
@@ -179,8 +188,8 @@ def _transport_security() -> TransportSecuritySettings | None:
     return TransportSecuritySettings(allowed_hosts=hosts, allowed_origins=origins)
 
 
-def _build_mcp() -> FastMCP:
-    """Construct the FastMCP server, enabling OAuth Resource-Server auth iff
+def _build_mcp(apps: Apps) -> MCPServer:
+    """Construct the MCP server, enabling OAuth Resource-Server auth iff
     WorkOS is configured in the environment.
 
     Auth is opt-in (see auth.workos_auth_from_env): with `WORKOS_*` env set,
@@ -188,7 +197,20 @@ def _build_mcp() -> FastMCP:
     protected-resource metadata; without it, the server is authless
     (Milestone-1 read-only catalog mode). stdio never enforces auth.
     """
-    kwargs: dict = {"instructions": INSTRUCTIONS.strip()}
+    kwargs: dict = {
+        "instructions": INSTRUCTIONS.strip(),
+        "version": __version__,
+        "extensions": [apps],
+        # Tool definitions and app resources are static for a running release
+        # and identical for every authenticated user. Let modern clients avoid
+        # repeatedly fetching them; older protocol revisions ignore the hints.
+        "cache_hints": {
+            "server/discover": CacheHint(ttl_ms=300_000, scope="public"),
+            "tools/list": CacheHint(ttl_ms=300_000, scope="public"),
+            "resources/list": CacheHint(ttl_ms=3_600_000, scope="public"),
+            "resources/read": CacheHint(ttl_ms=86_400_000, scope="public"),
+        },
+    }
     auth = workos_auth_from_env()
     if auth is not None:
         verifier, settings = auth
@@ -198,22 +220,15 @@ def _build_mcp() -> FastMCP:
             "WorkOS Resource-Server auth enabled (resource=%s)",
             settings.resource_server_url,
         )
-    transport_security = _transport_security()
-    if transport_security is not None:
-        kwargs["transport_security"] = transport_security
-    return FastMCP("bibliocommons-mcp", **kwargs)
+    return MCPServer("bibliocommons-mcp", **kwargs)
 
 
-mcp = _build_mcp()
-
-# Register the prebuilt React bundles as MCP Apps UI resources. The
-# mapping is used below by tools that want to render a card; passing
-# `meta=ui_tool_meta(UI_RESOURCES[name])` to `@mcp.tool` tells a
-# UI-capable host (Claude Desktop, Inspector) which bundle to mount.
-from . import ui_resources  # noqa: E402  (import after FastMCP init)
-from .ui import ui_tool_meta  # noqa: E402
-
-UI_RESOURCES = ui_resources.register_all(mcp)
+# Register the prebuilt React bundles with the SDK's official MCP Apps
+# extension before constructing the server. The mapping is used below by tools
+# whose metadata points at a UI resource.
+_apps = Apps()
+UI_RESOURCES = ui_resources.register_all(_apps)
+mcp = _build_mcp(_apps)
 
 _cfg: Config | None = None
 _client: Client | None = None
@@ -233,6 +248,10 @@ _user_clients: TTLCache[Client] = TTLCache(
     ttl=float(os.environ.get("BIBLIOCOMMONS_MCP_SESSION_TTL") or 86400),
     maxsize=int(os.environ.get("BIBLIOCOMMONS_MCP_MAX_SESSIONS") or 1000),
 )
+# Prevent duplicate login/client creation when MCP SDK v2 dispatches multiple
+# synchronous tool calls concurrently. The lock covers only lazy construction;
+# established clients serialize their own cookie/session traffic.
+_client_creation_lock = RLock()
 
 # Account settings page (/account): browser flow for capturing each user's
 # library credentials into _cred_store. Enabled only when WorkOS is configured
@@ -243,7 +262,12 @@ except WebSettingsConfigError as _exc:
     logger.warning("account settings page disabled: %s", _exc)
     _web_settings_cfg = None
 if _web_settings_cfg is not None:
-    register_account_routes(mcp, _web_settings_cfg, _cred_store)
+    register_account_routes(
+        mcp,
+        _web_settings_cfg,
+        _cred_store,
+        on_credentials_changed=_user_clients.pop,
+    )
     logger.info("account settings page enabled at /account")
 
 
@@ -365,12 +389,13 @@ def _ensure_single_client() -> Client:
     card/PIN are present.
     """
     global _cfg, _client
-    if _client is None:
-        _cfg = Config.load(require_credentials=False)
-        _client = Client(_cfg.library)
-        if _cfg.has_credentials:
-            _client.authenticate(_cfg.card, _cfg.pin)
-    return _client
+    with _client_creation_lock:
+        if _client is None:
+            _cfg = Config.load(require_credentials=False)
+            _client = Client(_cfg.library)
+            if _cfg.has_credentials:
+                _client.authenticate(_cfg.card, _cfg.pin)
+        return _client
 
 
 def _setup_required_message() -> str:
@@ -421,28 +446,34 @@ def _ensure_user_client(subject: str) -> Client:
     client = _user_clients.get(subject)
     if client is not None:
         return client
-    creds = _cred_store.get(subject)
-    if creds is None:
-        if _single_user_mode():
-            owners = _owner_subjects()
-            if not owners:
-                raise NotAuthenticatedError(
-                    "This connector runs in single-user mode but no owner is "
-                    "allow-listed yet. The operator must add this account id to "
-                    f"BIBLIOCOMMONS_MCP_OWNER_SUBJECTS: {subject}"
-                )
-            if subject not in owners:
-                raise NotAuthenticatedError(
-                    "This is a single-user connector; your account "
-                    f"({subject}) is not the owner."
-                )
-            return _ensure_single_client()
-        raise NotAuthenticatedError(_setup_required_message())
-    client = Client(creds.library)
-    if creds.has_credentials:
-        client.authenticate(creds.card, creds.pin)
-    _user_clients.put(subject, client)
-    return client
+    with _client_creation_lock:
+        # Another worker may have completed authentication while this one was
+        # waiting for the creation lock.
+        client = _user_clients.get(subject)
+        if client is not None:
+            return client
+        creds = _cred_store.get(subject)
+        if creds is None:
+            if _single_user_mode():
+                owners = _owner_subjects()
+                if not owners:
+                    raise NotAuthenticatedError(
+                        "This connector runs in single-user mode but no owner is "
+                        "allow-listed yet. The operator must add this account id to "
+                        f"BIBLIOCOMMONS_MCP_OWNER_SUBJECTS: {subject}"
+                    )
+                if subject not in owners:
+                    raise NotAuthenticatedError(
+                        "This is a single-user connector; your account "
+                        f"({subject}) is not the owner."
+                    )
+                return _ensure_single_client()
+            raise NotAuthenticatedError(_setup_required_message())
+        client = Client(creds.library)
+        if creds.has_credentials:
+            client.authenticate(creds.card, creds.pin)
+        _user_clients.put(subject, client)
+        return client
 
 
 def _ensure_client() -> Client:
@@ -489,7 +520,7 @@ def _safe(fn: Callable) -> Callable:
 
     BCError (gateway errors), BranchNotFound (resolver), ValueError
     (caller mistakes), and NotAuthenticatedError (account op in read-only mode)
-    become ToolError. Anything else propagates and FastMCP renders the
+    become ToolError. Anything else propagates and MCPServer renders the
     class + message.
     """
 
@@ -768,7 +799,7 @@ def place_hold(
     Args:
         bib_ids: List of bib IDs. Pass `[id]` for a single hold. Order
             is preserved during placement (first attempted first).
-        pickup_branch: Branch name or 3-letter code applied to every
+        pickup_branch: Branch name or code applied to every
             hold. Defaults to `default_pickup_branch` from config.
             Names are matched case-insensitively; locker variants are
             de-prioritized when the query is ambiguous.
@@ -1278,7 +1309,7 @@ def check_in_loan(
 @mcp.tool(title="List branches at your library", annotations=READ_ONLY)
 @_safe
 def list_branches() -> BranchList:
-    """List every branch with its 3-letter pickup code."""
+    """List every branch with its library-specific pickup code."""
     client = _ensure_client()
     return BranchList(
         library=client.library,
@@ -1369,25 +1400,29 @@ def _run_http() -> None:
         )
         sys.exit(2)
 
-    mcp.settings.host = os.environ.get("FASTMCP_HOST", "0.0.0.0")
-    mcp.settings.port = int(
-        os.environ.get("PORT") or os.environ.get("FASTMCP_PORT") or 8000
-    )
-    mcp.settings.stateless_http = True
+    host = os.environ.get("FASTMCP_HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT") or os.environ.get("FASTMCP_PORT") or 8000)
     # Two independent axes: WorkOS OAuth (server-level access) and library
     # credentials (account tools). Report both so the operator isn't misled.
     auth_mode = "WorkOS OAuth" if workos_auth_from_env() else "authless"
     creds_mode = "library creds set" if cfg.has_credentials else "read-only catalog"
     logger.info(
         "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, %s, library=%s]",
-        mcp.settings.host,
-        mcp.settings.port,
+        host,
+        port,
         auth_mode,
         creds_mode,
         cfg.library,
     )
     try:
-        mcp.run(transport="streamable-http")
+        mcp.run(
+            transport="streamable-http",
+            host=host,
+            port=port,
+            stateless_http=True,
+            json_response=True,
+            transport_security=_transport_security(),
+        )
     except KeyboardInterrupt:
         logger.info("shutting down (interrupt)")
     except (BCError, BranchNotFound) as exc:

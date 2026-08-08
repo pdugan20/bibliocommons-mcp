@@ -54,7 +54,7 @@ Acceptance: connector added on claude.ai web shows up on the iOS app;
 | #   | Task                                                                                                                                                                                            | Owner | Status |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
 | 1.1 | Add transport switch in `server.py:main()`: no-arg → stdio (unchanged); `serve --http` / `BIBLIOCOMMONS_MCP_TRANSPORT=http` → streamable-http                                                   | repo  | [x]    |
-| 1.2 | Configure `FastMCP` for HTTP: `stateless_http=True`, bind `0.0.0.0:$PORT` (`PORT` env honored), path default `/mcp`                                                                             | repo  | [x]    |
+| 1.2 | Configure the official MCP server for HTTP: sessionless modern transport plus legacy `stateless_http=True`, bind `0.0.0.0:$PORT` (`PORT` env honored), path default `/mcp`                      | repo  | [x]    |
 | 1.3 | Read-only catalog mode: `config.py` allows library-only (`require_credentials=False`); account tools raise a clean `NotAuthenticatedError`→ToolError. Library comes from config (not hardcoded) | repo  | [x]    |
 | 1.4 | Public `GET /healthz` via `@mcp.custom_route` (credential-free; reports library + auth mode)                                                                                                    | repo  | [x]    |
 | 1.5 | Unit tests: transport selection, healthz (ok/read-only/misconfigured), authless boot, account-tool clean error — `tests/test_http_transport.py` + `tests/test_config.py` (113 pass)             | repo  | [x]    |
@@ -107,7 +107,7 @@ forwarded to the BiblioCommons gateway.
 | #   | Task                                                                                                                                                       | Owner | Status |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
 | 2.1 | WorkOS app: enable DCR/CIMD (Claude auto-registers, no manual redirect/secret). Resource Indicator = `https://getbiblio.app/mcp`. **Owner — deploy-time**  | owner | [ ]    |
-| 2.2 | `_build_mcp()` wires `FastMCP(token_verifier=WorkOSTokenVerifier, auth=AuthSettings(...))` when `WORKOS_*` env present; omits `auth_server_provider`       | repo  | [x]    |
+| 2.2 | `_build_mcp()` wires `MCPServer(token_verifier=WorkOSTokenVerifier, auth=AuthSettings(...))` when `WORKOS_*` env present; omits `auth_server_provider`     | repo  | [x]    |
 | 2.3 | `WorkOSTokenVerifier.verify_token()` — JWKS/JWT: signature + iss (trailing-slash tolerant) + aud (RFC 8707) + expiry                                       | repo  | [x]    |
 | 2.4 | Verified live: SDK serves `/.well-known/oauth-protected-resource/mcp` → `authorization_servers: api.workos.com`; un-authed `/mcp` → 401 + WWW-Authenticate | repo  | [x]    |
 | 2.5 | Confirmed: no `RemoteAuthProvider` (fastmcp-only); hand-wired `TokenVerifier` on official `mcp`                                                            | repo  | [x]    |

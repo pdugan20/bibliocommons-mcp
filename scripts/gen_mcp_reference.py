@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the MCP tool reference from the live FastMCP instance.
+"""Generate the MCP tool reference from the live MCPServer instance.
 
 Writes docs-mintlify/reference/mcp-tools.mdx by introspecting every registered
 tool (name, description, parameters, annotations), grouped by read-only / writes
@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import pathlib
 
-# Importing the server registers every tool on the shared FastMCP instance.
+# Importing the server registers every tool on the shared MCPServer instance.
 from bibliocommons_mcp.server import mcp
 
 OUT = pathlib.Path("docs-mintlify/reference/mcp-tools.mdx")
@@ -42,9 +42,9 @@ LABELS = {"read-only": "Read-only", "writes": "Writes", "destructive": "Destruct
 
 def _kind(tool) -> str:
     a = tool.annotations
-    if a and getattr(a, "readOnlyHint", None):
+    if a and getattr(a, "read_only_hint", None):
         return "read-only"
-    if a and getattr(a, "destructiveHint", None):
+    if a and getattr(a, "destructive_hint", None):
         return "destructive"
     return "writes"
 
@@ -101,7 +101,7 @@ def main() -> None:
         for t in group:
             out.append(f"### `{t.name}`\n")
             out.append(f"**{LABELS[kind]}.** {_first_para(t.description)}\n")
-            rows = _param_rows(t.inputSchema)
+            rows = _param_rows(t.input_schema)
             if rows:
                 out.append("| Parameter | Type | Required | Description |")
                 out.append("| --- | --- | --- | --- |")

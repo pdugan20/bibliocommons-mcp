@@ -15,6 +15,13 @@
 > — see **"What changed in this revision"** at the bottom if you read an
 > earlier draft.
 >
+> **SDK update 2026-07-28:** the implementation has moved to official
+> `mcp>=2,<3`, `MCPServer`, and the official MCP Apps extension. It negotiates
+> MCP 2026-07-28 while retaining earlier-protocol compatibility. The 1.27.1
+> details below remain as the historical record for the original deployment;
+> current transport settings are passed to `run()` / the ASGI app rather than
+> the server constructor.
+>
 > **Execution checklist:** [`remote-mcp-mobile-tracker.md`](remote-mcp-mobile-tracker.md)
 > — phased tasks with owners + acceptance criteria. This doc is the
 > _why/architecture_; the tracker is the _what/checklist_.
@@ -55,7 +62,7 @@ language. The two sibling servers that already work on mobile both:
   (`mcp.rewind.rest` on Cloudflare Workers; `mcp.next-up.app` on Cloud Run);
 - gate access with **OAuth 2.1** (PKCE/S256), tokens validated server-side.
 
-We replicate that shell around the existing FastMCP tool definitions. The
+We replicate that shell around the existing MCP tool definitions. The
 tools themselves barely change. **Note:** rewind ran its own OAuth provider
 (`@cloudflare/workers-oauth-provider`) because it predates the spec change
 below — we should _not_ copy that; see the auth section.
@@ -64,8 +71,8 @@ below — we should _not_ copy that; see the auth section.
 
 ### 1. Add a Streamable HTTP entry point (keep stdio)
 
-`mcp` here is the official `modelcontextprotocol/python-sdk` FastMCP
-(`pyproject.toml` pins `mcp>=1.27`; installed 1.27.1), which supports
+`mcp` here is the official `modelcontextprotocol/python-sdk` v2
+(`pyproject.toml` pins `mcp>=2,<3`), which supports
 `mcp.run(transport="streamable-http")` and exposes an ASGI app via
 `mcp.streamable_http_app()` (returns a Starlette app) for when you need
 custom middleware or extra routes (`/healthz`, favicon, root-level
@@ -78,15 +85,15 @@ In `server.py:main()` (currently stdio-only), add a transport switch — do
 - `bibliocommons-mcp serve --http` (or `BIBLIOCOMMONS_MCP_TRANSPORT=http`) →
   Streamable HTTP bound to `0.0.0.0:$PORT` (Cloud Run sets `$PORT`).
 
-**SDK specifics verified against 1.27.1 — these bit earlier drafts:**
+**Current SDK v2 specifics (the original 1.27.1 behavior is preserved where
+noted):**
 
 - The Streamable HTTP endpoint **defaults to `/mcp`, not `/`**
-  (`FastMCP.settings.streamable_http_path`). Decide your public path
-  deliberately; env override is `FASTMCP_STREAMABLE_HTTP_PATH`, host/port are
-  `FASTMCP_HOST` / `FASTMCP_PORT` (defaults `127.0.0.1:8000` — bind `0.0.0.0`
-  for a container).
+  (unchanged from the v1 deployment). Decide your public path deliberately;
+  the current server passes host, port, and transport security explicitly to
+  `MCPServer.run()`.
 - For a multi-tenant remote service, run **`stateless_http=True`**
-  (`FastMCP(..., stateless_http=True)`): a fresh transport per request, no
+  (passed to `run()` / `streamable_http_app()` in SDK v2): no
   sticky-session affinity, which is what you want behind a load balancer.
   Derive the user per-call from the auth context instead of session state
   (see §2). `session_idle_timeout` is incompatible with stateless mode.
@@ -150,8 +157,8 @@ the **current** MCP spec that is no longer the right call:
 - **Claude also supports fully authless remote connectors** — which is what
   makes milestone 1 nearly free.
 
-**What the official `mcp` SDK (1.27.1) gives you for RS mode** (verified in
-source): construct `FastMCP(..., token_verifier=<TokenVerifier>,
+**What the official `mcp` SDK gives you for RS mode:** construct
+`MCPServer(..., token_verifier=<TokenVerifier>,
 auth=AuthSettings(issuer_url="<external AS>", resource_server_url="https://getbiblio.app/mcp", required_scopes=[...]))`
 and **omit** `auth_server_provider`. That makes the SDK a pure Resource Server
 — no authorize/token/register endpoints to implement. The canonical example is

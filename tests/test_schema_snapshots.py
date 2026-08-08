@@ -4,7 +4,7 @@ Catches unintentional changes to ``inputSchema``, ``outputSchema``,
 ``title``, or ``annotations`` — silent edits to any of these are
 tool-poisoning vectors for clients pinned against our surface.
 
-Note that ``description`` is intentionally excluded: FastMCP applies
+Note that ``description`` is intentionally excluded: MCPServer applies
 Python-version-dependent whitespace normalization to docstrings, so
 the same source can render slightly differently across 3.11 / 3.12 /
 3.14. The other fields are the load-bearing contract.
@@ -32,9 +32,11 @@ def _tool_signature(tool) -> dict:
     """
     return {
         "title": tool.title,
-        "inputSchema": tool.inputSchema,
-        "outputSchema": tool.outputSchema,
-        "annotations": (tool.annotations.model_dump() if tool.annotations else None),
+        "inputSchema": tool.input_schema,
+        "outputSchema": tool.output_schema,
+        "annotations": (
+            tool.annotations.model_dump(by_alias=True) if tool.annotations else None
+        ),
     }
 
 

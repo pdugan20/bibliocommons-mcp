@@ -7,9 +7,9 @@ bibliocommons-mcp is a thin Python MCP server that authenticates against a Bibli
 ## Data flow
 
 ```text
-MCP client (Claude Code, Claude Desktop, Cursor, ...)
+MCP client (Claude, ChatGPT, Codex, Cursor, ...)
         |
-        v  stdio MCP framing
+        v  stdio or sessionless Streamable HTTP
    bibliocommons-mcp server
         |
         +-- python-bibliocommons (login flow → session cookies)
@@ -24,9 +24,32 @@ MCP client (Claude Code, Claude Desktop, Cursor, ...)
 ## Module layout
 
 - `src/bibliocommons_mcp/config.py` — TOML config loader, env-var overrides
-- `src/bibliocommons_mcp/branches.py` — branch name ↔ 3-letter code resolver with in-memory cache
+- `src/bibliocommons_mcp/branches.py` — branch name ↔ code resolver with in-memory cache
 - `src/bibliocommons_mcp/client.py` — the gateway client. Wraps `python-bibliocommons` for the login flow, layers everything else.
-- `src/bibliocommons_mcp/server.py` — FastMCP server + tool registrations
+- `src/bibliocommons_mcp/server.py` — official MCP SDK v2 server, tool
+  registrations, OAuth resource-server wiring, and Streamable HTTP transport
+- `src/bibliocommons_mcp/ui.py` / `ui_resources.py` — official MCP Apps
+  extension metadata and bundled HTML resources
+
+## MCP protocol profile
+
+- The runtime pins the official Python SDK to `mcp>=2,<3`. Modern clients
+  negotiate MCP 2026-07-28; SDK v2's compatibility path continues to serve
+  MCP 2025-11-25 clients.
+- Streamable HTTP is sessionless under the modern request/response protocol.
+  Legacy HTTP also runs in stateless mode, so neither path relies on sticky
+  load-balancer sessions.
+- MCP Apps is advertised through the official versioned extension and serves
+  the holds, loans, and search cards as `text/html;profile=mcp-app` resources.
+- Tool and resource discovery carry public cache hints because their schemas
+  and bundled HTML are release-static and identical across users.
+- The Tasks extension is intentionally not advertised: current catalog and
+  account operations are bounded request/response calls. Revisit Tasks if a
+  future bulk or reporting operation can outlive a normal client timeout.
+- In remote mode the server remains an OAuth Resource Server. SDK v2 emits the
+  protected-resource metadata and bearer challenge; WorkOS JWTs are still
+  verified for signature, issuer, audience, expiry, and subject before a
+  per-user BiblioCommons session is selected.
 
 ## Authentication
 
@@ -66,7 +89,7 @@ The trick is **`errorMessageLocale` inside `materialParams`**. Without it, the g
 | **Digital vs. physical have separate endpoints.** | Available digital items → `POST /v2/libraries/{library}/checkouts` (immediate borrow). Physical → `POST /holds`. Unavailable digital (Libby waitlist) → `POST /holds` with `materialType: "DIGITAL"`, but this needs a `format` enum field we haven't fully exercised yet (deferred to v1.1 — see [`format-codes.md`](format-codes.md) for the leaked enum). The Libby app handles digital waitlists fine in the meantime. |
 | **DELETE /holds is bulk.**                        | Body is `{accountId, metadataIds: [...], holdIds: [...], errorMessageLocale}` — plural and arrays even when canceling one.                                                                                                                                                                                                                                                                                                 |
 | **Search pagination is fixed at 25 per page.**    | The `size` param is silently ignored. Use `page=N` (1-indexed).                                                                                                                                                                                                                                                                                                                                                            |
-| **Branch IDs are 3-letter codes.**                | LCY = Lake City. Branches can have locker variants (`LOCK1`–`LOCK7`); the resolver prefers the regular branch when a query is ambiguous.                                                                                                                                                                                                                                                                                   |
+| **Branch codes vary by library.**                 | Seattle uses alphabetic codes such as `LCY`; Chicago uses numeric codes such as `56`. Branches can have locker variants; the resolver prefers the regular branch when a name is ambiguous.                                                                                                                                                                                                                                 |
 | **Locale matters.**                               | All POSTs need `?locale=en-US` on the URL _and_ `errorMessageLocale: "en-US"` in the body. The MCP server hardcodes both.                                                                                                                                                                                                                                                                                                  |
 
 ## Testing strategy
@@ -74,6 +97,12 @@ The trick is **`errorMessageLocale` inside `materialParams`**. Without it, the g
 - **Unit tests** for config loading, branch resolution, hold/cancel body shape construction, and error parsing. No network, no credentials needed.
 - **VCR cassettes** under `tests/cassettes/` for read-only HTTP flows (login → branches, search, availability). Recorded once against a real library account, then sanitized and replayed in CI. The conftest.py scrubber replaces card/PIN/access-token/session-id with fixed fakes; verifies-clean before commit.
 - **No state-changing tests against the live gateway in CI.** `place_hold`, `cancel_hold`, and `borrow_digital` are validated via body-shape unit tests only.
+- **Protocol compatibility tests** exercise the MCP 2026-07-28 discovery flow,
+  official Apps negotiation, cache hints, sessionless HTTP, OAuth subject
+  propagation, and the legacy initialize path supported by SDK v2.
+- **Concurrency tests** cover the per-user client cache and mutable in-memory
+  stores. Gateway calls are serialized per authenticated BiblioCommons session
+  while different users can still make progress concurrently.
 
 To re-record cassettes (after, say, an upstream API change), run:
 

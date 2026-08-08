@@ -10,9 +10,10 @@ single-tenant (no-subject) path is unchanged.
 from __future__ import annotations
 
 import types
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 
 import bibliocommons_mcp.server as srv
 from bibliocommons_mcp.cache import TTLCache
@@ -96,6 +97,25 @@ def test_clients_cached_and_isolated_per_subject(multiuser):
     b = srv._ensure_client()
     assert b is not a1  # isolated
     assert b.library == "sfpl"
+
+
+def test_concurrent_requests_create_one_client(multiuser, monkeypatch):
+    created: list[_FakeClient] = []
+
+    class TrackingClient(_FakeClient):
+        def __init__(self, library: str) -> None:
+            super().__init__(library)
+            created.append(self)
+
+    monkeypatch.setattr(srv, "Client", TrackingClient)
+    srv._cred_store.put("user_a", UserCredentials(library="seattle", card="1", pin="2"))
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        clients = list(pool.map(lambda _: srv._ensure_user_client("user_a"), range(16)))
+
+    assert all(client is clients[0] for client in clients)
+    assert len(created) == 1
+    assert created[0].auth_calls == [("1", "2")]
 
 
 def test_single_tenant_path_when_no_subject(multiuser):
