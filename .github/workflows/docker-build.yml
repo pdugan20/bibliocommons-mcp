@@ -8,28 +8,47 @@ name: Docker Build
 on:
   push:
     branches: [main]
-    paths:
-      - "src/**"
-      - "pyproject.toml"
-      - "Dockerfile"
-      - ".dockerignore"
-      - ".github/workflows/docker-build.yml"
   pull_request:
     branches: [main]
-    paths:
-      - "src/**"
-      - "pyproject.toml"
-      - "Dockerfile"
-      - ".dockerignore"
-      - ".github/workflows/docker-build.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+  impact:
+    name: Classify Docker impact
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.classify.outputs.build }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Classify changed paths
+        id: classify
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]] || ! git cat-file -e "$BASE_SHA^{commit}"; then
+            echo "Unable to prove the comparison base; failing safe by building."
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-paths.txt"
+          cat "$RUNNER_TEMP/changed-paths.txt"
+          build="$(python scripts/classify_docker_impact.py < "$RUNNER_TEMP/changed-paths.txt")"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build image + healthz smoke
+    needs: impact
+    if: needs.impact.outputs.build == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -65,3 +84,33 @@ jobs:
             echo "::error::/healthz did not return status ok"
             exit 1
           fi
+
+  gate:
+    name: Docker Gate
+    if: ${{ always() }}
+    needs: [impact, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the classified Docker outcome
+        env:
+          IMPACT_RESULT: ${{ needs.impact.result }}
+          BUILD_REQUIRED: ${{ needs.impact.outputs.build }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          impact = os.environ["IMPACT_RESULT"]
+          required = os.environ["BUILD_REQUIRED"]
+          build = os.environ["BUILD_RESULT"]
+          print(f"impact={impact} required={required} build={build}")
+
+          valid = impact == "success" and (
+              (required == "true" and build == "success")
+              or (required == "false" and build == "skipped")
+          )
+          if not valid:
+              print("::error::Docker impact classification or smoke build failed closed")
+              sys.exit(1)
+          PY

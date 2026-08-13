@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   ruff:
     name: Ruff
@@ -161,3 +164,40 @@ jobs:
       - uses: actions/checkout@v7
       - name: Validate docs links (mint broken-links)
         run: cd docs-mintlify && npx --yes mint@latest broken-links
+
+  ci-gate:
+    name: CI Gate
+    if: ${{ always() }}
+    needs:
+      - ruff
+      - markdownlint
+      - prettier
+      - claude-lint
+      - web-bundles
+      - test
+      - infra-lint
+      - docs-reference
+      - docs-links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+
+          results = {
+              name: details["result"]
+              for name, details in json.loads(os.environ["JOB_RESULTS"]).items()
+          }
+          failed = {
+              name: result for name, result in results.items() if result != "success"
+          }
+          print(json.dumps(results, indent=2, sort_keys=True))
+          if failed:
+              print(f"::error::CI jobs did not succeed: {failed}")
+              sys.exit(1)
+          PY
