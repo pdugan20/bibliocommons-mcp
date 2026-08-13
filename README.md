@@ -1,9 +1,9 @@
 # bibliocommons-mcp
 
-[![PyPI](https://img.shields.io/pypi/v/bibliocommons-mcp?logo=pypi&logoColor=white)](https://pypi.org/project/bibliocommons-mcp/)
-[![CI](https://github.com/pdugan20/bibliocommons-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/pdugan20/bibliocommons-mcp/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/Python-%3E%3D3.11-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?logo=opensourceinitiative&logoColor=white)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/pdugan20/bibliocommons-mcp/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/pdugan20/bibliocommons-mcp/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/bibliocommons-mcp)](https://pypi.org/project/bibliocommons-mcp/)
+[![Python](https://img.shields.io/pypi/pyversions/bibliocommons-mcp)](https://pypi.org/project/bibliocommons-mcp/)
+[![License](https://img.shields.io/github/license/pdugan20/bibliocommons-mcp)](LICENSE)
 
 MCP server for placing holds, searching, and managing your account at [BiblioCommons](https://bibliocommons.com/)-powered public libraries.
 
