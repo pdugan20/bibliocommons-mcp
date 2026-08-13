@@ -75,7 +75,7 @@ jobs:
       # The committed _ui_bundles.py was emitted by the same build
       # script. If a contributor edits anything in web/ but forgets
       # to rerun `make build-web`, this diff catches it. Bundle output
-      # is byte-stable across Node 22 + the lockfile, so any drift
+      # is byte-stable across Node 24 + the lockfile, so any drift
       # here is a real out-of-sync, not flake.
       - name: Diff against committed bundles
         run: |
