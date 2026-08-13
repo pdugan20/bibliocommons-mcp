@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import yaml
@@ -7,6 +8,7 @@ import yaml
 from scripts.classify_docker_impact import requires_docker_build
 
 ROOT = Path(__file__).parents[1]
+PINNED_ACTION = re.compile(r"uses:\s+[^\s@]+@[0-9a-f]{40}(?:\s+#.*)?$")
 
 
 def _workflow(name: str) -> tuple[str, dict]:
@@ -63,3 +65,23 @@ def test_docker_build_is_admitted_only_by_the_classifier() -> None:
 
     assert build["needs"] == "impact"
     assert build["if"] == "needs.impact.outputs.build == 'true'"
+
+
+def test_every_external_action_is_commit_pinned() -> None:
+    for path in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+        for line_number, line in enumerate(path.read_text().splitlines(), start=1):
+            if "uses:" not in line:
+                continue
+            assert PINNED_ACTION.search(line), f"{path}:{line_number}: {line}"
+
+
+def test_ci_tools_do_not_float() -> None:
+    workflows = "\n".join(
+        path.read_text()
+        for path in sorted((ROOT / ".github" / "workflows").glob("*.yml"))
+    )
+
+    assert "@latest" not in workflows
+    assert "pip install ruff==0.16.3" in workflows
+    assert workflows.count("pip install build==1.5.0") == 2
+    assert workflows.count("version: 0.4.83") == 2

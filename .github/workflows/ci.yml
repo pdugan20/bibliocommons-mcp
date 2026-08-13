@@ -18,12 +18,12 @@ jobs:
     name: Ruff
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Install Ruff
-        run: pip install ruff
+        run: pip install ruff==0.16.3
       - name: Check linting
         run: ruff check src/ tests/
       - name: Check formatting
@@ -33,8 +33,8 @@ jobs:
     name: Markdown Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: DavidAnson/markdownlint-cli2-action@v24
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DavidAnson/markdownlint-cli2-action@8de2aa07cae85fd17c0b35642db70cf5495f1d25 # v24.0.0
         with:
           globs: |
             **/*.md
@@ -44,7 +44,7 @@ jobs:
     name: Prettier
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Run Prettier check
         # Pinned to the repo's prettier (web/package-lock.json) so CI doesn't
         # float to a newer 3.x whose markdown rules disagree with committed
@@ -55,16 +55,16 @@ jobs:
     name: Claude Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Run claude-code-lint
-        run: npx claude-code-lint@latest
+        run: npx --yes claude-code-lint@0.8.0
 
   web-bundles:
     name: Web bundle freshness
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: web/.nvmrc
           cache: npm
@@ -101,8 +101,8 @@ jobs:
         os: [ubuntu-latest, macos-latest]
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install package with dev dependencies
@@ -111,7 +111,7 @@ jobs:
         run: python -m pytest tests/ -v --tb=short --cov-report=xml
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.12'
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           files: coverage.xml
           fail_ci_if_error: false
@@ -122,18 +122,20 @@ jobs:
     env:
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Lint Dockerfile (hadolint)
-        uses: hadolint/hadolint-action@v3.3.0
+        uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
         with:
           dockerfile: Dockerfile
       - name: Check fly.toml formatting (taplo)
-        run: npx --yes @taplo/cli@latest fmt --check fly.toml
+        run: npx --yes @taplo/cli@0.7.0 fmt --check fly.toml
       # Semantic fly.toml validation needs platform auth; runs only when the
       # FLY_API_TOKEN secret is configured, otherwise skipped (not failed).
       - name: Set up flyctl
         if: env.FLY_API_TOKEN != ''
-        uses: superfly/flyctl-actions/setup-flyctl@v1.4
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # node24
+        with:
+          version: 0.4.83
       - name: Validate fly.toml (flyctl)
         if: env.FLY_API_TOKEN != ''
         run: flyctl config validate
@@ -142,8 +144,8 @@ jobs:
     name: Docs Reference Freshness
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       - name: Install package
@@ -161,9 +163,9 @@ jobs:
     name: Docs Links
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validate docs links (mint broken-links)
-        run: cd docs-mintlify && npx --yes mint@latest broken-links
+        run: cd docs-mintlify && npx --yes mint@4.2.802 broken-links
 
   ci-gate:
     name: CI Gate
