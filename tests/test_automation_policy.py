@@ -104,7 +104,12 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
     assert renovate["automergeStrategy"] == "squash"
     assert renovate["internalChecksFilter"] == "strict"
     assert renovate["vulnerabilityAlerts"] == {"enabled": False}
-    assert renovate["lockFileMaintenance"]["automerge"] is False
+    assert renovate["lockFileMaintenance"] == {
+        "enabled": True,
+        "schedule": ["before 6am on monday"],
+        "dependencyDashboardApproval": True,
+        "automerge": False,
+    }
 
     assert {
         (entry["package-ecosystem"], entry["directory"])
@@ -150,8 +155,20 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
         and rule.get("automerge") is False
         for rule in package_rules
     )
+    assert any(
+        rule.get("description") == "All web updates require generated-bundle approval"
+        and rule.get("matchManagers") == ["npm"]
+        and rule.get("matchFileNames") == ["web/package.json"]
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        and "matchDepTypes" not in rule
+        and "matchCurrentVersion" not in rule
+        and "matchUpdateTypes" not in rule
+        for rule in package_rules
+    )
     assert all(
-        rule.get("automerge") is False
+        rule.get("dependencyDashboardApproval", True) is True
+        and rule.get("automerge") is False
         for rule in package_rules
         if rule.get("matchManagers") == ["npm"]
     )
