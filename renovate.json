@@ -90,6 +90,15 @@
       "automerge": true
     },
     {
+      "description": "CI Python interpreter-line updates require exception handling",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["actions/python-versions"],
+      "matchUpdateTypes": ["minor", "major"],
+      "groupName": "CI Python interpreter line",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
       "description": "Pre-1.0 minor updates require exception handling",
       "matchCurrentVersion": "/^0\\./",
       "matchUpdateTypes": ["minor", "major"],

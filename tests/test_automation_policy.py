@@ -141,3 +141,12 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
         and rule.get("automerge") is False
         for rule in package_rules
     )
+    assert any(
+        rule.get("matchManagers") == ["github-actions"]
+        and rule.get("matchPackageNames") == ["actions/python-versions"]
+        and set(rule.get("matchUpdateTypes", [])) == {"minor", "major"}
+        and rule.get("groupName") == "CI Python interpreter line"
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
