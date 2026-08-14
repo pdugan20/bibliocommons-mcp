@@ -1,36 +1,36 @@
 version: 2
 updates:
-  - package-ecosystem: 'npm'
-    directory: '/web'
+  - package-ecosystem: "npm"
+    directory: "/web"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '06:20'
-      timezone: 'America/Los_Angeles'
+      interval: "weekly"
+      day: "monday"
+      time: "06:20"
+      timezone: "America/Los_Angeles"
     open-pull-requests-limit: 0
-  - package-ecosystem: 'pip'
-    directory: '/'
+  - package-ecosystem: "pip"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '06:30'
-      timezone: 'America/Los_Angeles'
-    open-pull-requests-limit: 0
-
-  - package-ecosystem: 'docker'
-    directory: '/'
-    schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '06:40'
-      timezone: 'America/Los_Angeles'
+      interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "America/Los_Angeles"
     open-pull-requests-limit: 0
 
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "docker"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '06:50'
-      timezone: 'America/Los_Angeles'
+      interval: "weekly"
+      day: "monday"
+      time: "06:40"
+      timezone: "America/Los_Angeles"
+    open-pull-requests-limit: 0
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:50"
+      timezone: "America/Los_Angeles"
     open-pull-requests-limit: 0
