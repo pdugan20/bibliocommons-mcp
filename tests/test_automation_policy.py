@@ -150,3 +150,16 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
         and rule.get("automerge") is False
         for rule in package_rules
     )
+    assert all(
+        rule.get("automerge") is False
+        for rule in package_rules
+        if rule.get("matchManagers") == ["npm"]
+    )
+    assert any(
+        rule.get("matchManagers") == ["dockerfile"]
+        and set(rule.get("matchUpdateTypes", []))
+        == {"patch", "minor", "digest", "pin", "pinDigest"}
+        and "minimumReleaseAge" not in rule
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )

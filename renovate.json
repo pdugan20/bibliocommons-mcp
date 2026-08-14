@@ -25,7 +25,7 @@
   },
   "packageRules": [
     {
-      "description": "Stable web runtime non-major updates",
+      "description": "Stable web runtime non-major updates require bundle regeneration",
       "matchManagers": ["npm"],
       "matchFileNames": ["web/package.json"],
       "matchDepTypes": ["dependencies", "optionalDependencies"],
@@ -33,10 +33,10 @@
       "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
       "groupName": "web runtime dependencies",
       "minimumReleaseAge": "7 days",
-      "automerge": true
+      "automerge": false
     },
     {
-      "description": "Stable web development non-major updates",
+      "description": "Stable web development non-major updates require bundle regeneration",
       "matchManagers": ["npm"],
       "matchFileNames": ["web/package.json"],
       "matchDepTypes": ["devDependencies"],
@@ -44,7 +44,7 @@
       "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
       "groupName": "web development dependencies",
       "minimumReleaseAge": "7 days",
-      "automerge": true
+      "automerge": false
     },
     {
       "description": "Stable Python runtime non-major updates",
@@ -67,11 +67,10 @@
       "automerge": true
     },
     {
-      "description": "Docker base-image non-major updates",
+      "description": "Docker base-image non-major updates remain reviewed",
       "matchManagers": ["dockerfile"],
       "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
-      "minimumReleaseAge": "14 days",
-      "automerge": true
+      "automerge": false
     },
     {
       "description": "Python interpreter-line updates require exception handling",
