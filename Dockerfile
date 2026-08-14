@@ -19,7 +19,7 @@ COPY src ./src
 # Install the package and create the non-root user in one layer.
 RUN pip install . \
   && useradd --create-home --uid 10001 app
-USER app
+USER 10001
 
 # Cloud Run / Fly inject $PORT; _run_http() honors it (default 8000).
 EXPOSE 8000
@@ -27,6 +27,6 @@ EXPOSE 8000
 # Liveness via the credential-free /healthz route. (Cloud Run uses its own
 # probes and ignores this; it helps for Docker/Fly/local.)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD python -c "import os,sys,urllib.request; p=os.environ.get('PORT','8000'); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{p}/healthz', timeout=2).status==200 else 1)"
+  CMD ["python", "-c", "import os,sys,urllib.request; p=os.environ.get('PORT','8000'); sys.exit(0 if urllib.request.urlopen(f'http://127.0.0.1:{p}/healthz', timeout=2).status==200 else 1)"]
 
 CMD ["bibliocommons-mcp", "serve", "--http"]
