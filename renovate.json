@@ -21,9 +21,17 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"],
+    "dependencyDashboardApproval": true,
     "automerge": false
   },
   "packageRules": [
+    {
+      "description": "All web updates require generated-bundle approval",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["web/package.json"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
     {
       "description": "Stable web runtime non-major updates require bundle regeneration",
       "matchManagers": ["npm"],
