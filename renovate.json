@@ -1,4 +1,114 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabled": false
+  "enabled": true,
+  "extends": ["config:recommended"],
+  "enabledManagers": ["npm", "pep621", "dockerfile", "github-actions"],
+  "timezone": "America/Los_Angeles",
+  "dependencyDashboard": true,
+  "dependencyDashboardAutoclose": true,
+  "labels": ["dependencies"],
+  "branchConcurrentLimit": 3,
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "rebaseWhen": "behind-base-branch",
+  "platformAutomerge": true,
+  "automergeType": "pr",
+  "automergeStrategy": "squash",
+  "internalChecksFilter": "strict",
+  "vulnerabilityAlerts": {
+    "enabled": false
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"],
+    "automerge": false
+  },
+  "packageRules": [
+    {
+      "description": "Stable web runtime non-major updates require bundle regeneration",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["web/package.json"],
+      "matchDepTypes": ["dependencies", "optionalDependencies"],
+      "matchCurrentVersion": "!/^0\\./",
+      "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
+      "groupName": "web runtime dependencies",
+      "minimumReleaseAge": "7 days",
+      "automerge": false
+    },
+    {
+      "description": "Stable web development non-major updates require bundle regeneration",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["web/package.json"],
+      "matchDepTypes": ["devDependencies"],
+      "matchCurrentVersion": "!/^0\\./",
+      "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
+      "groupName": "web development dependencies",
+      "minimumReleaseAge": "7 days",
+      "automerge": false
+    },
+    {
+      "description": "Stable Python runtime non-major updates",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["project.dependencies"],
+      "matchCurrentVersion": "!/^0\\./",
+      "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
+      "groupName": "python runtime dependencies",
+      "minimumReleaseAge": "7 days",
+      "automerge": true
+    },
+    {
+      "description": "Stable Python development non-major updates",
+      "matchManagers": ["pep621"],
+      "matchDepTypes": ["project.optional-dependencies"],
+      "matchCurrentVersion": "!/^0\\./",
+      "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
+      "groupName": "python development dependencies",
+      "minimumReleaseAge": "7 days",
+      "automerge": true
+    },
+    {
+      "description": "Docker base-image non-major updates remain reviewed",
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
+      "automerge": false
+    },
+    {
+      "description": "Python interpreter-line updates require exception handling",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["python"],
+      "matchUpdateTypes": ["minor", "major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": "GitHub Actions non-major updates",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
+      "groupName": "github actions",
+      "minimumReleaseAge": "14 days",
+      "automerge": true
+    },
+    {
+      "description": "CI Python interpreter-line updates require exception handling",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["actions/python-versions"],
+      "matchUpdateTypes": ["minor", "major"],
+      "groupName": "CI Python interpreter line",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": "Pre-1.0 minor updates require exception handling",
+      "matchCurrentVersion": "/^0\\./",
+      "matchUpdateTypes": ["minor", "major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": "All major updates require exception handling",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    }
+  ]
 }

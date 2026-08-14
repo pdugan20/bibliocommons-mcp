@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -85,3 +86,80 @@ def test_ci_tools_do_not_float() -> None:
     assert "pip install ruff==0.16.3" in workflows
     assert workflows.count("pip install build==1.5.0") == 2
     assert workflows.count("version: 0.4.83") == 2
+
+
+def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
+    renovate = json.loads((ROOT / "renovate.json").read_text())
+    dependabot = yaml.safe_load((ROOT / ".github" / "dependabot.yml").read_text())
+
+    assert renovate["enabled"] is True
+    assert set(renovate["enabledManagers"]) == {
+        "npm",
+        "pep621",
+        "dockerfile",
+        "github-actions",
+    }
+    assert renovate["platformAutomerge"] is True
+    assert renovate["automergeType"] == "pr"
+    assert renovate["automergeStrategy"] == "squash"
+    assert renovate["internalChecksFilter"] == "strict"
+    assert renovate["vulnerabilityAlerts"] == {"enabled": False}
+    assert renovate["lockFileMaintenance"]["automerge"] is False
+
+    assert {
+        (entry["package-ecosystem"], entry["directory"])
+        for entry in dependabot["updates"]
+    } == {
+        ("npm", "/web"),
+        ("pip", "/"),
+        ("docker", "/"),
+        ("github-actions", "/"),
+    }
+    assert all(
+        entry["open-pull-requests-limit"] == 0 for entry in dependabot["updates"]
+    )
+
+    package_rules = renovate["packageRules"]
+    assert any(
+        rule.get("matchUpdateTypes") == ["major"]
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
+    assert any(
+        rule.get("matchCurrentVersion") == "/^0\\./"
+        and set(rule.get("matchUpdateTypes", [])) == {"minor", "major"}
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
+    assert any(
+        rule.get("matchManagers") == ["dockerfile"]
+        and rule.get("matchPackageNames") == ["python"]
+        and set(rule.get("matchUpdateTypes", [])) == {"minor", "major"}
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
+    assert any(
+        rule.get("matchManagers") == ["github-actions"]
+        and rule.get("matchPackageNames") == ["actions/python-versions"]
+        and set(rule.get("matchUpdateTypes", [])) == {"minor", "major"}
+        and rule.get("groupName") == "CI Python interpreter line"
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
+    assert all(
+        rule.get("automerge") is False
+        for rule in package_rules
+        if rule.get("matchManagers") == ["npm"]
+    )
+    assert any(
+        rule.get("matchManagers") == ["dockerfile"]
+        and set(rule.get("matchUpdateTypes", []))
+        == {"patch", "minor", "digest", "pin", "pinDigest"}
+        and "minimumReleaseAge" not in rule
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
