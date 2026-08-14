@@ -21,7 +21,7 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on monday"],
-    "automerge": true
+    "automerge": false
   },
   "packageRules": [
     {
@@ -74,6 +74,14 @@
       "automerge": true
     },
     {
+      "description": "Python interpreter-line updates require exception handling",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["python"],
+      "matchUpdateTypes": ["minor", "major"],
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
       "description": "GitHub Actions non-major updates",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["patch", "minor", "digest", "pin", "pinDigest"],
@@ -85,11 +93,13 @@
       "description": "Pre-1.0 minor updates require exception handling",
       "matchCurrentVersion": "/^0\\./",
       "matchUpdateTypes": ["minor", "major"],
+      "dependencyDashboardApproval": true,
       "automerge": false
     },
     {
       "description": "All major updates require exception handling",
       "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
       "automerge": false
     }
   ]

@@ -104,6 +104,7 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
     assert renovate["automergeStrategy"] == "squash"
     assert renovate["internalChecksFilter"] == "strict"
     assert renovate["vulnerabilityAlerts"] == {"enabled": False}
+    assert renovate["lockFileMaintenance"]["automerge"] is False
 
     assert {
         (entry["package-ecosystem"], entry["directory"])
@@ -120,12 +121,23 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
 
     package_rules = renovate["packageRules"]
     assert any(
-        rule.get("matchUpdateTypes") == ["major"] and rule.get("automerge") is False
+        rule.get("matchUpdateTypes") == ["major"]
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
         for rule in package_rules
     )
     assert any(
         rule.get("matchCurrentVersion") == "/^0\\./"
         and set(rule.get("matchUpdateTypes", [])) == {"minor", "major"}
+        and rule.get("dependencyDashboardApproval") is True
+        and rule.get("automerge") is False
+        for rule in package_rules
+    )
+    assert any(
+        rule.get("matchManagers") == ["dockerfile"]
+        and rule.get("matchPackageNames") == ["python"]
+        and set(rule.get("matchUpdateTypes", [])) == {"minor", "major"}
+        and rule.get("dependencyDashboardApproval") is True
         and rule.get("automerge") is False
         for rule in package_rules
     )
