@@ -26,13 +26,10 @@ claude mcp add bibliocommons bibliocommons-mcp --scope user
 
 ## Try asking
 
-> Place a hold on something at my branch.
->
-> Show my current holds with queue positions.
->
-> What's due back this week?
->
-> Cancel a hold.
+- “Place a hold on _Project Hail Mary_ at my branch.”
+- “Show my current holds and their queue positions.”
+- “What’s due back this week?”
+- “Cancel my hold on _Zen and the Art of Motorcycle Maintenance_.”
 
 ## Tools
 
