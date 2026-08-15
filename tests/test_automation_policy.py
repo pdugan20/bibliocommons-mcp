@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import re
 from pathlib import Path
@@ -10,11 +11,77 @@ from scripts.classify_docker_impact import requires_docker_build
 
 ROOT = Path(__file__).parents[1]
 PINNED_ACTION = re.compile(r"uses:\s+[^\s@]+@[0-9a-f]{40}(?:\s+#.*)?$")
+APPROVAL_GATED_UPDATE_TYPES = {
+    "digest",
+    "pin",
+    "pinDigest",
+    "lockFileMaintenance",
+}
+AUTOMERGE_UPDATE_TYPES = {"patch", "minor"}
+UNCONSTRAINED_GATE_KEYS = {
+    "description",
+    "matchUpdateTypes",
+    "dependencyDashboardApproval",
+    "automerge",
+}
 
 
 def _workflow(name: str) -> tuple[str, dict]:
     text = (ROOT / ".github" / "workflows" / name).read_text()
     return text, yaml.safe_load(text)
+
+
+def _assert_unsafe_updates_are_approval_gated(renovate: dict) -> None:
+    package_rules = renovate["packageRules"]
+
+    for rule in package_rules:
+        if rule.get("automerge") is not True:
+            continue
+        update_types = set(rule.get("matchUpdateTypes", []))
+        assert update_types
+        assert update_types <= AUTOMERGE_UPDATE_TYPES
+
+    for update_type in APPROVAL_GATED_UPDATE_TYPES:
+        matching = [
+            rule
+            for rule in package_rules
+            if update_type in rule.get("matchUpdateTypes", [])
+        ]
+        assert matching
+        assert not any(rule.get("automerge") is True for rule in matching)
+        terminal = matching[-1]
+        assert terminal is package_rules[-1]
+        assert set(terminal) == UNCONSTRAINED_GATE_KEYS
+        assert set(terminal["matchUpdateTypes"]) == APPROVAL_GATED_UPDATE_TYPES
+        assert terminal["dependencyDashboardApproval"] is True
+        assert terminal["automerge"] is False
+
+
+def _assert_automerge_release_ages(renovate: dict) -> None:
+    expected_ages = {"pep621": "7 days", "github-actions": "14 days"}
+
+    package_rules = renovate["packageRules"]
+    for index, rule in enumerate(package_rules):
+        if rule.get("automerge") is not True:
+            continue
+        managers = rule.get("matchManagers")
+        assert isinstance(managers, list)
+        assert len(managers) == 1
+        manager = managers[0]
+        update_types = set(rule["matchUpdateTypes"])
+        assert rule.get("minimumReleaseAge") == expected_ages[manager]
+
+        for later in package_rules[index + 1 :]:
+            if "minimumReleaseAge" not in later:
+                continue
+            later_managers = set(later.get("matchManagers", []))
+            later_update_types = set(later.get("matchUpdateTypes", []))
+            can_match_manager = not later_managers or manager in later_managers
+            can_match_update = not later_update_types or bool(
+                update_types & later_update_types
+            )
+            if can_match_manager and can_match_update:
+                assert later["minimumReleaseAge"] == expected_ages[manager]
 
 
 def test_docker_impact_classification_is_exact() -> None:
@@ -180,3 +247,82 @@ def test_routine_updater_ownership_is_disjoint_and_fail_closed() -> None:
         and rule.get("automerge") is False
         for rule in package_rules
     )
+
+    _assert_unsafe_updates_are_approval_gated(renovate)
+    _assert_automerge_release_ages(renovate)
+
+
+def test_unsafe_update_gate_rejects_narrowing_and_late_overrides() -> None:
+    renovate = json.loads((ROOT / "renovate.json").read_text())
+
+    for selector, value in (
+        ("matchManagers", ["pep621"]),
+        ("matchFileNames", ["pyproject.toml"]),
+    ):
+        narrowed = copy.deepcopy(renovate)
+        narrowed["packageRules"][-1][selector] = value
+        try:
+            _assert_unsafe_updates_are_approval_gated(narrowed)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError(f"unsafe gate accepted {selector} narrowing")
+
+    late_unsafe_automerge = copy.deepcopy(renovate)
+    late_unsafe_automerge["packageRules"].append(
+        {"matchUpdateTypes": ["digest"], "automerge": True}
+    )
+    try:
+        _assert_unsafe_updates_are_approval_gated(late_unsafe_automerge)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("late digest automerge override was accepted")
+
+    selector_only_override = copy.deepcopy(renovate)
+    selector_only_override["packageRules"].append(
+        {
+            "matchManagers": ["github-actions"],
+            "dependencyDashboardApproval": False,
+        }
+    )
+    try:
+        _assert_unsafe_updates_are_approval_gated(selector_only_override)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("selector-only approval override was accepted")
+
+
+def test_automerge_release_age_rejects_shortened_actions_quarantine() -> None:
+    renovate = json.loads((ROOT / "renovate.json").read_text())
+    shortened = copy.deepcopy(renovate)
+    actions = next(
+        rule
+        for rule in shortened["packageRules"]
+        if rule.get("matchManagers") == ["github-actions"]
+        and rule.get("automerge") is True
+    )
+    actions["minimumReleaseAge"] = "1 day"
+
+    try:
+        _assert_automerge_release_ages(shortened)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("one-day Actions quarantine was accepted")
+
+    later_override = copy.deepcopy(renovate)
+    later_override["packageRules"].append(
+        {
+            "matchManagers": ["github-actions"],
+            "matchUpdateTypes": ["minor"],
+            "minimumReleaseAge": "1 day",
+        }
+    )
+    try:
+        _assert_automerge_release_ages(later_override)
+    except AssertionError:
+        pass
+    else:
+        raise AssertionError("later one-day Actions override was accepted")
