@@ -133,7 +133,7 @@ jobs:
       # FLY_API_TOKEN secret is configured, otherwise skipped (not failed).
       - name: Set up flyctl
         if: env.FLY_API_TOKEN != ''
-        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # node24
+        uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
         with:
           version: 0.4.83
       - name: Validate fly.toml (flyctl)
