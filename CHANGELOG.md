@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.3](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.2...v0.6.3) (2026-09-02)
+
+
+### Bug Fixes
+
+* **container:** satisfy hadolint 2.15 ([#87](https://github.com/pdugan20/bibliocommons-mcp/issues/87)) ([3cf57ba](https://github.com/pdugan20/bibliocommons-mcp/commit/3cf57ba48a297031c2aca1fb8c23a4e5d7c0cd16))
+* **deps:** hold generated web updates ([#85](https://github.com/pdugan20/bibliocommons-mcp/issues/85)) ([7c19879](https://github.com/pdugan20/bibliocommons-mcp/commit/7c198793032ed37151a9b557cca8101408d4e012))
+* **deps:** repair web transitive vulnerabilities ([#75](https://github.com/pdugan20/bibliocommons-mcp/issues/75)) ([65517b1](https://github.com/pdugan20/bibliocommons-mcp/commit/65517b1fefae21a8af88c4edd27377fdd73ae9d5))
+* narrow Renovate automerge classes ([#88](https://github.com/pdugan20/bibliocommons-mcp/issues/88)) ([e090dd1](https://github.com/pdugan20/bibliocommons-mcp/commit/e090dd1a8f029e15890a7d548f83926255caa04a))
+
+
+### Documentation
+
+* improve example prompts ([#89](https://github.com/pdugan20/bibliocommons-mcp/issues/89)) ([0c4f3d2](https://github.com/pdugan20/bibliocommons-mcp/commit/0c4f3d2c6ceca86fb0e492bb1dba991ccb50fa19))
+* standardize README badges ([#77](https://github.com/pdugan20/bibliocommons-mcp/issues/77)) ([3f04b20](https://github.com/pdugan20/bibliocommons-mcp/commit/3f04b20b4d769577c0e8dea91ceccd3d7c52cd5d))
+
 ## [0.6.2](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.1...v0.6.2) (2026-07-28)
 
 
