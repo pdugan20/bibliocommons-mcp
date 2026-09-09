@@ -1,11 +1,5 @@
 # bibliocommons-mcp
 
-## Work modes
-
-- Default to exploration for prototypes and small changes. Make focused edits directly; do not require a formal spec, separate plan, worktree, or TDD.
-- Apply production rigor when the user explicitly asks to ship, harden, prepare a release, or use strict TDD. Match verification to risk and obey any stronger test requirements below.
-- Ask before placing or cancelling holds, borrowing items, recording against the live gateway, publishing a release, or making any other live mutation. A user request naming the exact mutation and target counts as approval for that operation.
-
 MCP server for BiblioCommons-powered public libraries. Search the catalog,
 place holds, manage checkouts via an MCP client.
 
@@ -95,6 +89,16 @@ place holds, manage checkouts via an MCP client.
 10. **No state-changing tests against the live gateway in CI.** State-changing
     code paths (place_hold, cancel_hold, borrow_digital) are unit-tested for
     body shape correctness only. Read-only flows use VCR cassettes.
+
+## Code Review Rules
+
+- Flag credentials, session material, patron data, or unsanitized response content that
+  can reach stdout, MCP responses, logs, exceptions, cassettes, or fixtures. Stdout must
+  remain valid MCP framing only.
+- Flag hold, checkout, or cancellation changes that use the wrong physical/digital DTO,
+  omit the required locale fields, or confuse borrowing `account_id` with the UGC user ID.
+- Flag state-changing live-gateway tests or cassette recording that is not automatically
+  sanitized and manually diff-inspected before commit.
 
 ## Generality
 
