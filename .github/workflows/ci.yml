@@ -135,7 +135,7 @@ jobs:
         if: env.FLY_API_TOKEN != ''
         uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
         with:
-          version: 0.4.83
+          version: 0.4.102
       - name: Validate fly.toml (flyctl)
         if: env.FLY_API_TOKEN != ''
         run: flyctl config validate
