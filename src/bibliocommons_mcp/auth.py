@@ -39,8 +39,14 @@ class WorkOSAccessToken(AccessToken):
     """
 
 
-class WorkOSTokenVerifier(TokenVerifier):
-    """Validate a WorkOS-issued JWT: signature (JWKS) + iss + aud + expiry."""
+class JwksTokenVerifier(TokenVerifier):
+    """Validate a JWKS-backed JWT: signature + iss + aud + expiry.
+
+    Generic RS256/JWKS machinery shared by every Resource-Server auth backend
+    (WorkOS, Cloudflare Access, ...). Subclasses shape the returned
+    `AccessToken` via `_build_token`; the verify/decode/issuer-check path is
+    otherwise identical across backends.
+    """
 
     def __init__(
         self,
@@ -63,7 +69,11 @@ class WorkOSTokenVerifier(TokenVerifier):
     def _issuer_ok(self, iss: str | None) -> bool:
         return iss in (self._issuer, self._issuer + "/")
 
-    def _verify_sync(self, token: str) -> WorkOSAccessToken | None:
+    def _build_token(self, claims: dict, token: str) -> AccessToken:
+        """Shape the validated claims into an `AccessToken`. Override per backend."""
+        raise NotImplementedError
+
+    def _verify_sync(self, token: str) -> AccessToken | None:
         signing_key = self._jwk_client.get_signing_key_from_jwt(token)
         options = {"require": ["exp", "sub"], "verify_aud": bool(self._audience)}
         kwargs: dict = {
@@ -73,13 +83,30 @@ class WorkOSTokenVerifier(TokenVerifier):
         }
         if self._audience:
             kwargs["audience"] = self._audience
-        # Don't pass `issuer=` — PyJWT does exact-string matching and WorkOS's
+        # Don't pass `issuer=` — PyJWT does exact-string matching and issuers'
         # trailing slash varies. Decode (verifying sig/exp/aud), then check iss
         # ourselves against both forms.
         claims = jwt.decode(token, signing_key.key, **kwargs)
         if not self._issuer_ok(claims.get("iss")):
             logger.debug("token rejected: issuer mismatch (%s)", claims.get("iss"))
             return None
+        return self._build_token(claims, token)
+
+    async def verify_token(self, token: str) -> AccessToken | None:
+        # PyJWT's JWKS fetch + decode are blocking; run off the event loop.
+        try:
+            return await anyio.to_thread.run_sync(self._verify_sync, token)
+        except Exception:
+            # Any failure (bad signature, expired, wrong aud/iss, malformed,
+            # JWKS fetch error) is an auth failure, not a server error.
+            logger.debug("token verification failed", exc_info=True)
+            return None
+
+
+class WorkOSTokenVerifier(JwksTokenVerifier):
+    """Validate a WorkOS-issued JWT: signature (JWKS) + iss + aud + expiry."""
+
+    def _build_token(self, claims: dict, token: str) -> WorkOSAccessToken:
         raw_scopes = claims.get("scope") or claims.get("scopes") or ""
         scopes = raw_scopes.split() if isinstance(raw_scopes, str) else list(raw_scopes)
         return WorkOSAccessToken(
@@ -91,16 +118,6 @@ class WorkOSTokenVerifier(TokenVerifier):
             subject=str(claims["sub"]),
             claims=claims,
         )
-
-    async def verify_token(self, token: str) -> AccessToken | None:
-        # PyJWT's JWKS fetch + decode are blocking; run off the event loop.
-        try:
-            return await anyio.to_thread.run_sync(self._verify_sync, token)
-        except Exception:
-            # Any failure (bad signature, expired, wrong aud/iss, malformed,
-            # JWKS fetch error) is an auth failure, not a server error.
-            logger.debug("token verification failed", exc_info=True)
-            return None
 
 
 def workos_auth_from_env() -> tuple[WorkOSTokenVerifier, AuthSettings] | None:

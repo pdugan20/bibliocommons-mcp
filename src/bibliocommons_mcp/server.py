@@ -21,6 +21,8 @@ from urllib.parse import quote_plus, urlparse
 from mcp.server import CacheHint, MCPServer
 from mcp.server.apps import Apps
 from mcp.server.auth.middleware.auth_context import get_access_token
+from mcp.server.auth.provider import TokenVerifier
+from mcp.server.auth.settings import AuthSettings
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
@@ -28,9 +30,10 @@ from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, Response
 
 from . import __version__, ui_resources
-from .auth import workos_auth_from_env
+from .auth import AuthConfigError, workos_auth_from_env
 from .branches import BranchNotFound
 from .cache import TTLCache
+from .cf_access import cf_access_auth_from_env
 from .client import BCError, Client, NotAuthenticatedError
 from .config import Config, ConfigError
 from .credentials import CredentialStore, InMemoryCredentialStore, UserCredentials
@@ -188,13 +191,41 @@ def _transport_security() -> TransportSecuritySettings | None:
     return TransportSecuritySettings(allowed_hosts=hosts, allowed_origins=origins)
 
 
+def _auth_from_env() -> tuple[TokenVerifier, AuthSettings, str] | None:
+    """Dispatch to whichever Resource-Server auth backend is configured.
+
+    WorkOS (`workos_auth_from_env`) and Cloudflare Access
+    (`cf_access_auth_from_env`) are independent, env-gated backends. Exactly
+    one may be active: both configured at once is ambiguous, and a silent
+    precedence rule is a footgun, so that raises rather than picking one.
+    Neither configured means authless. Returns `(verifier, settings,
+    backend_name)`, or None.
+    """
+    workos = workos_auth_from_env()
+    cf_access = cf_access_auth_from_env()
+    if workos is not None and cf_access is not None:
+        raise AuthConfigError(
+            "Both WorkOS (WORKOS_JWKS_URL/WORKOS_CLIENT_ID) and Cloudflare Access "
+            "(CF_ACCESS_TEAM_DOMAIN) auth are configured. Only one Resource-Server "
+            "auth backend may be active at a time — unset one of them."
+        )
+    if workos is not None:
+        verifier, settings = workos
+        return verifier, settings, "WorkOS OAuth"
+    if cf_access is not None:
+        verifier, settings = cf_access
+        return verifier, settings, "Cloudflare Access"
+    return None
+
+
 def _build_mcp(apps: Apps) -> MCPServer:
     """Construct the MCP server, enabling OAuth Resource-Server auth iff
-    WorkOS is configured in the environment.
+    WorkOS or Cloudflare Access is configured in the environment.
 
-    Auth is opt-in (see auth.workos_auth_from_env): with `WORKOS_*` env set,
-    the HTTP transport validates WorkOS bearer tokens and advertises
-    protected-resource metadata; without it, the server is authless
+    Auth is opt-in (see `_auth_from_env`): with `WORKOS_*` or `CF_ACCESS_*`
+    env set, the HTTP transport validates bearer tokens from that backend and
+    (WorkOS only — see `cf_access.cf_access_auth_from_env`) advertises
+    protected-resource metadata; without either, the server is authless
     (Milestone-1 read-only catalog mode). stdio never enforces auth.
     """
     kwargs: dict = {
@@ -211,14 +242,15 @@ def _build_mcp(apps: Apps) -> MCPServer:
             "resources/read": CacheHint(ttl_ms=86_400_000, scope="public"),
         },
     }
-    auth = workos_auth_from_env()
+    auth = _auth_from_env()
     if auth is not None:
-        verifier, settings = auth
+        verifier, settings, backend = auth
         kwargs["token_verifier"] = verifier
         kwargs["auth"] = settings
+        # Log the backend and issuer only — never the audience/resource value
+        # or any token (see AGENTS.md critical rule 1).
         logger.info(
-            "WorkOS Resource-Server auth enabled (resource=%s)",
-            settings.resource_server_url,
+            "%s Resource-Server auth enabled (issuer=%s)", backend, settings.issuer_url
         )
     return MCPServer("bibliocommons-mcp", **kwargs)
 
@@ -1402,9 +1434,11 @@ def _run_http() -> None:
 
     host = os.environ.get("FASTMCP_HOST", "0.0.0.0")
     port = int(os.environ.get("PORT") or os.environ.get("FASTMCP_PORT") or 8000)
-    # Two independent axes: WorkOS OAuth (server-level access) and library
-    # credentials (account tools). Report both so the operator isn't misled.
-    auth_mode = "WorkOS OAuth" if workos_auth_from_env() else "authless"
+    # Two independent axes: Resource-Server auth (server-level access — WorkOS
+    # OAuth, Cloudflare Access, or none) and library credentials (account
+    # tools). Report both so the operator isn't misled.
+    auth = _auth_from_env()
+    auth_mode = auth[2] if auth else "authless"
     creds_mode = "library creds set" if cfg.has_credentials else "read-only catalog"
     logger.info(
         "Starting bibliocommons-mcp (streamable-http) on %s:%s [%s, %s, library=%s]",
