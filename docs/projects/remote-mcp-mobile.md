@@ -104,7 +104,7 @@ noted):**
 ### 2. Multi-tenancy — still the real work, but reshaped
 
 Today the design is **one server instance = one library = one card** (creds
-from `config.toml` / env; see CLAUDE.md "Single-library-per-server"). The
+from `config.toml` / env; see AGENTS.md "Single-library-per-server"). The
 concrete chokepoint is `server.py:_ensure_client()` (~`:148`) — a Config-driven
 **module-global singleton** `Client`. A multi-user remote service inverts this:
 **credentials must be per-user**, supplied via the auth flow, never baked into
@@ -113,7 +113,7 @@ for the _authenticated identity_ of this request."
 
 The good news from the code audit: `client.py` is **already fully
 instance-per-library**. `Client(library)` → `authenticate(card, pin)` →
-instance `account_id` (the `+1` quirk, CLAUDE.md rule #5, is computed
+instance `account_id` (the `+1` quirk, AGENTS.md rule #5, is computed
 per-instance). So multi-tenancy is "mint one `Client` per user, cache it keyed
 by the authenticated subject with a TTL" — not a rewrite of the tool layer.
 Re-auth is a network round-trip you don't want on every call, hence the cache.
@@ -132,7 +132,7 @@ card/PIN. So you still need a step that maps `authenticated subject →
   (on a server-hosted consent/settings page), you encrypt and store keyed to
   the subject, later calls look it up. Powerful but you are now **custodian of
   other people's library PINs** — encryption-at-rest with a per-record key,
-  never logged (CLAUDE.md rule #1 extends to the store), and a deletion path.
+  never logged (AGENTS.md rule #1 extends to the store), and a deletion path.
 - **Per-session (don't persist):** bring-your-own — creds live only for the
   life of an authenticated session, re-supplied on reconnect. Lower risk, more
   friction.

@@ -95,7 +95,7 @@ Acceptance: connector added on claude.ai web shows up on the iOS app;
 
 Goal: authenticated multi-user. The server is an OAuth 2.1 **Resource Server**
 that validates tokens from the chosen IdP (Phase 0.3); it does **not** run its
-own authorization server. Per CLAUDE.md rule #1, credentials never hit logs,
+own authorization server. Per AGENTS.md rule #1, credentials never hit logs,
 stdout, or the wire protocol — that extends to the store.
 
 Acceptance: a second person can connect with _their_ library card and see
@@ -175,6 +175,6 @@ Acceptance: production-safe for the intended user set (gated by ToS 0.7).
 
 - [ ] Brief (`remote-mcp-mobile.md`) and this tracker agree; both updated as decisions land.
 - [ ] stdio transport still works for local Claude Code (no regression).
-- [ ] No state-changing tests against the live gateway in CI (CLAUDE.md rule #10) — body-shape unit tests + VCR for read-only only.
+- [ ] No state-changing tests against the live gateway in CI (AGENTS.md rule #10) — body-shape unit tests + VCR for read-only only.
 - [ ] No credential ever in logs / stdout / tool output / the store in plaintext.
 - [ ] ToS sign-off (0.7) before any non-owner user is onboarded.
