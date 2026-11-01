@@ -265,3 +265,40 @@ def test_logout_rejects_cross_site_post():
     _authenticate(tc)
     r = tc.post("/account/logout", follow_redirects=False)
     assert r.status_code == 403
+
+
+@pytest.mark.parametrize(
+    ("public_base", "origin", "allowed"),
+    [
+        ("https://getbiblio.app:443", "https://getbiblio.app", True),
+        ("https://getbiblio.app/", "https://GetBiblio.app", True),
+        ("https://getbiblio.app:8443", "https://getbiblio.app:8443", True),
+        ("https://getbiblio.app:8443", "https://getbiblio.app", False),
+        ("https://getbiblio.app", "http://getbiblio.app", False),
+    ],
+)
+def test_origin_check_normalizes_default_ports(public_base, origin, allowed):
+    from dataclasses import replace
+
+    store = InMemoryCredentialStore()
+
+    async def _ex(code):
+        return "user_42"
+
+    async def _val(library, card, pin):
+        return None
+
+    app = AccountSettings(
+        replace(CFG, public_base=public_base),
+        store,
+        exchange_code=_ex,
+        validate_credentials=_val,
+    )
+    tc = TestClient(
+        Starlette(routes=app.routes),
+        base_url="https://testserver",
+        headers={"origin": origin},
+    )
+    _authenticate(tc)
+    r = tc.post("/account", data=FORM)
+    assert (r.status_code == 200) is allowed

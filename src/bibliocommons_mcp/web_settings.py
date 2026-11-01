@@ -47,10 +47,18 @@ _LIBRARY_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 
 
 def _origin_of(url: str) -> str | None:
+    """Serialize a URL's origin the way browsers do, dropping a default port."""
     parts = urllib.parse.urlsplit(url)
-    if not parts.scheme or not parts.netloc:
+    scheme = parts.scheme.lower()
+    try:
+        host, port = parts.hostname, parts.port
+    except ValueError:
         return None
-    return f"{parts.scheme}://{parts.netloc}".lower()
+    if not scheme or not host:
+        return None
+    if port is None or (scheme, port) in {("https", 443), ("http", 80)}:
+        return f"{scheme}://{host}"
+    return f"{scheme}://{host}:{port}"
 
 
 class WebSettingsConfigError(RuntimeError):
