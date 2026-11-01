@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.3](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.2...v0.6.3) (2026-11-01)
+
+
+### Bug Fixes
+
+* **container:** satisfy hadolint 2.15 ([#87](https://github.com/pdugan20/bibliocommons-mcp/issues/87)) ([3cf57ba](https://github.com/pdugan20/bibliocommons-mcp/commit/3cf57ba48a297031c2aca1fb8c23a4e5d7c0cd16))
+* **deps:** hold generated web updates ([#85](https://github.com/pdugan20/bibliocommons-mcp/issues/85)) ([7c19879](https://github.com/pdugan20/bibliocommons-mcp/commit/7c198793032ed37151a9b557cca8101408d4e012))
+* **deps:** repair web transitive vulnerabilities ([#75](https://github.com/pdugan20/bibliocommons-mcp/issues/75)) ([65517b1](https://github.com/pdugan20/bibliocommons-mcp/commit/65517b1fefae21a8af88c4edd27377fdd73ae9d5))
+* **deps:** update dependency mypy to v1.20.2 ([#116](https://github.com/pdugan20/bibliocommons-mcp/issues/116)) ([b141db3](https://github.com/pdugan20/bibliocommons-mcp/commit/b141db30a0ee8c64e7b7ce5c2263fbdaac2c606c))
+* narrow Renovate automerge classes ([#88](https://github.com/pdugan20/bibliocommons-mcp/issues/88)) ([e090dd1](https://github.com/pdugan20/bibliocommons-mcp/commit/e090dd1a8f029e15890a7d548f83926255caa04a))
+* patch web dependency security issues ([#109](https://github.com/pdugan20/bibliocommons-mcp/issues/109)) ([cdcb14d](https://github.com/pdugan20/bibliocommons-mcp/commit/cdcb14d8951db65f12583569e2dbc2158a4ca5df))
+* validate library subdomain and check Origin on /account ([#114](https://github.com/pdugan20/bibliocommons-mcp/issues/114)) ([58b9b76](https://github.com/pdugan20/bibliocommons-mcp/commit/58b9b76f197dec3429135c71c310a7d557d9a7ca))
+
+
+### Documentation
+
+* add threat model ([#113](https://github.com/pdugan20/bibliocommons-mcp/issues/113)) ([5ea6050](https://github.com/pdugan20/bibliocommons-mcp/commit/5ea6050c84e80187c5466a4edee201a75006a767))
+* improve example prompts ([#89](https://github.com/pdugan20/bibliocommons-mcp/issues/89)) ([0c4f3d2](https://github.com/pdugan20/bibliocommons-mcp/commit/0c4f3d2c6ceca86fb0e492bb1dba991ccb50fa19))
+* standardize README badges ([#77](https://github.com/pdugan20/bibliocommons-mcp/issues/77)) ([3f04b20](https://github.com/pdugan20/bibliocommons-mcp/commit/3f04b20b4d769577c0e8dea91ceccd3d7c52cd5d))
+
 ## [0.6.2](https://github.com/pdugan20/bibliocommons-mcp/compare/v0.6.1...v0.6.2) (2026-07-28)
 
 
