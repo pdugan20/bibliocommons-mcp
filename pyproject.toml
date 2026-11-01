@@ -49,7 +49,7 @@ dev = [
     "syrupy>=4.0",
     "vcrpy>=6.0",
     "ruff>=0.9",
-    "mypy==1.19.1",
+    "mypy==1.20.2",
     "build>=1.0",
     "pre-commit>=3.5",
 ]
