@@ -49,6 +49,7 @@ dev = [
     "syrupy>=4.0",
     "vcrpy>=6.0",
     "ruff>=0.9",
+    "mypy==1.19.1",
     "build>=1.0",
     "pre-commit>=3.5",
 ]
@@ -88,3 +89,12 @@ select = ["E", "F", "I", "N", "W", "UP"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["bibliocommons_mcp"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/"]
+
+# The upstream client has no stubs or py.typed marker.
+[[tool.mypy.overrides]]
+module = ["bibliocommons"]
+ignore_missing_imports = true

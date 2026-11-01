@@ -394,7 +394,8 @@ def _ensure_single_client() -> Client:
             _cfg = Config.load(require_credentials=False)
             _client = Client(_cfg.library)
             if _cfg.has_credentials:
-                _client.authenticate(_cfg.card, _cfg.pin)
+                # has_credentials guarantees both optional strings are present.
+                _client.authenticate(_cfg.card, _cfg.pin)  # type: ignore[arg-type]
         return _client
 
 
@@ -471,7 +472,8 @@ def _ensure_user_client(subject: str) -> Client:
             raise NotAuthenticatedError(_setup_required_message())
         client = Client(creds.library)
         if creds.has_credentials:
-            client.authenticate(creds.card, creds.pin)
+            # has_credentials guarantees both optional strings are present.
+            client.authenticate(creds.card, creds.pin)  # type: ignore[arg-type]
         _user_clients.put(subject, client)
         return client
 
@@ -1289,7 +1291,7 @@ def check_in_loan(
         )
 
     checked_in: list[str] = []
-    failures: dict[str, str] = {}
+    failures = {}
     for i, ref in enumerate(checkouts):
         if i > 0:
             time.sleep(delay_seconds)

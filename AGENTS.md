@@ -107,7 +107,7 @@ Tested against `seattle` and `sfpl`.
 ```bash
 make dev          # install with dev/test deps + pre-commit hooks
 make test         # pytest, VCR replays cassettes
-make lint         # ruff check + format check
+make lint         # ruff check + format check + mypy
 make format       # ruff --fix + format
 make check-all    # lint + test
 ```

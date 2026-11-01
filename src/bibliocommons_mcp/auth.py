@@ -137,9 +137,10 @@ def workos_auth_from_env() -> tuple[WorkOSTokenVerifier, AuthSettings] | None:
     issuer = os.environ.get("WORKOS_ISSUER", WORKOS_DEFAULT_ISSUER)
 
     verifier = WorkOSTokenVerifier(issuer=issuer, jwks_url=jwks_url, audience=resource)
+    # Pydantic validates and converts these environment strings to AnyHttpUrl.
     settings = AuthSettings(
-        issuer_url=issuer,
-        resource_server_url=resource,
+        issuer_url=issuer,  # type: ignore[arg-type]
+        resource_server_url=resource,  # type: ignore[arg-type]
         required_scopes=[],
     )
     return verifier, settings
