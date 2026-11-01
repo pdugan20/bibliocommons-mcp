@@ -23,6 +23,7 @@ import hmac
 import json
 import logging
 import os
+import re
 import secrets
 import time
 import urllib.parse
@@ -39,6 +40,17 @@ from .credentials import CredentialStore, UserCredentials
 logger = logging.getLogger(__name__)
 
 _STATE_MAX_AGE = 600  # seconds a login attempt's state stays valid
+
+# BiblioCommons library subdomains, e.g. "seattle" or "sfpl". The value becomes
+# the host in https://{library}.bibliocommons.com, so anything else is rejected.
+_LIBRARY_RE = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+
+
+def _origin_of(url: str) -> str | None:
+    parts = urllib.parse.urlsplit(url)
+    if not parts.scheme or not parts.netloc:
+        return None
+    return f"{parts.scheme}://{parts.netloc}".lower()
 
 
 class WebSettingsConfigError(RuntimeError):
@@ -209,6 +221,25 @@ class AccountSettings:
             self.cfg.session_secret, cookie, max_age=self.cfg.session_max_age
         )
 
+    def _is_same_origin(self, request) -> bool:
+        """Whether a state-changing request came from this site's own pages.
+
+        Browsers send Origin on form POSTs; Referer is the fallback. A request
+        carrying neither is rejected, which blocks cross-site form submission
+        even where SameSite=Lax cookies would be attached.
+        """
+        expected = _origin_of(self.cfg.public_base)
+        origin = request.headers.get("origin")
+        if origin:
+            return origin.lower() == expected
+        referer = request.headers.get("referer")
+        return bool(referer) and _origin_of(referer) == expected
+
+    def _forbidden(self):
+        return PlainTextResponse(
+            "This form must be submitted from the account page.", status_code=403
+        )
+
     # --- handlers ---
 
     async def login(self, request):
@@ -269,13 +300,23 @@ class AccountSettings:
             return RedirectResponse("/account/login", status_code=302)
 
         if request.method == "POST":
+            if not self._is_same_origin(request):
+                return self._forbidden()
             form = await request.form()
-            library = (form.get("library") or "").strip()
+            library = (form.get("library") or "").strip().lower()
             card = (form.get("card") or "").strip()
             pin = (form.get("pin") or "").strip()
             if not (library and card and pin):
                 return HTMLResponse(
                     _page(error="Library, card number, and PIN are all required."),
+                    status_code=400,
+                )
+            if not _LIBRARY_RE.fullmatch(library):
+                return HTMLResponse(
+                    _page(
+                        error="Enter just the library's subdomain, like seattle or "
+                        "sfpl."
+                    ),
                     status_code=400,
                 )
             try:
@@ -308,6 +349,8 @@ class AccountSettings:
         return HTMLResponse(_page(configured=self.store.get(subject) is not None))
 
     async def logout(self, request):
+        if not self._is_same_origin(request):
+            return self._forbidden()
         resp = RedirectResponse("/account/login", status_code=302)
         resp.delete_cookie("bc_session", path="/account")
         return resp

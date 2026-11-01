@@ -29,7 +29,19 @@ CFG = WebSettingsConfig(
 )
 
 
-def _make(store, *, exchange=None, validate=None, validate_raises=False, changed=None):
+# Browsers send Origin on form POSTs; the routes require it to match the site.
+SITE_ORIGIN = {"origin": "https://getbiblio.app"}
+
+
+def _make(
+    store,
+    *,
+    exchange=None,
+    validate=None,
+    validate_raises=False,
+    changed=None,
+    headers=SITE_ORIGIN,
+):
     async def _ex(code):
         return "user_42"
 
@@ -45,7 +57,9 @@ def _make(store, *, exchange=None, validate=None, validate_raises=False, changed
         validate_credentials=validate or _val,
         on_credentials_changed=changed,
     )
-    return TestClient(Starlette(routes=app.routes), base_url="https://testserver")
+    return TestClient(
+        Starlette(routes=app.routes), base_url="https://testserver", headers=headers
+    )
 
 
 def _authenticate(tc):
@@ -179,3 +193,75 @@ def test_env_missing_public_base_raises(monkeypatch):
     monkeypatch.delenv("BIBLIOCOMMONS_MCP_PUBLIC_URL", raising=False)
     with pytest.raises(WebSettingsConfigError, match="public origin"):
         web_settings_from_env()
+
+
+FORM = {"library": "seattle", "card": "12345", "pin": "6789"}
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {},
+        {"origin": "https://evil.example"},
+        {"origin": "null"},
+        {"referer": "https://evil.example/page"},
+    ],
+)
+def test_save_rejects_cross_site_posts(headers):
+    store = InMemoryCredentialStore()
+    tc = _make(store, headers=headers)
+    _authenticate(tc)
+    r = tc.post("/account", data=FORM)
+    assert r.status_code == 403
+    assert store.get("user_42") is None
+
+
+def test_save_accepts_same_site_referer_without_origin():
+    store = InMemoryCredentialStore()
+    tc = _make(store, headers={"referer": "https://getbiblio.app/account"})
+    _authenticate(tc)
+    r = tc.post("/account", data=FORM)
+    assert r.status_code == 200
+    assert store.get("user_42") is not None
+
+
+@pytest.mark.parametrize(
+    "library",
+    [
+        "evil.com/x?",
+        "seattle.evil",
+        "attacker.example#",
+        "-seattle",
+        "sea_ttle",
+        "a" * 64,
+    ],
+)
+def test_save_rejects_non_subdomain_library(library):
+    seen = []
+
+    async def _val(lib, card, pin):
+        seen.append(lib)
+
+    store = InMemoryCredentialStore()
+    tc = _make(store, validate=_val)
+    _authenticate(tc)
+    r = tc.post("/account", data={**FORM, "library": library})
+    assert r.status_code == 400
+    assert seen == []
+    assert store.get("user_42") is None
+
+
+def test_save_lowercases_library():
+    store = InMemoryCredentialStore()
+    tc = _make(store)
+    _authenticate(tc)
+    r = tc.post("/account", data={**FORM, "library": " Seattle "})
+    assert r.status_code == 200
+    assert store.get("user_42").library == "seattle"
+
+
+def test_logout_rejects_cross_site_post():
+    tc = _make(InMemoryCredentialStore(), headers={"origin": "https://evil.example"})
+    _authenticate(tc)
+    r = tc.post("/account/logout", follow_redirects=False)
+    assert r.status_code == 403
