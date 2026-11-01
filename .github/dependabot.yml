@@ -1,6 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    cooldown: { default-days: 7 }
     directory: "/web"
     schedule:
       interval: "weekly"
@@ -9,6 +10,7 @@ updates:
       timezone: "America/Los_Angeles"
     open-pull-requests-limit: 0
   - package-ecosystem: "pip"
+    cooldown: { default-days: 7 }
     directory: "/"
     schedule:
       interval: "weekly"
@@ -18,6 +20,7 @@ updates:
     open-pull-requests-limit: 0
 
   - package-ecosystem: "docker"
+    cooldown: { default-days: 7 }
     directory: "/"
     schedule:
       interval: "weekly"
@@ -27,6 +30,7 @@ updates:
     open-pull-requests-limit: 0
 
   - package-ecosystem: "github-actions"
+    cooldown: { default-days: 14 }
     directory: "/"
     schedule:
       interval: "weekly"

@@ -7,6 +7,7 @@ dev:
 lint:
 	ruff check src/ tests/
 	ruff format --check src/ tests/
+	mypy
 
 format:
 	ruff check --fix src/ tests/

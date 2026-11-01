@@ -54,12 +54,10 @@ See [`projects/public-readiness-ci.md`](projects/public-readiness-ci.md) for the
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | **MCP Inspector CLI in CI**                  | Skipped — `tests/test_mcp_smoke.py` covers the same handshake validation in-process. Documented in `CONTRIBUTING.md` as a manual debug tool. |
 | **`mcpdiff` schema snapshots**               | Skipped — adds maintenance burden for a project with no external schema consumers yet.                                                       |
-| **`claude-code-lint` in CI**                 | Clickwheel runs `npx claude-code-lint@latest`; we don't. Worth adding.                                                                       |
 | **Sentry MCP integration**                   | Skipped — overkill for v0.x personal use.                                                                                                    |
 | **TestPyPI staging publish**                 | Clickwheel has `test-publish.yml`; we don't.                                                                                                 |
 | **Live state-changing CI test**              | Cassettes cover reads; no CI test actually places/cancels a hold against a real account.                                                     |
 | **Coverage threshold tighter than 60%**      | We're at 86% — could raise the floor to lock the gain in.                                                                                    |
-| **Repo-level `claudelint`**                  | Your local `claudelint` skill is available; not wired into this repo's CI.                                                                   |
 | **Pre-commit hook for credential leak grep** | Already in `.pre-commit-config.yaml`; never tested with a deliberate leak (could add a self-test).                                           |
 
 ## Docs / polish
@@ -116,10 +114,10 @@ See [`projects/public-readiness-ci.md`](projects/public-readiness-ci.md) for the
 
 ## Honest categorization
 
-| Bucket                            | Items                                                                                       |
-| --------------------------------- | ------------------------------------------------------------------------------------------- |
-| **Planned, real next work**       | Digital queue holds, suspend, renew, pickup-branch update, item-level holds (v1.1–v1.2).    |
-| **Probably useful, low-priority** | Ready-for-pickup tool, recommendations, examples/ dir, asciicast in README.                 |
-| **Worth doing soon-ish**          | `claude-code-lint` in CI, raise coverage floor, retry/backoff for transient gateway errors. |
-| **Quietly fine to skip forever**  | Sentry, Docker, multi-library, MCP Apps UI bundles, Homebrew formula, Python 3.10 support.  |
-| **One-time housekeeping**         | Rotate the `RELEASE_PLEASE_TOKEN` PAT.                                                      |
+| Bucket                            | Items                                                                                      |
+| --------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Planned, real next work**       | Digital queue holds, suspend, renew, pickup-branch update, item-level holds (v1.1–v1.2).   |
+| **Probably useful, low-priority** | Ready-for-pickup tool, recommendations, examples/ dir, asciicast in README.                |
+| **Worth doing soon-ish**          | raise coverage floor, retry/backoff for transient gateway errors.                          |
+| **Quietly fine to skip forever**  | Sentry, Docker, multi-library, MCP Apps UI bundles, Homebrew formula, Python 3.10 support. |
+| **One-time housekeeping**         | Rotate the `RELEASE_PLEASE_TOKEN` PAT.                                                     |
