@@ -59,6 +59,8 @@ renewing, and returning digital loans early all change a real library account
 3. **Mutations.** Tool annotations and dry runs are hints to the client, not consent.
    Mutations name their exact targets, verify that the hold or loan belongs to the
    caller, and treat catalog text as data (`AGENTS.md`).
+   Keep physical/digital request DTOs and endpoint-specific locale fields correct, and
+   distinguish the borrowing `account_id` from the UGC identity (`src/bibliocommons_mcp/client.py`).
 4. **Browser routes.** Session and state cookies stay signed, expiring, Secure, HttpOnly,
    and SameSite. State-changing posts verify their origin. Batches, delays, login attempts,
    and the credential store are bounded.

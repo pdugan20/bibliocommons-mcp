@@ -96,6 +96,17 @@ place holds, manage checkouts via an MCP client.
     code paths (place_hold, cancel_hold, borrow_digital) are unit-tested for
     body shape correctness only. Read-only flows use VCR cassettes.
 
+## Code Review Rules
+
+- Flag credentials, session cookies, raw upstream errors, or unsanitized cassettes that
+  reach logs, fixtures, or MCP responses. Stdout must remain valid MCP framing only.
+- Flag remote tools or account routes that bypass subject isolation, credential expiry,
+  or the origin and session checks described in `docs/security/threat-model.md`.
+- Flag hold, checkout, or cancellation changes that use the wrong physical/digital DTO,
+  omit endpoint-specific locale fields, or confuse borrowing `account_id` with the UGC ID.
+- Flag state-changing live-gateway tests or cassette recording without authorization,
+  automatic sanitization, and manual diff inspection before commit.
+
 ## Generality
 
 The same endpoints work for any BiblioCommons-powered library. Library is
