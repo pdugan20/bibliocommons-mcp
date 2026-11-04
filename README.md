@@ -68,3 +68,5 @@ The same gateway serves every BiblioCommons-powered library — see [`docs/known
 - [`docs/troubleshooting.md`](docs/troubleshooting.md) — common errors and fixes
 - [`docs/roadmap.md`](docs/roadmap.md) — what's planned next
 - [`docs/releasing.md`](docs/releasing.md) — automated release flow
+- [`docs/deploy-fly.md`](docs/deploy-fly.md) — running the remote/HTTP connector, WorkOS OAuth
+- [`docs/deploy-cloudflare-access.md`](docs/deploy-cloudflare-access.md) — Cloudflare Access as an alternative auth backend
